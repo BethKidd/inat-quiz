@@ -15,7 +15,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:linear-gradient(145deg,#0c0e1a,#151933,#1a1040);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:16px;color:#e2e4ef}
+body{min-height:100vh;background:linear-gradient(145deg,#0c0e1a,#151933,#1a1040);display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef}
 a{color:#818cf8;text-decoration:none}.container{max-width:540px;width:100%}.center{text-align:center}
 .logo-icon{font-size:48px;margin-bottom:8px}
 h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
@@ -36,15 +36,15 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .footer-text{font-size:12px;color:#555770;margin-top:20px;text-align:center}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#818cf8;border-radius:50%;margin:0 auto 16px;animation:spin .8s linear infinite}
-.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;color:#8688a5;font-size:13px;font-weight:600}
+.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:8px;color:#8688a5;font-size:13px;font-weight:600}
 .progress-track{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#818cf8,#a5b4fc);transition:width .4s}
 .round-badge{background:rgba(129,140,248,.15);color:#a5b4fc;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px}
 .remaining-badge{background:rgba(251,191,36,.12);color:#fbbf24;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px}
 .q-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:24px;backdrop-filter:blur(20px);transition:opacity .3s,transform .3s;overflow-y:auto}
 .q-card.fade-out{opacity:0;transform:translateY(12px)}
-.prompt{font-size:17px;font-weight:600;text-align:center;margin-bottom:16px}
-.carousel{position:relative;border-radius:16px;overflow:hidden;margin-bottom:12px;background:#0a0c18;aspect-ratio:3/2;user-select:none}
+.prompt{font-size:15px;font-weight:600;text-align:center;margin-bottom:8px}
+.carousel{position:relative;border-radius:12px;overflow:hidden;margin-bottom:8px;background:#0a0c18;aspect-ratio:3/2;user-select:none}
 .carousel-track{display:flex;height:100%;transition:transform .35s ease;width:100%}
 .carousel-slide{width:100%;min-width:100%;height:100%;position:relative;flex-shrink:0;overflow:hidden}
 .carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
@@ -65,8 +65,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .map-toggle{position:absolute;top:6px;right:8px;z-index:1000;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s}
 .map-strip .leaflet-container{width:100%;height:100%}
 .map-strip .map-place-label{position:absolute;bottom:6px;right:8px;font-size:10px;font-weight:600;color:#333;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:5px;z-index:1000;pointer-events:none}
-.fields{display:flex;flex-direction:column;gap:0}
-.field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7c80a3;margin-bottom:3px;margin-top:2px;display:flex;align-items:center;gap:6px}
+.fields{display:flex;flex-direction:column;gap:4px}.input-row{display:flex;gap:6px;align-items:center}.input-row .answer-input{flex:1}
+.field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7c80a3;margin-bottom:2px;margin-top:0;display:flex;align-items:center;gap:6px}
 .field-label .hint{font-weight:500;text-transform:none;letter-spacing:0;font-style:italic;color:#555770;font-size:11px}
 .answer-input{width:100%;padding:8px 14px;font-size:15px;border-radius:10px;border:1.5px solid #3a3f58;background:rgba(255,255,255,.04);color:#e2e4ef;outline:none;font-family:inherit;transition:border-color .15s}
 .answer-input:focus{border-color:#818cf8}
@@ -75,13 +75,11 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .answer-input.wrong{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171}
 .answer-input.skipped{border-color:#fbbf24;background:rgba(251,191,36,.06);color:#fbbf24}
 .answer-input.locked{border-color:#4ade80;background:rgba(74,222,128,.05);color:rgba(74,222,128,.5)}
-.correct-answer{font-size:11px;margin-top:1px;font-weight:600;min-height:14px}
+.correct-answer{font-size:11px;margin-top:1px;font-weight:600;min-height:12px}
 .correct-answer.show-correct{color:#4ade80}.correct-answer.show-wrong{color:#f87171}.correct-answer.show-skipped{color:#fbbf24}
-.btn-row{display:flex;gap:8px;margin-top:10px}
-.btn-submit{flex:1;padding:12px 0;border-radius:12px;border:none;background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-.btn-skip{padding:12px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#8688a5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-row{display:flex;gap:8px;margin-top:6px}.btn-submit{padding:0;width:40px;height:40px;border-radius:10px;border:none;background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-size:20px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .retry-notice{text-align:center;font-size:13px;color:#fbbf24;margin-top:10px;font-weight:600}
-.etym-note{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.15);font-size:13px;color:#c4c6e7;line-height:1.5}
+.etym-note{margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.15);font-size:13px;color:#c4c6e7;line-height:1.5}
 .etym-note .etym-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#818cf8;margin-bottom:4px}
 .etym-loading{color:#7c80a3;font-style:italic}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
@@ -109,14 +107,27 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .tab-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#7c80a3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .tab-btn.active{border-color:#818cf8;background:rgba(129,140,248,.1);color:#e2e4ef}
 .hidden{display:none!important}
-#screen-quiz{height:100dvh;display:flex;flex-direction:column;padding:16px;overflow:hidden}
-#screen-quiz .top-bar{flex-shrink:0}
-#screen-quiz .q-card{flex:1;min-height:0;overflow-y:auto}
+#screen-quiz{position:fixed;inset:0;display:flex;flex-direction:column;padding:6px 8px 8px;overflow:hidden}
+#screen-quiz .top-bar{flex-shrink:0;margin-bottom:4px;gap:8px}
+#screen-quiz .q-card{flex:1;min-height:0;overflow-y:auto;padding:8px;border-radius:14px}
+#screen-quiz .prompt{display:none}
+#screen-quiz .carousel{margin-bottom:6px;border-radius:10px}
+#screen-quiz .map-strip{margin-bottom:6px;height:90px}
+#screen-quiz .map-strip.expanded{height:280px}
+#screen-quiz #obs-notes{margin-bottom:6px!important;padding:6px 10px!important}
+.field-stage{position:relative;overflow:hidden;min-height:84px}
+.field-stage .field-group{transition:transform .25s ease,opacity .25s ease}
+.field-stage .field-group.slide-out-left{transform:translateX(-110%);opacity:0}
+.field-stage .field-group.slide-in-right{animation:slideInRight .25s ease}
+@keyframes slideInRight{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.btn-mini-arrow{padding:0;width:36px;height:36px;border-radius:8px;border:1px solid rgba(129,140,248,.5);background:rgba(129,140,248,.15);color:#a5b4fc;font-size:18px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.btn-mini-arrow:hover{background:rgba(129,140,248,.3);border-color:#818cf8;color:#fff}
+.btn-next-floating{position:fixed;bottom:14px;right:14px;width:48px;height:48px;border-radius:12px;border:none;background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-size:22px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;z-index:100;box-shadow:0 4px 16px rgba(99,102,241,.4)}
 .lightbox{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;touch-action:none}
 .lightbox.hidden{display:none!important}
 #lb-img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;transition:transform .1s}
 #lb-map-wrap{width:100%;height:100%}
-#lb-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#lb-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.65);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10001;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .mc-btn{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #3a3f58;background:rgba(255,255,255,.04);color:#e2e4ef;font-size:14px;font-family:inherit;cursor:pointer;text-align:left;transition:all .15s}
 .mc-btn:hover{border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.06)}
 .mc-btn.mc-correct{border-color:#4ade80;background:rgba(74,222,128,.1);color:#4ade80}
@@ -199,10 +210,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     </div>
     <div class="map-strip hidden" id="map-strip"><div id="map-container" style="width:100%;height:100%"></div><div class="map-place-label" id="map-place-label"></div><button class="map-toggle" id="map-toggle">▲ Minimize</button></div>
     <div id="obs-notes" class="hidden" style="font-size:12px;color:#a5b4fc;background:rgba(129,140,248,.06);border:1px solid rgba(129,140,248,.1);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-style:italic;line-height:1.4"><span style="font-style:normal;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#818cf8;display:block;margin-bottom:3px">📝 Your notes</span><span id="obs-notes-text"></span></div>
-    <div class="fields">
-      <div class="field-group"><div class="field-label">Family <span class="hint">e.g. Rosaceae</span></div><input type="text" id="inp-family" class="answer-input" autocomplete="off" spellcheck="false"><div class="correct-answer" id="fb-family"></div></div>
-      <div class="field-group"><div class="field-label">Common Name <span class="hint">e.g. Dog Rose</span></div><input type="text" id="inp-common" class="answer-input" autocomplete="off" spellcheck="false"><div class="correct-answer" id="fb-common"></div></div>
-      <div class="field-group"><div class="field-label">Species <span class="hint">e.g. Rosa canina</span></div><input type="text" id="inp-species" class="answer-input" autocomplete="off" spellcheck="false"><div class="correct-answer" id="fb-species"></div></div>
+    <div class="fields field-stage">
+      <div class="field-group"><div class="field-label">Family <span class="hint">e.g. Rosaceae</span></div><div class="input-row"><input type="text" id="inp-family" class="answer-input" autocomplete="off" spellcheck="false"><button type="button" class="btn-mini-arrow step-btn" data-step="family" title="Next (or press Enter)">→</button></div><div class="correct-answer" id="fb-family"></div></div>
+      <div class="field-group"><div class="field-label">Species <span class="hint">e.g. Rosa canina</span></div><div class="input-row"><input type="text" id="inp-species" class="answer-input" autocomplete="off" spellcheck="false"><button type="button" class="btn-mini-arrow step-btn" data-step="species" title="Next (or press Enter)">→</button></div><div class="correct-answer" id="fb-species"></div></div>
+      <div class="field-group"><div class="field-label">Common Name <span class="hint">e.g. Dog Rose</span></div><div class="input-row"><input type="text" id="inp-common" class="answer-input" autocomplete="off" spellcheck="false"><button type="button" class="btn-mini-arrow step-btn" data-step="common" title="Next (or press Enter)">→</button></div><div class="correct-answer" id="fb-common"></div></div>
     </div>
     <div id="mc-panel" class="hidden">
       <div class="field-label" style="margin-bottom:8px">Which species is this?</div>
@@ -219,8 +230,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <div id="etym-box" class="etym-note hidden"><div class="etym-label">📖 Etymology</div><div id="etym-text"></div></div>
     <div id="traits-box" class="etym-note hidden" style="background:rgba(34,211,238,.05);border-color:rgba(34,211,238,.15);max-height:260px;overflow-y:auto"><div class="etym-label" style="color:#22d3ee">🔬 Key Traits</div><div id="traits-text"></div></div>
     <div id="wiki-box" class="etym-note hidden" style="background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.15);max-height:200px;overflow-y:auto"><div class="etym-label" style="color:#fbbf24">🌿 About this species</div><div id="wiki-text" style="white-space:pre-wrap"></div></div>
-    <div class="btn-row" id="btn-row-submit"><button class="btn-submit" id="btn-submit">Check Answers</button><button class="btn-skip" id="btn-skip">Skip</button></div>
-    <div class="btn-row hidden" id="btn-row-next"><button class="btn-submit" id="btn-next" style="flex:1">Next →</button></div>
+    <div id="btn-row-submit" class="hidden"><button class="btn-submit" id="btn-submit">→</button></div>
+    <button class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)">→</button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div>
 </div>
@@ -254,6 +265,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   </div>
 </div>
 
+<div id="lightbox" class="lightbox hidden"><img id="lb-img" src="" alt=""><div id="lb-map-wrap"></div><button id="lb-close">✕</button></div>
 <script>
 const API="https://api.inaturalist.org/v1";
 const SP_RANKS=new Set(["species","subspecies","variety","form","hybrid","infraspecies"]);
@@ -323,7 +335,6 @@ document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListene
 $("btn-start").addEventListener("click",()=>doStart());
 $("btn-exit").addEventListener("click",()=>{killMap();showScreen("setup")});
 $("btn-submit").addEventListener("click",()=>{if(S.traitMode)checkTraits();else check()});
-$("btn-skip").addEventListener("click",skip);
 $("btn-replay").addEventListener("click",()=>{
   if(S.traitMode){
     // After traits, go back to names
@@ -349,6 +360,7 @@ $("btn-back-setup").addEventListener("click",()=>showScreen("setup"));
 $("btn-study-due").addEventListener("click",()=>doStart(true));
 $("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
 ["inp-family","inp-common","inp-species"].forEach(id=>{$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.stopPropagation();const c=S.deck[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}})});
+document.querySelectorAll(".step-btn").forEach(b=>{b.addEventListener("click",e=>{e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c||c._revealed)return;check()})});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
   const c=S.deck?.[S.cardIndex];
   if(S.traitMode&&c&&!c._revealed){checkTraits();return}
@@ -957,7 +969,7 @@ function renderTraitCard(){
   killMap();hide("map-strip");hide("obs-notes");
   // Hide other panels
   document.querySelector(".fields").classList.add("hidden");
-  hide("mc-panel");hide("etym-box");hide("wiki-box");hide("traits-box");hide("retry-notice");hide("btn-row-next");
+  hide("mc-panel");hide("etym-box");hide("wiki-box");hide("traits-box");hide("retry-notice");hide("btn-next");
   show("trait-panel");show("btn-row-submit");
   $("btn-submit").textContent="Check Traits";
   // Render questions
@@ -1026,7 +1038,7 @@ function checkTraits(){
     S.retryQueue.push(retryCard);
     $("retry-notice").textContent=`${retryCard._traitQuestions.length} wrong \u2014 you\u2019ll see those again.`;show("retry-notice");
   }
-  hide("btn-row-submit");show("btn-row-next");
+  hide("btn-row-submit");show("btn-next");
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Traits</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
@@ -1091,7 +1103,7 @@ async function renderCard(){
   fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([...userPhotos,...mapSlide,...ex])}});
   const notes=o.description?.trim();
   if(notes){$("obs-notes-text").textContent=notes;show("obs-notes")}else{hide("obs-notes")}
-  hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("btn-row-next");hide("retry-notice");
+  hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("btn-next");hide("retry-notice");
   // Notes stay visible throughout
   if(c._mcMode&&c._mcOptions){
     $("q-prompt").textContent="Which species is this?";
@@ -1107,50 +1119,51 @@ async function renderCard(){
   }else{
     document.querySelector(".fields").classList.remove("hidden");
     hide("mc-panel");
-    show("btn-row-submit");
+    hide("btn-row-submit");
     showFieldStep(c);
   }
   hide("trait-panel");
   $("q-card").classList.remove("fade-out");
 }
 
-function showFieldStep(c){
-  ["family","common","species"].forEach(f=>{
-    $("inp-"+f).closest(".field-group").classList.add("hidden");
-    $("inp-"+f).value="";$("inp-"+f).className="answer-input";
+function showFieldStep(c,animateIn){
+  ["family","species","common"].forEach(f=>{
+    const fg=$("inp-"+f).closest(".field-group");
+    fg.classList.add("hidden");fg.classList.remove("slide-out-left","slide-in-right");
+    $("inp-"+f).value="";$("inp-"+f).className="answer-input";$("inp-"+f).disabled=false;
     $("fb-"+f).textContent="";$("fb-"+f).className="correct-answer";
+    const sb=fg.querySelector(".step-btn");if(sb)sb.style.display="";
   });
-  if(c._revealed){
-    ["family","common","species"].forEach(f=>$("inp-"+f).closest(".field-group").classList.remove("hidden"));
-    return;
-  }
-  if(c.familyDone&&c.family){$("inp-family").closest(".field-group").classList.remove("hidden");setupF("inp-family","fb-family",true,c.family)}
-  if(c.speciesDone&&c.species){$("inp-species").closest(".field-group").classList.remove("hidden");setupF("inp-species","fb-species",true,c.species)}
-  if(c.commonDone&&c.common){$("inp-common").closest(".field-group").classList.remove("hidden");setupF("inp-common","fb-common",true,c.common)}
+  if(c._revealed)return;
   const step=c._fieldOrder[c._fieldStep];
   if(!step){check();return}
-  $("inp-"+step).closest(".field-group").classList.remove("hidden");
-  $("inp-"+step).disabled=false;
-  const isLast=c._fieldStep>=c._fieldOrder.length-1;
-  $("btn-submit").textContent=isLast?"Check Answer":"Next →";
-  setTimeout(()=>$("inp-"+step).focus(),80);
+  const fg=$("inp-"+step).closest(".field-group");
+  fg.classList.remove("hidden");
+  if(animateIn){fg.classList.add("slide-in-right");setTimeout(()=>fg.classList.remove("slide-in-right"),300)}
+  setTimeout(()=>$("inp-"+step).focus(),animateIn?260:80);
 }
 
-function setupF(iid,fid,done,val){const inp=$(iid),fb=$(fid);inp.value="";fb.textContent="";fb.className="correct-answer";
-  if(!val){inp.className="answer-input";inp.disabled=true;inp.placeholder="— no data —"}
-  else if(done){inp.className="answer-input locked";inp.disabled=true;inp.value=val;fb.textContent="✓ already got this";fb.className="correct-answer show-correct"}
-  else{inp.className="answer-input";inp.disabled=false;inp.placeholder=""}}
-
 function revealCard(c){
-  // Show all fields with final state
   const fieldDefs=[["family","inp-family","fb-family"],["species","inp-species","fb-species"],["common","inp-common","fb-common"]];
   fieldDefs.forEach(([f,iid,fid])=>{
-    const val=c[f];const fg=$(iid).closest(".field-group");
+    const fg=$(iid).closest(".field-group");
+    fg.classList.remove("slide-out-left","slide-in-right","hidden");
+    const val=c[f],inp=$(iid),fb=$(fid);
+    const sb=fg.querySelector(".step-btn");if(sb)sb.style.display="none";
     if(!val){fg.classList.add("hidden");return}
-    fg.classList.remove("hidden");$(iid).disabled=true;
-    if(c[f+"Done"]){$(iid).className="answer-input correct";$(fid).textContent="\u2713";$(fid).className="correct-answer show-correct"}
-    else if($(iid).className.includes("wrong")){/* already styled */}
-    else{$(iid).className="answer-input skipped";$(iid).value=val;$(fid).textContent=val;$(fid).className="correct-answer show-skipped"}
+    inp.disabled=true;
+    const result=(c._results||{})[f];
+    const userVal=(c._answers||{})[f]||"";
+    if(result==="correct"||c[f+"Done"]){
+      inp.value=val;inp.className="answer-input correct";
+      fb.textContent="\u2713";fb.className="correct-answer show-correct";
+    }else if(result==="wrong"){
+      inp.value=userVal;inp.className="answer-input wrong";
+      fb.textContent=val;fb.className="correct-answer show-wrong";
+    }else{
+      inp.value="";inp.className="answer-input skipped";
+      fb.textContent=val;fb.className="correct-answer show-skipped";
+    }
   });
   hide("btn-row-submit");showEtym(c.species,c.common);
   const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
@@ -1171,9 +1184,10 @@ function revealCard(c){
     S.sessionResults.push({species:c.species,common:c.common,quality:q,interval:c.srs.interval});
   }
   if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
-  show("btn-row-next");
+  show("btn-next");
   const isLast=S.cardIndex+1>=S.deck.length&&(allCorrect||S.retryQueue.length<=1);
-  $("btn-next").textContent=isLast&&S.retryQueue.length===0?"See Results \u2192":"Next \u2192";
+  $("btn-next").innerHTML=isLast&&S.retryQueue.length===0?"\u2713":"\u2192";
+  $("btn-next").title=isLast&&S.retryQueue.length===0?"See results (Enter)":"Next (Enter)";
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`}
@@ -1212,7 +1226,7 @@ function handleMC(c,chosenIdx){
   }
   const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
-  show("btn-row-next");
+  show("btn-next");
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
@@ -1222,44 +1236,34 @@ function check(){
   const c=S.deck[S.cardIndex];
   if(c._revealed)return;
   const step=c._fieldOrder[c._fieldStep];
-  if(!step){return}
-  // Check current field
-  const fieldMap={family:["inp-family","fb-family",c.family],species:["inp-species","fb-species",c.species],common:["inp-common","fb-common",c.common]};
-  const [iid,fid,val]=fieldMap[step];
-  const result=chkF(iid,fid,false,val);
-  if(result==="correct")c[step+"Done"]=true;
-  // Accumulate tracking
-  if(!c._activeFields)c._activeFields=0;
-  if(!c._correctThisAttempt)c._correctThisAttempt=0;
-  c._activeFields++;
-  if(result==="correct")c._correctThisAttempt++;
+  if(!step)return;
+  const inp=$("inp-"+step);
+  const userVal=inp.value;
+  const correctVal=c[step];
+  const isCorrect=correctVal&&isMatch(userVal,correctVal);
+  c._answers=c._answers||{};
+  c._results=c._results||{};
+  c._answers[step]=userVal;
+  c._results[step]=isCorrect?"correct":(userVal.trim()?"wrong":"skipped");
+  if(isCorrect)c[step+"Done"]=true;
+  c._activeFields=(c._activeFields||0)+1;
+  if(isCorrect)c._correctThisAttempt=(c._correctThisAttempt||0)+1;
   const isLast=c._fieldStep>=c._fieldOrder.length-1;
   if(isLast){
-    // Final field — reveal everything
     c._revealed=true;
     revealCard(c);
-  }else{
-    c._fieldStep++;
-    showFieldStep(c);
+    return;
   }
+  // Animate current field out, then bring in next
+  const oldFG=inp.closest(".field-group");
+  oldFG.classList.add("slide-out-left");
+  c._fieldStep++;
+  setTimeout(()=>{
+    oldFG.classList.add("hidden");
+    oldFG.classList.remove("slide-out-left");
+    showFieldStep(c,true);
+  },250);
 }
-function chkF(iid,fid,done,val){if(!val)return"nodata";if(done)return"done";const inp=$(iid),fb=$(fid);
-  if(isMatch(inp.value,val)){inp.className="answer-input correct";fb.textContent="✓";fb.className="correct-answer show-correct";return"correct"}
-  inp.className="answer-input wrong";fb.textContent=val;fb.className="correct-answer show-wrong";return"wrong"}
-
-function skip(){const c=S.deck[S.cardIndex];if(c._revealed)return;
-  // Skip remaining fields
-  if(!c._activeFields)c._activeFields=0;
-  if(!c._correctThisAttempt)c._correctThisAttempt=0;
-  c._fieldOrder.slice(c._fieldStep).forEach(step=>{
-    const fieldMap={family:["inp-family","fb-family",c.family],species:["inp-species","fb-species",c.species],common:["inp-common","fb-common",c.common]};
-    const [iid,fid,val]=fieldMap[step];
-    if(val){skF(iid,fid,false,val);c._activeFields++;}
-  });
-  c._revealed=true;
-  revealCard(c);
-}
-function skF(iid,fid,done,val){if(!val||done)return;$(iid).className="answer-input skipped";$(fid).textContent=val;$(fid).className="correct-answer show-skipped"}
 
 function next(){
   killMap();S.cardIndex++;
@@ -1345,8 +1349,22 @@ function closeLightbox(){
   if(lbLeafMap){lbLeafMap.remove();lbLeafMap=null}
   $("lb-img").src="";$("lb-map-wrap").innerHTML="";
 }
-$("lb-close").addEventListener("click",closeLightbox);
-$("lightbox").addEventListener("click",e=>{if(e.target===$("lightbox"))closeLightbox()});
+$("lb-close").addEventListener("click",e=>{e.stopPropagation();closeLightbox()});
+$("lightbox").addEventListener("click",e=>{if(e.target===$("lightbox")||e.target===$("lb-img"))closeLightbox()});
+// Swipe between slides in lightbox
+let _lbTsX=null;
+$("lightbox").addEventListener("touchstart",e=>{if(e.touches.length===1)_lbTsX=e.touches[0].clientX},{passive:true});
+$("lightbox").addEventListener("touchend",e=>{
+  if(_lbTsX===null)return;
+  const dx=e.changedTouches[0].clientX-_lbTsX;
+  if(Math.abs(dx)>50&&cSlides.length>1){
+    moveCar(dx<0?1:-1);
+    const s=cSlides[cIdx];
+    if(s.type==="map")openLightboxMap(s.lat,s.lng,s.label);
+    else openLightboxImg(s.url);
+  }
+  _lbTsX=null;
+});
 
 /* ── Visual Viewport (keyboard fix) ── */
 if(window.visualViewport){
@@ -1362,10 +1380,5 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
-<div id="lightbox" class="lightbox hidden">
-  <img id="lb-img" src="" alt="">
-  <div id="lb-map-wrap"></div>
-  <button id="lb-close">✕</button>
-</div>
 </body>
 </html>
