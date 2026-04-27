@@ -283,15 +283,24 @@ function dbPut(c){return new Promise((res,rej)=>{const r=db.transaction(STORE,"r
 function dbAllUser(u){return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index("username").getAll(u.toLowerCase());r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
 function dbClearUser(u){return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");const r=tx.objectStore(STORE).index("username").openCursor(u.toLowerCase());r.onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 
-/* ── SM-2 ── */
+/* ── SM-2 (Anki-style: learning steps 1min→10min, then days) ── */
+// Intervals stored in minutes. Learning: 1min, 10min. Graduated: days.
+const DAY=1440; // minutes in a day
 function sm2(card,q){
   const now=Date.now();let{easeFactor:ef,interval:iv,repetitions:reps}=card;
-  if(q<3){reps=0;iv=1}
-  else{
-    if(reps===0)iv=1;else if(reps===1)iv=10;else iv=Math.round(iv*ef);
-    reps++;ef=ef+(0.1-(5-q)*(0.08+(5-q)*0.02));if(ef<1.3)ef=1.3;
-    if(q===3)iv=Math.max(1,Math.round(iv*0.7));
-    if(q===5)iv=Math.round(iv*1.3);
+  if(q<3){
+    // Fail — back to first learning step
+    reps=0;iv=1;
+  }else{
+    if(reps===0){iv=10}                          // passed step 1 → step 2 (10 min)
+    else if(reps===1){iv=DAY}                    // passed step 2 → graduate (1 day)
+    else{                                         // review phase: grow in days
+      if(q===3)iv=Math.max(DAY,Math.round(iv*1.2));    // hard
+      else if(q===5)iv=Math.round(iv*ef*1.3);           // easy
+      else iv=Math.round(iv*ef);                         // good
+    }
+    reps++;
+    if(reps>2){ef=Math.max(1.3,ef+(0.1-(5-q)*(0.08+(5-q)*0.02)));}
   }
   card.easeFactor=ef;card.interval=iv;card.repetitions=reps;
   card.lastReview=now;card.nextReview=now+iv*60000;
