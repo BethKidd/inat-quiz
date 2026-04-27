@@ -1,5 +1,5 @@
 const CACHE = 'inat-quiz-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json'];
+const ASSETS = ['/inat-quiz/', '/inat-quiz/index.html', '/inat-quiz/manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
