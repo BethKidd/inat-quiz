@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0c0e1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="iNat Quiz">
+<title>iNat Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:linear-gradient(145deg,#0c0e1a,#151933,#1a1040);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:16px;color:#e2e4ef}
+a{color:#818cf8;text-decoration:none}.container{max-width:540px;width:100%}.center{text-align:center}
+.logo-icon{font-size:48px;margin-bottom:8px}
+h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
+.subtitle{font-size:15px;color:#7c80a3;margin-top:6px}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:28px;text-align:left;backdrop-filter:blur(20px);margin-top:24px}
+.label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8688a5;margin-bottom:8px}
+.label+.label,.count-row+.label{margin-top:20px}
+.input{width:100%;padding:12px 16px;font-size:16px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#e2e4ef;outline:none;font-family:inherit}
+.input:focus{border-color:#818cf8}
+.count-row{display:flex;gap:8px}
+.count-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#c0c3db;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.count-btn:hover{border-color:rgba(129,140,248,.4)}.count-btn.active{border-color:#818cf8;background:rgba(129,140,248,.1);color:#e2e4ef}
+.error{color:#f87171;font-size:13px;margin-top:12px;text-align:center;line-height:1.5}
+.btn-primary{display:block;width:100%;margin-top:24px;padding:14px 0;border-radius:14px;border:none;background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s}
+.btn-primary:hover{transform:translateY(-1px)}.btn-primary:disabled{opacity:.4;cursor:default;transform:none}
+.btn-secondary{display:block;width:100%;margin-top:10px;padding:12px 0;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#a5b4fc;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-danger{display:block;width:100%;margin-top:8px;padding:10px 0;border-radius:14px;border:1px solid rgba(248,113,113,.2);background:transparent;color:#f87171;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.footer-text{font-size:12px;color:#555770;margin-top:20px;text-align:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#818cf8;border-radius:50%;margin:0 auto 16px;animation:spin .8s linear infinite}
+.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;color:#8688a5;font-size:13px;font-weight:600}
+.progress-track{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#818cf8,#a5b4fc);transition:width .4s}
+.round-badge{background:rgba(129,140,248,.15);color:#a5b4fc;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px}
+.remaining-badge{background:rgba(251,191,36,.12);color:#fbbf24;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px}
+.q-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:24px;backdrop-filter:blur(20px);transition:opacity .3s,transform .3s}
+.q-card.fade-out{opacity:0;transform:translateY(12px)}
+.prompt{font-size:17px;font-weight:600;text-align:center;margin-bottom:16px}
+.carousel{position:relative;border-radius:16px;overflow:hidden;margin-bottom:12px;background:#0a0c18;aspect-ratio:3/2;user-select:none}
+.carousel-track{display:flex;height:100%;transition:transform .35s ease;width:100%}
+.carousel-slide{width:100%;min-width:100%;height:100%;position:relative;flex-shrink:0;overflow:hidden}
+.carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.carousel-badge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;z-index:2}
+.badge-yours{background:rgba(129,140,248,.85);color:#fff}
+.badge-other{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);backdrop-filter:blur(4px)}
+.carousel-observer{position:absolute;bottom:8px;left:8px;font-size:10px;font-weight:600;color:rgba(255,255,255,.7);background:rgba(0,0,0,.45);padding:2px 8px;border-radius:6px;z-index:2}
+.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;z-index:3}
+.carousel:hover .carousel-nav{opacity:1}.carousel-nav:hover{background:rgba(0,0,0,.7)}
+.carousel-prev{left:8px}.carousel-next{right:8px}
+.carousel-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3}
+.carousel-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);transition:all .2s;cursor:pointer}
+.carousel-dot.active{background:#fff;transform:scale(1.2)}
+.map-strip{border-radius:12px;margin-bottom:16px;height:120px;position:relative;overflow:hidden;background:#1a1a2e;cursor:pointer;transition:height .3s ease}
+.map-strip.expanded{height:300px;cursor:default}
+.map-strip .leaflet-control-zoom{display:none}
+.map-strip.expanded .leaflet-control-zoom{display:flex}
+.map-toggle{position:absolute;top:6px;right:8px;z-index:1000;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.map-strip .leaflet-container{width:100%;height:100%}
+.map-strip .map-place-label{position:absolute;bottom:6px;right:8px;font-size:10px;font-weight:600;color:#333;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:5px;z-index:1000;pointer-events:none}
+.fields{display:flex;flex-direction:column;gap:0}
+.field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7c80a3;margin-bottom:3px;margin-top:2px;display:flex;align-items:center;gap:6px}
+.field-label .hint{font-weight:500;text-transform:none;letter-spacing:0;font-style:italic;color:#555770;font-size:11px}
+.answer-input{width:100%;padding:8px 14px;font-size:15px;border-radius:10px;border:1.5px solid #3a3f58;background:rgba(255,255,255,.04);color:#e2e4ef;outline:none;font-family:inherit;transition:border-color .15s}
+.answer-input:focus{border-color:#818cf8}
+.answer-input:disabled{opacity:.6;cursor:default}
+.answer-input.correct{border-color:#4ade80;background:rgba(74,222,128,.08);color:#4ade80}
+.answer-input.wrong{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171}
+.answer-input.skipped{border-color:#fbbf24;background:rgba(251,191,36,.06);color:#fbbf24}
+.answer-input.locked{border-color:#4ade80;background:rgba(74,222,128,.05);color:rgba(74,222,128,.5)}
+.correct-answer{font-size:11px;margin-top:1px;font-weight:600;min-height:14px}
+.correct-answer.show-correct{color:#4ade80}.correct-answer.show-wrong{color:#f87171}.correct-answer.show-skipped{color:#fbbf24}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn-submit{flex:1;padding:12px 0;border-radius:12px;border:none;background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-skip{padding:12px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#8688a5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.retry-notice{text-align:center;font-size:13px;color:#fbbf24;margin-top:10px;font-weight:600}
+.etym-note{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.15);font-size:13px;color:#c4c6e7;line-height:1.5}
+.etym-note .etym-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#818cf8;margin-bottom:4px}
+.etym-loading{color:#7c80a3;font-style:italic}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+.stat-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;text-align:center}
+.stat-num{font-size:28px;font-weight:800;color:#a5b4fc;line-height:1}
+.stat-label{font-size:11px;color:#7c80a3;margin-top:4px;font-weight:600}
+.species-list{margin-top:16px;max-height:400px;overflow-y:auto}
+.sp-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;margin-bottom:4px;font-size:13px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+.sp-name{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-sci{font-style:italic;color:#7c80a3;font-size:12px}
+.sp-interval{font-size:11px;color:#8688a5;white-space:nowrap}
+.sp-ease{font-size:11px;white-space:nowrap;font-weight:600}
+.ease-new{color:#818cf8}.ease-learning{color:#fbbf24}.ease-review{color:#4ade80}.ease-mature{color:#22d3ee}
+.due-badge{background:rgba(248,113,113,.15);color:#f87171;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px}
+.due-badge.due-none{background:rgba(74,222,128,.1);color:#4ade80}
+.results-card{max-width:480px;width:100%;text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:40px;backdrop-filter:blur(20px)}
+.results-emoji{font-size:56px;margin-bottom:12px}.results-title{font-size:26px;font-weight:800;margin-bottom:16px}
+.results-score{font-size:42px;font-weight:800;color:#a5b4fc;line-height:1}
+.results-sub{font-size:15px;color:#8688a5;margin-top:6px}
+.results-breakdown{margin-top:20px;text-align:left;max-height:300px;overflow-y:auto}
+.rb-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;margin-bottom:4px;font-size:13px}
+.rb-icon{font-size:16px;flex-shrink:0}.rb-name{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rb-detail{color:#8688a5;font-size:12px;white-space:nowrap}
+.tab-row{display:flex;gap:4px;margin-bottom:20px}
+.tab-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#7c80a3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.tab-btn.active{border-color:#818cf8;background:rgba(129,140,248,.1);color:#e2e4ef}
+.hidden{display:none!important}
+.mc-btn{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #3a3f58;background:rgba(255,255,255,.04);color:#e2e4ef;font-size:14px;font-family:inherit;cursor:pointer;text-align:left;transition:all .15s}
+.mc-btn:hover{border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.06)}
+.mc-btn.mc-correct{border-color:#4ade80;background:rgba(74,222,128,.1);color:#4ade80}
+.mc-btn.mc-wrong{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171}
+.mc-btn.mc-dim{opacity:.4;cursor:default}
+.mc-btn .mc-common{font-size:12px;color:#7c80a3;margin-top:2px}
+.mc-btn.mc-correct .mc-common{color:rgba(74,222,128,.7)}
+.mc-btn.mc-wrong .mc-common{color:rgba(248,113,113,.6)}
+.trait-q{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px}
+.trait-q .trait-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7c80a3;margin-bottom:5px}
+.trait-mc-btn{width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #3a3f58;background:rgba(255,255,255,.03);color:#e2e4ef;font-size:13px;font-family:inherit;cursor:pointer;text-align:left;transition:all .15s;margin-top:4px}
+.trait-mc-btn:hover{border-color:rgba(129,140,248,.4)}
+.trait-mc-btn.mc-correct{border-color:#4ade80;background:rgba(74,222,128,.1);color:#4ade80}
+.trait-mc-btn.mc-wrong{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171}
+.trait-mc-btn.mc-dim{opacity:.4;cursor:default}
+.trait-fb{font-size:11px;margin-top:3px;font-weight:600;min-height:14px}
+.trait-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;line-height:1.5}
+.trait-label{color:#22d3ee;font-weight:700;white-space:nowrap}
+.trait-val{color:#c4c6e7}
+.trait-distinguish{grid-column:1/-1;margin-top:4px;padding-top:6px;border-top:1px solid rgba(34,211,238,.1);color:#e2e4ef;font-size:12px;line-height:1.5}
+.gloss{border-bottom:1px dotted rgba(34,211,238,.4);cursor:help;position:relative}
+.gloss:hover::after{content:attr(data-def);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e4ef;border:1px solid rgba(34,211,238,.3);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:400;font-style:normal;white-space:normal;width:220px;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4);line-height:1.4}
+</style>
+</head>
+<body>
+
+<div id="screen-setup" class="container center">
+  <div class="logo-icon">🦎</div><h1>iNat Quiz</h1>
+  <p class="subtitle">Spaced repetition for your iNaturalist observations</p>
+  <div class="card">
+    <label class="label">iNaturalist Username</label>
+    <input type="text" id="inp-user" class="input" placeholder="e.g. kueda">
+    <label class="label">Deck Size</label>
+    <div class="count-row" id="count-row">
+      <button class="count-btn active" data-n="5">5</button>
+      <button class="count-btn" data-n="10">10</button>
+      <button class="count-btn" data-n="15">15</button>
+      <button class="count-btn" data-n="20">20</button>
+    </div>
+    <label class="label" style="margin-top:20px">OpenAI API Key <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#555770">(optional — for etymology)</span></label>
+    <input type="password" id="inp-apikey" class="input" placeholder="sk-..." style="font-size:13px">
+    <p style="font-size:11px;color:#555770;margin-top:6px">Stored in memory only. Never saved or sent anywhere except OpenAI.</p>
+    <p id="error-msg" class="error hidden"></p>
+    <button id="btn-start" class="btn-primary" disabled>Start Quiz →</button>
+    <button id="btn-stats" class="btn-secondary" style="display:none">📊 View Progress</button>
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)">
+      <label class="label">Species List Quiz</label>
+      <p style="font-size:12px;color:#555770;margin-bottom:10px">Upload a CSV/text file with one scientific name per line.</p>
+      <input type="file" id="inp-csv" accept=".csv,.txt,.tsv" style="display:none">
+      <button id="btn-csv" class="btn-secondary" style="margin-top:0">📋 Upload Species List</button>
+      <p id="csv-status" style="font-size:12px;color:#7c80a3;margin-top:6px" class="hidden"></p>
+      <button id="btn-start-csv" class="btn-primary hidden" style="margin-top:10px;background:linear-gradient(135deg,#34d399,#059669)">Start List Quiz →</button>
+      <div style="margin-top:12px">
+        <input type="file" id="inp-traits" accept=".csv" style="display:none">
+        <button id="btn-traits" class="btn-secondary" style="margin-top:0">🔬 Upload Traits Database</button>
+        <p id="traits-status" style="font-size:12px;color:#7c80a3;margin-top:6px" class="hidden"></p>
+        <button id="btn-start-traits" class="btn-primary hidden" style="margin-top:10px;background:linear-gradient(135deg,#22d3ee,#0891b2)">Start Traits Quiz 🔬 →</button>
+      </div>
+    </div>
+  </div>
+  <p class="footer-text">Progress saved in your browser via IndexedDB.</p>
+</div>
+
+<div id="screen-loading" class="container center hidden"><div class="spinner"></div><p id="loading-text" style="font-size:15px;color:#c0c3db">Loading...</p></div>
+
+<div id="screen-quiz" class="container hidden">
+  <div class="top-bar">
+    <button id="btn-exit" style="background:none;border:none;color:#8688a5;font-size:18px;cursor:pointer;padding:0 4px;font-family:inherit" title="Exit to home">✕</button>
+    <span id="q-counter">1/5</span>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <span id="round-info" style="display:flex;align-items:center;gap:6px"></span>
+  </div>
+  <div class="q-card" id="q-card">
+    <p class="prompt" id="q-prompt">Identify this observation</p>
+    <div class="carousel" id="carousel">
+      <div class="carousel-track" id="carousel-track"></div>
+      <button class="carousel-nav carousel-prev" id="car-prev">‹</button>
+      <button class="carousel-nav carousel-next" id="car-next">›</button>
+      <div class="carousel-dots" id="carousel-dots"></div>
+    </div>
+    <div class="map-strip hidden" id="map-strip"><div id="map-container" style="width:100%;height:100%"></div><div class="map-place-label" id="map-place-label"></div><button class="map-toggle" id="map-toggle">▲ Minimize</button></div>
+    <div id="obs-notes" class="hidden" style="font-size:12px;color:#a5b4fc;background:rgba(129,140,248,.06);border:1px solid rgba(129,140,248,.1);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-style:italic;line-height:1.4"><span style="font-style:normal;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#818cf8;display:block;margin-bottom:3px">📝 Your notes</span><span id="obs-notes-text"></span></div>
+    <div class="fields">
+      <div class="field-group"><div class="field-label">Family <span class="hint">e.g. Rosaceae</span></div><input type="text" id="inp-family" class="answer-input" autocomplete="off" spellcheck="false"><div class="correct-answer" id="fb-family"></div></div>
+      <div class="field-group"><div class="field-label">Common Name <span class="hint">e.g. Dog Rose</span></div><input type="text" id="inp-common" class="answer-input" autocomplete="off" spellcheck="false"><div class="correct-answer" id="fb-common"></div></div>
+      <div class="field-group"><div class="field-label">Species <span class="hint">e.g. Rosa canina</span></div><input type="text" id="inp-species" class="answer-input" autocomplete="off" spellcheck="false"><div class="correct-answer" id="fb-species"></div></div>
+    </div>
+    <div id="mc-panel" class="hidden">
+      <div class="field-label" style="margin-bottom:8px">Which species is this?</div>
+      <div id="mc-options" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div id="mc-feedback" style="margin-top:8px;font-size:13px;font-weight:600;min-height:20px"></div>
+    </div>
+    <div id="trait-panel" class="hidden">
+      <div style="text-align:center;margin-bottom:12px">
+        <span style="font-size:20px;font-weight:800;color:#a5b4fc" id="trait-species"></span>
+        <span style="font-size:13px;color:#7c80a3;display:block" id="trait-common"></span>
+      </div>
+      <div id="trait-questions" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+    <div id="etym-box" class="etym-note hidden"><div class="etym-label">📖 Etymology</div><div id="etym-text"></div></div>
+    <div id="traits-box" class="etym-note hidden" style="background:rgba(34,211,238,.05);border-color:rgba(34,211,238,.15);max-height:260px;overflow-y:auto"><div class="etym-label" style="color:#22d3ee">🔬 Key Traits</div><div id="traits-text"></div></div>
+    <div id="wiki-box" class="etym-note hidden" style="background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.15);max-height:200px;overflow-y:auto"><div class="etym-label" style="color:#fbbf24">🌿 About this species</div><div id="wiki-text" style="white-space:pre-wrap"></div></div>
+    <div class="btn-row" id="btn-row-submit"><button class="btn-submit" id="btn-submit">Check Answers</button><button class="btn-skip" id="btn-skip">Skip</button></div>
+    <div class="btn-row hidden" id="btn-row-next"><button class="btn-submit" id="btn-next" style="flex:1">Next →</button></div>
+    <div class="retry-notice hidden" id="retry-notice"></div>
+  </div>
+</div>
+
+<div id="screen-results" class="container center hidden">
+  <div class="results-card">
+    <div class="results-emoji" id="res-emoji"></div><h2 class="results-title">Session Complete!</h2>
+    <div class="results-score" id="res-score"></div><div class="results-sub" id="res-sub"></div>
+    <div class="results-breakdown" id="res-breakdown"></div>
+    <div style="margin-top:28px">
+      <button class="btn-primary" id="btn-replay">Continue Studying →</button>
+      <button class="btn-secondary" id="btn-view-stats">📊 View All Progress</button>
+      <button class="btn-secondary" id="btn-change">Change Settings</button>
+    </div>
+  </div>
+</div>
+
+<div id="screen-stats" class="container hidden">
+  <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">📊 Your Progress</h2>
+  <p style="font-size:13px;color:#7c80a3;margin-bottom:16px" id="stats-user"></p>
+  <div class="tab-row">
+    <button class="tab-btn active" data-tab="overview" id="tab-overview">Overview</button>
+    <button class="tab-btn" data-tab="species" id="tab-species">Species</button>
+  </div>
+  <div id="tab-content-overview"><div class="stats-grid" id="stats-grid"></div><div style="margin-top:20px;text-align:center"><span class="due-badge" id="stats-due"></span></div></div>
+  <div id="tab-content-species" class="hidden"><div class="species-list" id="species-list"></div></div>
+  <div style="margin-top:24px">
+    <button class="btn-primary" id="btn-study-due">Study Due Cards →</button>
+    <button class="btn-secondary" id="btn-back-setup">← Back</button>
+    <button class="btn-danger" id="btn-reset">Reset All Progress</button>
+  </div>
+</div>
+
+<script>
+const API="https://api.inaturalist.org/v1";
+const SP_RANKS=new Set(["species","subspecies","variety","form","hybrid","infraspecies"]);
+const DB_NAME="inat_quiz_srs";const DB_VER=1;const STORE="cards";
+
+/* ── IndexedDB ── */
+let db=null;
+function openDB(){return new Promise((res,rej)=>{
+  const r=indexedDB.open(DB_NAME,DB_VER);
+  r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE)){const s=d.createObjectStore(STORE,{keyPath:"taxonKey"});s.createIndex("username","username");s.createIndex("nextReview","nextReview")}};
+  r.onsuccess=e=>{db=e.target.result;res(db)};r.onerror=e=>rej(e.target.error);
+})}
+function dbGet(k){return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}
+function dbPut(c){return new Promise((res,rej)=>{const r=db.transaction(STORE,"readwrite").objectStore(STORE).put(c);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function dbAllUser(u){return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index("username").getAll(u.toLowerCase());r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+function dbClearUser(u){return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");const r=tx.objectStore(STORE).index("username").openCursor(u.toLowerCase());r.onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+
+/* ── SM-2 ── */
+function sm2(card,q){
+  const now=Date.now();let{easeFactor:ef,interval:iv,repetitions:reps}=card;
+  if(q<3){reps=0;iv=1}
+  else{
+    if(reps===0)iv=1;else if(reps===1)iv=10;else iv=Math.round(iv*ef);
+    reps++;ef=ef+(0.1-(5-q)*(0.08+(5-q)*0.02));if(ef<1.3)ef=1.3;
+    if(q===3)iv=Math.max(1,Math.round(iv*0.7));
+    if(q===5)iv=Math.round(iv*1.3);
+  }
+  card.easeFactor=ef;card.interval=iv;card.repetitions=reps;
+  card.lastReview=now;card.nextReview=now+iv*60000;
+  card.totalReviews=(card.totalReviews||0)+1;
+  if(q>=3)card.correctReviews=(card.correctReviews||0)+1;
+  return card;
+}
+function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
+
+/* ── State ── */
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false};
+const photoCache=new Map(),etymCache=new Map();
+let cIdx=0,cSlides=[],leafMap=null;
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function $(id){return document.getElementById(id)}
+function show(id){$(id).classList.remove("hidden")}
+function hide(id){$(id).classList.add("hidden")}
+function showScreen(n){["screen-setup","screen-loading","screen-quiz","screen-results","screen-stats"].forEach(s=>s==="screen-"+n?show(s):hide(s))}
+function esc(s){if(!s)return"";const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").replace(/[-–—]/g," ").replace(/[^a-z0-9' ]/g,"").replace(/\s+/g," ")}
+function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
+function isMatch(u,c){const a=normalize(u),b=normalize(c);if(!a||!b)return false;if(a===b)return true;return b.length>4&&lev(a,b)<=2}
+function taxonKey(o){return(o.taxon?.name||"").toLowerCase()}
+function dedupe(obs){const s=new Map();for(const o of obs){const k=taxonKey(o);if(k&&!s.has(k))s.set(k,o)}return[...s.values()]}
+
+/* ── Init ── */
+(async function(){
+  await openDB();
+  const saved=localStorage.getItem("inat_quiz_user");
+  if(saved){$("inp-user").value=saved;$("btn-start").disabled=false;$("btn-stats").style.display="block"}
+  const ak=localStorage.getItem("inat_quiz_apikey");
+  if(ak)$("inp-apikey").value=ak;
+})();
+
+/* ── Events ── */
+$("inp-user").addEventListener("input",()=>{const v=$("inp-user").value.trim();$("btn-start").disabled=!v;$("btn-stats").style.display=v?"block":"none"});
+$("inp-user").addEventListener("keydown",e=>{if(e.key==="Enter"&&$("inp-user").value.trim())doStart()});
+document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListener("click",()=>{document.querySelectorAll("#count-row .count-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.qCount=+b.dataset.n})});
+$("btn-start").addEventListener("click",()=>doStart());
+$("btn-exit").addEventListener("click",()=>{killMap();showScreen("setup")});
+$("btn-submit").addEventListener("click",()=>{if(S.traitMode)checkTraits();else check()});
+$("btn-skip").addEventListener("click",skip);
+$("btn-replay").addEventListener("click",()=>{
+  if(S.traitMode){
+    // After traits, go back to names
+    S.traitMode=false;
+    if(S.csvMode)csvNextDeck();else doStart();
+  }else if(traitsDB.size>0&&S.allObs.length>0&&buildTraitsDeck()){
+    // After names, try a traits round
+    showScreen("quiz");renderTraitCard();
+  }else{
+    if(S.csvMode)csvNextDeck();else doStart();
+  }
+});
+$("btn-change").addEventListener("click",()=>showScreen("setup"));
+$("btn-csv").addEventListener("click",()=>$("inp-csv").click());
+$("inp-csv").addEventListener("change",handleCSV);
+$("btn-start-csv").addEventListener("click",()=>doStartCSV());
+$("btn-traits").addEventListener("click",()=>$("inp-traits").click());
+$("inp-traits").addEventListener("change",handleTraits);
+$("btn-start-traits").addEventListener("click",doStartTraits);
+$("btn-stats").addEventListener("click",()=>showStats());
+$("btn-view-stats").addEventListener("click",()=>showStats());
+$("btn-back-setup").addEventListener("click",()=>showScreen("setup"));
+$("btn-study-due").addEventListener("click",()=>doStart(true));
+$("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
+["inp-family","inp-common","inp-species"].forEach(id=>{$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.stopPropagation();const c=S.deck[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}})});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
+  const c=S.deck?.[S.cardIndex];
+  if(S.traitMode&&c&&!c._revealed){checkTraits();return}
+  if(c&&c._revealed)next();
+}});
+$("car-prev").addEventListener("click",e=>{e.stopPropagation();moveCar(-1)});
+$("car-next").addEventListener("click",e=>{e.stopPropagation();moveCar(1)});
+function expandMap(){
+  const s=$("map-strip");s.classList.add("expanded");$("map-toggle").textContent="\u25B2 Minimize";
+  if(leafMap){leafMap.dragging.enable();setTimeout(()=>leafMap.invalidateSize(),350)}
+}
+function collapseMap(){
+  const s=$("map-strip");s.classList.remove("expanded");$("map-toggle").textContent="\u25BC Expand";
+  if(leafMap){leafMap.dragging.disable();setTimeout(()=>leafMap.invalidateSize(),350)}
+}
+$("map-strip").addEventListener("click",e=>{
+  if(e.target.closest(".map-toggle")||e.target.closest(".leaflet-control-zoom"))return;
+  if($("map-strip").classList.contains("expanded"))collapseMap();else expandMap();
+});
+$("map-toggle").addEventListener("click",e=>{
+  e.stopPropagation();
+  if($("map-strip").classList.contains("expanded"))collapseMap();else expandMap();
+});
+$("btn-next").addEventListener("click",next);
+document.querySelectorAll(".tab-btn").forEach(btn=>{btn.addEventListener("click",()=>{
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
+  if(btn.dataset.tab==="overview"){show("tab-content-overview");hide("tab-content-species")}else{hide("tab-content-overview");show("tab-content-species")}
+})});
+
+/* ── Carousel ── */
+function moveCar(d){if(cSlides.length<=1)return;cIdx=(cIdx+d+cSlides.length)%cSlides.length;updateCar()}
+function goSlide(i){cIdx=i;updateCar()}
+function updateCar(){$("carousel-track").style.transform=`translateX(-${cIdx*100}%)`;document.querySelectorAll("#carousel-dots .carousel-dot").forEach((d,i)=>d.classList.toggle("active",i===cIdx))}
+function killMap(){if(leafMap){leafMap.remove();leafMap=null}}
+function initMapStrip(lat,lng){
+  killMap();const el=$("map-container");if(!el)return;
+  leafMap=L.map(el,{zoomControl:true,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false}).setView([lat,lng],17);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(leafMap);
+  L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#6366f1;border:3px solid #fff;box-shadow:0 0 8px rgba(99,102,241,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(leafMap);
+  setTimeout(()=>{if(leafMap)leafMap.invalidateSize()},120)}
+function renderCar(slides){cSlides=slides;cIdx=0;const t=$("carousel-track");t.style.transform="translateX(0)";t.innerHTML="";const dots=$("carousel-dots");dots.innerHTML="";
+  slides.forEach((s,i)=>{const sl=document.createElement("div");sl.className="carousel-slide";
+    sl.innerHTML=`<img src="${s.url}" alt="" loading="${i===0?'eager':'lazy'}"><span class="carousel-badge ${s.yours?'badge-yours':'badge-other'}">${s.yours?'Your photo':'Other observer'}</span>${s.observer&&!s.yours?`<span class="carousel-observer">\u{1F4F7} ${esc(s.observer)}</span>`:''}`;
+    t.appendChild(sl);const dot=document.createElement("span");dot.className="carousel-dot"+(i===0?" active":"");dot.addEventListener("click",()=>goSlide(i));dots.appendChild(dot)})}
+
+async function fetchExtra(tid,uid){
+  if(photoCache.has(tid))return photoCache.get(tid);
+  try{
+    const r=await fetch(`${API}/taxa/${tid}?locale=en`);
+    if(!r.ok)return[];const d=await r.json();
+    const taxon=(d.results||[])[0];if(!taxon)return[];
+    const ps=[];
+    const photos=taxon.taxon_photos||[];
+    for(const tp of photos){
+      const p=tp.photo;if(!p)continue;
+      const url=p.medium_url||p.url||"";
+      if(!url)continue;
+      // Skip if it's the same user's photo
+      if(p.user_id===uid)continue;
+      ps.push({type:"photo",url,observer:p.attribution||"",yours:false});
+      if(ps.length>=4)break;
+    }
+    photoCache.set(tid,ps);return ps;
+  }catch{return[]}
+}
+
+/* ── Etymology ── */
+async function fetchEtym(species,common){const key=$("inp-apikey")?.value?.trim();if(!key)return null;const ck=species.toLowerCase();if(etymCache.has(ck))return etymCache.get(ck);
+  try{const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+    body:JSON.stringify({model:"gpt-4o-mini",max_tokens:120,temperature:0.1,messages:[
+      {role:"system",content:"You are an expert in botanical and zoological Latin/Greek etymology, following Stearn's Botanical Latin and Jaeger's Source-Book of Biological Names. Give only well-established etymologies. If uncertain, say so rather than guess. Always cite the specific Latin or Greek root words. For example: Lamium album — 'Lamium' from Greek 'laimos' (throat/gullet), referring to the gaping mouth-shaped corolla; 'album' from Latin 'albus' (white), for the white flowers."},
+      {role:"user",content:`In 1-2 concise sentences, give the etymology of the scientific name "${species}"${common?` (common name: ${common})`:""}.  For each part of the name (genus and species epithet), state the specific Latin or Greek root word(s) it derives from, their literal meaning, and why the name was chosen. Format: 'Genus' from [language] '[root word]' (meaning); 'epithet' from [language] '[root word]' (meaning). No preamble.`}]})});
+    if(!r.ok)return null;const d=await r.json();const txt=d.choices?.[0]?.message?.content?.trim()||null;if(txt)etymCache.set(ck,txt);return txt}catch{return null}}
+function showEtym(species,common){const ak=$("inp-apikey")?.value?.trim();if(ak){show("etym-box");$("etym-text").innerHTML='<span class="etym-loading">Loading etymology\u2026</span>';fetchEtym(species,common).then(t=>{$("etym-text").textContent=t||"Etymology not available."})}else hide("etym-box")}
+
+const wikiCache=new Map();
+async function fetchWiki(species){
+  const ck=species.toLowerCase();
+  if(wikiCache.has(ck))return wikiCache.get(ck);
+  for(const term of[species,species.split(" ")[0]]){
+    try{
+      const r=await fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(term.replace(/ /g,"_"))}&prop=extracts&exintro=1&explaintext=1&format=json&origin=*`);
+      if(!r.ok)continue;const d=await r.json();
+      const pages=d.query?.pages||{};const page=Object.values(pages)[0];
+      if(page&&page.extract&&!page.extract.startsWith("may refer to")){
+        wikiCache.set(ck,page.extract);return page.extract;
+      }
+    }catch{}
+  }
+  wikiCache.set(ck,null);return null;
+}
+
+function showWiki(species,gotWrong){
+  if(!gotWrong){hide("wiki-box");return}
+  show("wiki-box");$("wiki-text").innerHTML='<span class="etym-loading">Loading\u2026</span>';
+  fetchWiki(species).then(text=>{
+    if(text)$("wiki-text").textContent=text;
+    else hide("wiki-box");
+  });
+}
+
+const traitsCache=new Map();
+async function fetchTraits(species,family){
+  const key=$("inp-apikey")?.value?.trim();
+  if(!key)return null;
+  const ck=species.toLowerCase();
+  if(traitsCache.has(ck))return traitsCache.get(ck);
+  try{
+    const r=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify({
+        model:"gpt-4o-mini",max_tokens:300,temperature:0.1,
+        messages:[
+          {role:"system",content:`You are an expert field botanist. Return ONLY valid JSON with these exact keys for the given plant species. Be precise and factual — use Stace's New Flora or similar authoritative sources. If a trait is variable or unknown, say so briefly.
+Keys: "stamens" (number or range), "petals" (count, arrangement e.g. "5, free" or "fused, 2-lipped"), "leaf" (type and shape, e.g. "simple, ovate, serrate margins"), "flower_colour", "fruit" (type e.g. "achene", "berry", "capsule"), "habitat" (typical UK habitats), "flowering" (months), "height" (typical range), "distinguish" (1-2 sentences on how to tell apart from most similar species in the same family/genus — name those species).
+No markdown, no backticks, no explanation — just the JSON object.`},
+          {role:"user",content:`${species}${family?` (${family})`:""}`}
+        ]
+      })
+    });
+    if(!r.ok)return null;
+    const d=await r.json();
+    let txt=d.choices?.[0]?.message?.content?.trim()||"";
+    txt=txt.replace(/```json|```/g,"").trim();
+    const parsed=JSON.parse(txt);
+    traitsCache.set(ck,parsed);
+    return parsed;
+  }catch(e){console.log("Traits parse error:",e);return null}
+}
+
+function renderTraits(t){
+  if(!t)return"<em>Traits not available.</em>";
+  const rows=[
+    ["Stamens",t.stamens],["Petals",t.petals],["Leaf",t.leaf],
+    ["Flower",t.flower_colour],["Fruit",t.fruit],["Habitat",t.habitat],
+    ["Flowering",t.flowering],["Height",t.height]
+  ].filter(([,v])=>v).map(([k,v])=>`<span class="trait-label">${esc(k)}</span><span class="trait-val">${esc(String(v))}</span>`).join("");
+  const dist=t.distinguish?`<div class="trait-distinguish"><strong>How to distinguish:</strong> ${esc(t.distinguish)}</div>`:"";
+  return`<div class="trait-grid">${rows}${dist}</div>`;
+}
+
+function showTraits(species,family,gotWrong){
+  const key=$("inp-apikey")?.value?.trim();
+  if(!key||!gotWrong){hide("traits-box");return}
+  show("traits-box");$("traits-text").innerHTML='<span class="etym-loading">Loading traits\u2026</span>';
+  fetchTraits(species,family).then(t=>{
+    if(t)$("traits-text").innerHTML=renderTraits(t);
+    else hide("traits-box");
+  });
+}
+
+/* ── Fetch & Start ── */
+async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-msg");showScreen("loading");$("loading-text").textContent="Checking username\u2026";
+  const un=$("inp-user").value.trim();localStorage.setItem("inat_quiz_user",un);
+  const ak=$("inp-apikey")?.value?.trim();if(ak)localStorage.setItem("inat_quiz_apikey",ak);
+  try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(!ur.ok)throw Error("Could not reach iNaturalist API");
+    const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
+    if(!m){showErr(`Username "${un}" not found.`);return}
+    const login=m.login;S.currentUser=login.toLowerCase();
+    $("loading-text").textContent=`Loading observations for ${login}\u2026`;
+    let allResults=[];
+    const cacheBust=Date.now();
+    for(let page=1;page<=5;page++){
+      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${page}&order=desc&order_by=created_at&locale=en&_=${cacheBust}`);
+      if(!r.ok)throw Error(`API error ${r.status}`);const d=await r.json();
+      const results=d.results||[];allResults.push(...results);
+      if(page===1)console.log(`iNat: ${d.total_results} total observations for ${login}, page 1: ${results.length}`);
+      if(results.length<200)break;
+    }
+    console.log(`Fetched ${allResults.length} observations total`);
+    // Log the 5 most recent so you can check
+    allResults.slice(0,5).forEach((o,i)=>{
+      const hasPhotos=!!(o.photos?.length);
+      const hasTaxon=!!(o.taxon?.name);
+      const rank=o.taxon?.rank||"none";
+      const spRank=SP_RANKS.has(rank.toLowerCase());
+      console.log(`  #${i+1}: ${o.taxon?.name||o.species_guess||"no ID"} | rank:${rank} spRank:${spRank} | photos:${hasPhotos} | created:${o.created_at}`);
+    });
+    const good=allResults.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
+    console.log(`After filtering: ${good.length} species-level obs with photos`);
+    const uniq=dedupe(good);if(uniq.length<4){showErr(`Only ${uniq.length} species-level observations found. Need at least 4.`);return}
+    $("loading-text").textContent="Fetching taxonomy\u2026";
+    const tids=[...new Set(uniq.map(o=>o.taxon.id))],fm={};
+    for(let i=0;i<tids.length;i+=30){const b=tids.slice(i,i+30);const tr=await fetch(`${API}/taxa/${b.join(",")}`);if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){const f=(t.ancestors||[]).find(a=>a.rank==="family");if(f)fm[t.id]=f.name}}}
+    for(const o of uniq)o._family=fm[o.taxon.id]||null;
+    S.allObs=uniq;await buildDeck(uniq,dueOnly);
+  }catch(e){showErr(`Error: ${e.message}`)}}
+function showErr(m){$("error-msg").textContent=m;show("error-msg");showScreen("setup")}
+
+/* ── CSV Mode ── */
+function parseCSVNames(text){
+  return text.split(/[\r\n]+/).map(l=>l.trim()).filter(Boolean)
+    .map(n=>n.replace(/\s+(agg\.|s\.s\.|s\.l\.|s\.str\.)$/i,"").trim())
+    .filter(n=>n&&!n.startsWith("#"));
+}
+
+async function handleCSV(){
+  const file=$("inp-csv").files[0];if(!file)return;
+  const text=await file.text();
+  const names=[...new Set(parseCSVNames(text))];
+  if(names.length<4){showErr(`Only ${names.length} species found in file. Need at least 4.`);return}
+  S.csvSpecies=names;S.csvMode=true;S.currentUser="csvlist";
+  hide("error-msg");showScreen("loading");
+  $("loading-text").textContent=`Looking up ${names.length} species on iNaturalist\u2026`;
+  const ak=$("inp-apikey")?.value?.trim();if(ak)localStorage.setItem("inat_quiz_apikey",ak);
+  try{
+    const delay=ms=>new Promise(r=>setTimeout(r,ms));
+    $("loading-text").textContent=`Searching for ${names.length} species\u2026`;
+    const taxonMap=new Map();let looked=0;
+    for(const name of names){
+      looked++;
+      if(looked%5===0)$("loading-text").textContent=`Searching species ${looked}/${names.length}\u2026`;
+      try{
+        const tr=await fetch(`${API}/taxa?q=${encodeURIComponent(name)}&per_page=5&locale=en`);
+        if(!tr.ok){await delay(300);continue}const td=await tr.json();
+        const taxon=(td.results||[]).find(t=>t.name?.toLowerCase()===name.toLowerCase()&&SP_RANKS.has((t.rank||"").toLowerCase()));
+        if(taxon&&taxon.default_photo)taxonMap.set(taxon.id,taxon);
+        await delay(80);
+      }catch{await delay(200);continue}
+    }
+    console.log(`CSV: searched ${names.length} names, found ${taxonMap.size} with photos`);
+    $("loading-text").textContent=`Fetching taxonomy for ${taxonMap.size} species\u2026`;
+    const tids=[...taxonMap.keys()];const fm={};
+    for(let i=0;i<tids.length;i+=30){
+      const b=tids.slice(i,i+30);
+      try{
+        const tr=await fetch(`${API}/taxa/${b.join(",")}`);
+        if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){
+          const f=(t.ancestors||[]).find(a=>a.rank==="family");
+          if(f)fm[t.id]=f.name;
+          if(t.default_photo)taxonMap.set(t.id,{...taxonMap.get(t.id),...t});
+        }}
+      }catch{}
+    }
+    const obs=[];
+    for(const[id,taxon] of taxonMap){
+      const photo=taxon.default_photo;
+      if(!photo)continue;
+      const photoUrl=photo.medium_url||photo.url||photo.square_url||"";
+      if(!photoUrl)continue;
+      obs.push({
+        id:id,
+        taxon:{id:taxon.id,name:taxon.name,rank:taxon.rank,preferred_common_name:taxon.preferred_common_name||""},
+        photos:[{url:photoUrl.replace(/\/medium\./,"/square.").replace(/\/original\./,"/square.")}],
+        user:{login:photo.attribution||"iNaturalist"},
+        place_guess:"",observed_on:"",observed_on_details:{},geojson:null,location:null,
+        _family:fm[taxon.id]||null
+      });
+    }
+    if(obs.length<4){showErr(`Only found ${obs.length} species with photos on iNaturalist. Need at least 4.`);return}
+    console.log(`CSV: ${obs.length} species ready for quiz`);
+    S.allObs=obs;S.csvSeen=new Set();
+    // Return to setup with Start List Quiz button visible
+    $("csv-status").textContent=`\u2705 ${obs.length} species loaded \u2014 ready to quiz!`;show("csv-status");
+    show("btn-start-csv");
+    showScreen("setup");
+  }catch(e){showErr(`Error: ${e.message}`)}
+}
+
+function doStartCSV(){
+  S.csvMode=true;S.currentUser="csvlist";
+  csvNextDeck();
+}
+
+async function csvNextDeck(){
+  const now=Date.now(),count=Math.min(S.qCount,S.allObs.length);
+  const existing=await dbAllUser(S.currentUser);const srsMap=new Map();
+  for(const c of existing)srsMap.set(c.taxonKey,c);
+  const due=[],notDue=[],fresh=[];
+  for(const o of S.allObs){
+    const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
+    if(!srs)fresh.push(o);else if(srs.nextReview<=now)due.push(o);else notDue.push(o);
+  }
+  const available=[...shuffle(fresh),...shuffle(due)];
+  if(available.length===0){showErr("You\u2019re all caught up on this list! No new or due cards right now.");return}
+  const pool=available.slice(0,count);
+  console.log(`CSV deck: ${fresh.length} new, ${due.length} due, ${notDue.length} not due → picked ${pool.length}`);
+  const freshSet=new Set(fresh.map(o=>taxonKey(o)));
+  S.deck=[];S.sessionResults=[];
+  for(const o of pool){
+    const k=S.currentUser+":"+taxonKey(o);
+    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:o.taxon.preferred_common_name||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+    const isFresh=freshSet.has(taxonKey(o));
+    const card={obs:o,srs,family:o._family||"",common:o.taxon.preferred_common_name||"",species:o.taxon.name||"",
+      familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false,
+      _mcMode:isFresh&&S.csvMode};
+    if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
+    // Generate MC distractors for fresh cards
+    if(card._mcMode){
+      const fam=o._family;
+      const sameFamily=S.allObs.filter(x=>x._family===fam&&x.taxon.name!==o.taxon.name);
+      const diffFamily=S.allObs.filter(x=>x._family!==fam&&x.taxon.name!==o.taxon.name);
+      let distractors=shuffle(sameFamily).slice(0,3);
+      if(distractors.length<3)distractors=[...distractors,...shuffle(diffFamily).slice(0,3-distractors.length)];
+      card._mcOptions=shuffle([
+        {species:o.taxon.name,common:o.taxon.preferred_common_name||"",family:fam||"",correct:true},
+        ...distractors.map(d=>({species:d.taxon.name,common:d.taxon.preferred_common_name||"",family:d._family||"",correct:false}))
+      ]);
+    }
+    S.deck.push(card);
+  }
+  S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=pool.length;S.completedCards=0;
+  showScreen("quiz");renderCard();
+}
+
+/* ── Traits Database ── */
+let traitsDB=new Map(); // species name → trait object
+const GLOSSARY={
+  "actinomorphic":"Radially symmetrical — can be divided into equal halves along any diameter",
+  "zygomorphic":"Bilaterally symmetrical — can be divided into mirror halves along only one plane",
+  "superior":"Ovary sits above where sepals/petals attach (hypogynous)",
+  "inferior":"Ovary sits below where sepals/petals attach (epigynous)",
+  "semi-inferior":"Ovary partially embedded in the receptacle (perigynous)",
+  "alternate":"Leaves arranged singly at each node, alternating sides up the stem",
+  "opposite":"Leaves in pairs at each node, directly across from each other",
+  "whorled":"Three or more leaves at each node, arranged in a ring",
+  "basal":"Leaves arising from the base of the stem or root crown",
+  "serrate":"Leaf margin with sharp forward-pointing teeth like a saw",
+  "crenate":"Leaf margin with rounded teeth",
+  "entire":"Leaf margin smooth and unbroken, without teeth or lobes",
+  "dentate":"Leaf margin with outward-pointing teeth",
+  "pinnate":"Compound leaf with leaflets arranged along a central axis",
+  "palmate":"Compound leaf with leaflets radiating from a single point",
+  "ternate":"Divided into three parts or leaflets",
+  "bipinnate":"Doubly pinnate — leaflets themselves divided pinnately",
+  "tripinnate":"Triply pinnate — bipinnate leaflets further divided",
+  "lanceolate":"Lance-shaped — much longer than wide, widest below middle",
+  "ovate":"Egg-shaped in outline, widest below the middle",
+  "obovate":"Inversely egg-shaped, widest above the middle",
+  "elliptic":"Oval, widest at the middle, tapering equally at both ends",
+  "linear":"Very narrow with parallel sides",
+  "cordate":"Heart-shaped at the base",
+  "sagittate":"Arrow-shaped, with basal lobes pointing downward",
+  "hastate":"Arrow-shaped, with basal lobes pointing outward",
+  "capitulum":"Dense head of many small flowers (typical of Asteraceae)",
+  "radiate":"Capitulum with outer ray florets and inner disc florets",
+  "ligulate":"Capitulum where all florets are strap-shaped (e.g. dandelion)",
+  "discoid":"Capitulum with disc florets only, no rays",
+  "umbel":"Flat or rounded flower cluster with stalks arising from one point",
+  "compound umbel":"Umbel of umbels — primary rays bear secondary umbels (umbellets)",
+  "corymb":"Flat-topped cluster where outer flowers open first",
+  "raceme":"Unbranched cluster with stalked flowers along a central axis",
+  "panicle":"Branched raceme — a compound flower cluster",
+  "cyme":"Flower cluster where central/terminal flower opens first",
+  "scorpioid":"Coiled cyme, curled like a scorpion's tail",
+  "spike":"Unbranched cluster with unstalked (sessile) flowers",
+  "catkin":"Drooping spike of tiny, usually unisexual flowers",
+  "achene":"Small dry one-seeded fruit that doesn't split open (e.g. buttercup)",
+  "capsule":"Dry fruit that splits open to release seeds",
+  "drupe":"Fleshy fruit with a hard stone inside (e.g. cherry, blackthorn)",
+  "berry":"Fleshy fruit with seeds embedded in pulp (e.g. tomato, grape)",
+  "follicle":"Dry fruit splitting along one side only",
+  "legume":"Pod splitting along two sides (typical of Fabaceae)",
+  "silique":"Long narrow pod of Brassicaceae, splitting from below",
+  "silicula":"Short broad pod of Brassicaceae",
+  "samara":"Winged dry fruit (e.g. ash, maple)",
+  "schizocarp":"Fruit splitting into separate one-seeded units (e.g. Apiaceae)",
+  "nut":"Hard-shelled dry fruit, usually single-seeded",
+  "nutlet":"Small nut, often in groups of four (e.g. Lamiaceae, Boraginaceae)",
+  "caryopsis":"Grain — dry fruit fused to seed coat (grasses)",
+  "papilionaceous":"Butterfly-shaped flower with standard, wings, and keel (Fabaceae)",
+  "spathulate":"Spoon-shaped or spatula-shaped",
+  "sessile":"Without a stalk — attached directly",
+  "petiolate":"Having a leaf stalk (petiole)",
+  "stipulate":"Having stipules (small appendages at leaf base)",
+  "glabrous":"Smooth, without hairs",
+  "pubescent":"Covered in soft short hairs",
+  "hirsute":"Covered in rough or coarse hairs",
+  "tomentose":"Densely covered in matted woolly hairs",
+  "decurrent":"Leaf blade extending down the stem as a wing",
+  "perennial":"Living for more than two years",
+  "annual":"Completing life cycle in one year",
+  "biennial":"Completing life cycle over two years",
+  "rhizomatous":"Spreading by underground stems (rhizomes)",
+  "stoloniferous":"Spreading by above-ground runners (stolons)",
+  "diadelphous":"Stamens in two groups (typically 9+1 in Fabaceae)",
+  "tetradynamous":"Four long + two short stamens (typical of Brassicaceae)",
+  "epicalyx":"Ring of bracts below and resembling an extra calyx",
+  "involucre":"Ring of bracts surrounding a flower head or umbel",
+  "bract":"Modified leaf at base of a flower or flower cluster",
+  "bracteole":"Small bract on a flower stalk",
+  "pappus":"Tuft of hairs or scales on achene (aids wind dispersal in Asteraceae)",
+  "receptacle":"Enlarged tip of stem bearing floral parts",
+  "hypanthium":"Cup-shaped structure formed by fused bases of sepals, petals, and stamens",
+  "calyx":"Collective term for all sepals",
+  "corolla":"Collective term for all petals",
+  "sepal":"Outer floral leaf, usually green and protective",
+  "tepal":"Perianth segment where sepals and petals are indistinguishable",
+  "stamen":"Male reproductive organ: filament + anther",
+  "anther":"Pollen-bearing tip of a stamen",
+  "stigma":"Pollen-receiving tip of the pistil",
+  "style":"Stalk connecting stigma to ovary",
+  "pistil":"Female reproductive organ: ovary + style + stigma",
+  "carpel":"Basic unit of the female reproductive structure",
+  "lobed":"Divided into rounded segments not reaching the midrib",
+  "pinnately lobed":"Lobed along both sides of the midrib",
+  "palmately lobed":"Lobed radiating from a central point like fingers",
+  "simple":"Leaf blade in one piece, not divided into leaflets",
+  "compound":"Leaf divided into separate leaflets",
+  "trifoliate":"Having three leaflets",
+  "imparipinnate":"Pinnate with an odd terminal leaflet",
+  "paripinnate":"Pinnate without a terminal leaflet (even number)",
+  "fused":"Petals or sepals joined together into a tube or ring",
+  "free":"Petals or sepals separate from each other"
+};
+
+function annotateGloss(html){
+  // Sort terms by length (longest first) to match multi-word terms before single words
+  const terms=Object.keys(GLOSSARY).sort((a,b)=>b.length-a.length);
+  for(const term of terms){
+    const re=new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})\\b`,"gi");
+    html=html.replace(re,(m)=>`<span class="gloss" data-def="${esc(GLOSSARY[term.toLowerCase()])}">${m}</span>`);
+  }
+  return html;
+}
+const TRAIT_FIELDS=[
+  {key:"habit",label:"Habit",mc:true},
+  {key:"flower_type",label:"Flower type",mc:true},
+  {key:"petal_count",label:"Petal count",mc:true},
+  {key:"stamen_count",label:"Stamen count",mc:true},
+  {key:"ovary_position",label:"Ovary position",mc:true},
+  {key:"floral_symmetry",label:"Floral symmetry",mc:true},
+  {key:"leaf_type",label:"Leaf type",mc:true},
+  {key:"leaf_arrangement",label:"Leaf arrangement",mc:true},
+  {key:"leaf_margin",label:"Leaf margin",mc:true},
+  {key:"fruit_type",label:"Fruit type",mc:true},
+  {key:"distinguishing_notes",label:"Key features",mc:true}
+];
+
+function parseTraitsCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return;
+  const headers=lines[0].split(",").map(h=>h.trim());
+  for(let i=1;i<lines.length;i++){
+    // Handle CSV fields that might contain commas within quotes
+    const vals=[];let cur="",inQ=false;
+    for(const ch of lines[i]){
+      if(ch==='"'){inQ=!inQ}else if(ch===","&&!inQ){vals.push(cur.trim());cur=""}else{cur+=ch}
+    }
+    vals.push(cur.trim());
+    const obj={};headers.forEach((h,j)=>obj[h]=vals[j]||"");
+    if(obj.species)traitsDB.set(obj.species.toLowerCase(),obj);
+  }
+}
+
+async function handleTraits(){
+  const file=$("inp-traits").files[0];if(!file)return;
+  const text=await file.text();
+  parseTraitsCSV(text);
+  $("traits-status").textContent=`\u2705 ${traitsDB.size} species traits loaded`;show("traits-status");
+  console.log(`Traits DB: ${traitsDB.size} species loaded`);
+  show("btn-start-traits");
+}
+
+function buildTraitsDeck(){
+  if(traitsDB.size===0)return false;
+  // Use allObs if available, otherwise build from traitsDB keys
+  let candidates=S.allObs.filter(o=>traitsDB.has(o.taxon.name.toLowerCase()));
+  if(candidates.length===0)return false;
+  const count=Math.min(S.qCount,candidates.length);
+  const pool=shuffle(candidates).slice(0,count);
+  S.deck=[];S.sessionResults=[];S.traitMode=true;
+  for(const o of pool){
+    const traits=traitsDB.get(o.taxon.name.toLowerCase());
+    const available=TRAIT_FIELDS.filter(f=>{const v=traits[f.key]?.trim();return v&&v.toLowerCase()!=="n/a"&&v!=="-"});
+    const picked=shuffle(available);
+    const questions=picked.map(f=>{
+      const answer=traits[f.key].trim();
+      if(f.mc){
+        const fam=traits.family||"";
+        const sameFamily=[...traitsDB.values()].filter(t=>t.family===fam&&t.species!==traits.species&&t[f.key]?.trim());
+        const diffFamily=[...traitsDB.values()].filter(t=>t.family!==fam&&t[f.key]?.trim());
+        const stopWords=new Set(["a","an","the","of","to","in","on","and","or","with","is","are","not","for","as","at","by","from","up","very","often","sometimes","usually","can","may","be"]);
+        const getWords=s=>new Set(s.toLowerCase().split(/[\s,;()]+/).filter(w=>w.length>2&&!stopWords.has(w)));
+        const answerWords=getWords(answer);
+        // Get candidates: no N/A, no exact match, no shared words with answer
+        let candidates=[...shuffle(sameFamily),...shuffle(diffFamily)].map(t=>t[f.key].trim())
+          .filter(d=>d&&d.toLowerCase()!=="n/a"&&d!=="-"&&d.toLowerCase()!==answer.toLowerCase())
+          .filter(d=>{const dw=getWords(d);return!([...dw].some(w=>answerWords.has(w)))});
+        // Pick 3 distractors that also don't share words with each other
+        let dists=[];const usedWords=new Set();
+        for(const d of candidates){
+          if(dists.length>=3)break;
+          const dw=getWords(d);
+          if([...dw].some(w=>usedWords.has(w)))continue;
+          dists.push(d);
+          dw.forEach(w=>usedWords.add(w));
+        }
+        // Fallback: relax word-uniqueness between distractors
+        if(dists.length<3){
+          for(const d of candidates){
+            if(dists.length>=3)break;
+            if(!dists.includes(d))dists.push(d);
+          }
+        }
+        // Last resort fallback: just no exact match or N/A
+        if(dists.length<3){
+          const fallback=[...shuffle(sameFamily),...shuffle(diffFamily)].map(t=>t[f.key].trim())
+            .filter(d=>d&&d.toLowerCase()!=="n/a"&&d!=="-"&&d.toLowerCase()!==answer.toLowerCase()&&!dists.includes(d));
+          dists=[...dists,...fallback].slice(0,3);
+        }
+        const options=shuffle([{text:answer,correct:true},...dists.map(d=>({text:d,correct:false}))]);
+        return{...f,answer,mc:true,options,answered:false};
+      }
+      return{...f,answer,mc:false,answered:false};
+    });
+    const card={obs:o,species:o.taxon.name,common:o.taxon.preferred_common_name||"",family:traits.family||"",
+      _traitMode:true,_traitQuestions:questions,_revealed:false,_traitScore:0,_traitTotal:questions.length};
+    S.deck.push(card);
+  }
+  S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=pool.length;S.completedCards=0;
+  return true;
+}
+
+async function doStartTraits(){
+  if(traitsDB.size===0){showErr("Upload a traits database first.");return}
+  // If no observations loaded yet, fetch them from iNaturalist
+  if(S.allObs.length===0){
+    const un=$("inp-user").value.trim();
+    if(!un){showErr("Enter your iNaturalist username first.");return}
+    hide("error-msg");showScreen("loading");$("loading-text").textContent="Loading observations for traits quiz\u2026";
+    try{
+      const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);
+      if(!ur.ok)throw Error("Could not reach iNaturalist API");
+      const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
+      if(!m){showErr(`Username "${un}" not found.`);return}
+      const login=m.login;S.currentUser=login.toLowerCase();
+      localStorage.setItem("inat_quiz_user",un);
+      const cacheBust=Date.now();let allResults=[];
+      for(let page=1;page<=5;page++){
+        const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${page}&order=desc&order_by=created_at&locale=en&_=${cacheBust}`);
+        if(!r.ok)throw Error(`API error ${r.status}`);const d=await r.json();
+        allResults.push(...(d.results||[]));if((d.results||[]).length<200)break;
+      }
+      const good=allResults.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
+      const uniq=dedupe(good);
+      const tids=[...new Set(uniq.map(o=>o.taxon.id))],fm={};
+      for(let i=0;i<tids.length;i+=30){const b=tids.slice(i,i+30);const tr=await fetch(`${API}/taxa/${b.join(",")}`);if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){const f=(t.ancestors||[]).find(a=>a.rank==="family");if(f)fm[t.id]=f.name}}}
+      for(const o of uniq)o._family=fm[o.taxon.id]||null;
+      S.allObs=uniq;S.csvMode=false;
+    }catch(e){showErr(`Error: ${e.message}`);return}
+  }
+  S.traitMode=true;
+  if(buildTraitsDeck()){
+    showScreen("quiz");renderTraitCard();
+  }else{
+    showErr("No species found matching between your observations and traits database.");
+  }
+}
+
+function renderTraitCard(){
+  const c=S.deck[S.cardIndex];c._revealed=false;
+  $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
+  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Traits</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  const o=c.obs;
+  $("q-prompt").textContent="What do you know about this species?";
+  $("trait-species").textContent=c.species;
+  $("trait-common").textContent=c.common;
+  // Show photo
+  const userP={type:"photo",url:o.photos[0].url?.replace("square","medium"),observer:"",yours:false};
+  renderCar([userP]);
+  fetchExtra(o.taxon.id,null).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([userP,...ex])}});
+  killMap();hide("map-strip");hide("obs-notes");
+  // Hide other panels
+  document.querySelector(".fields").classList.add("hidden");
+  hide("mc-panel");hide("etym-box");hide("wiki-box");hide("traits-box");hide("retry-notice");hide("btn-row-next");
+  show("trait-panel");show("btn-row-submit");
+  $("btn-submit").textContent="Check Traits";
+  // Render questions
+  const qDiv=$("trait-questions");qDiv.innerHTML="";
+  c._traitQuestions.forEach((q,qi)=>{
+    const wrap=document.createElement("div");wrap.className="trait-q";wrap.dataset.qi=qi;
+    if(q.mc){
+      wrap.innerHTML=`<div class="trait-label">${esc(q.label)}</div>`;
+      q.options.forEach((opt,oi)=>{
+        const btn=document.createElement("button");btn.className="trait-mc-btn";btn.textContent=opt.text;
+        btn.dataset.qi=qi;btn.dataset.oi=oi;
+        btn.addEventListener("click",()=>handleTraitMC(c,qi,oi));
+        wrap.appendChild(btn);
+      });
+      const fb=document.createElement("div");fb.className="trait-fb";fb.id=`trait-fb-${qi}`;
+      wrap.appendChild(fb);
+    }else{
+      wrap.innerHTML=`<div class="trait-label">${esc(q.label)}</div><input type="text" class="answer-input trait-input" data-qi="${qi}" autocomplete="off" spellcheck="false"><div class="trait-fb" id="trait-fb-${qi}"></div>`;
+    }
+    qDiv.appendChild(wrap);
+  });
+  $("q-card").classList.remove("fade-out");
+}
+
+function handleTraitMC(c,qi,oi){
+  const q=c._traitQuestions[qi];if(q.answered)return;q.answered=true;
+  const chosen=q.options[oi];
+  const wrap=$("trait-questions").children[qi];
+  const btns=wrap.querySelectorAll(".trait-mc-btn");
+  btns.forEach((btn,i)=>{
+    if(q.options[i].correct)btn.classList.add("mc-correct");
+    else if(i===oi)btn.classList.add("mc-wrong");
+    else btn.classList.add("mc-dim");
+    btn.style.pointerEvents="none";
+  });
+  const fb=wrap.querySelector(`#trait-fb-${qi}`);
+  if(chosen.correct){fb.textContent="\u2713 Correct";fb.style.color="#4ade80";c._traitScore++;q._correct=true}
+  else{fb.textContent=`\u2717 ${q.answer}`;fb.style.color="#f87171";q._correct=false}
+}
+
+function checkTraits(){
+  const c=S.deck[S.cardIndex];if(c._revealed)return;c._revealed=true;
+  // Mark any unanswered MC as wrong
+  c._traitQuestions.forEach((q,qi)=>{
+    if(!q.answered){q.answered=true;q._correct=false}
+  });
+  // Show full traits from CSV database
+  const t=traitsDB.get(c.species.toLowerCase());
+  if(t){
+    show("traits-box");
+    const fields=[["Habit","habit"],["Flower type","flower_type"],["Petal count","petal_count"],
+      ["Stamens","stamen_count"],["Ovary","ovary_position"],["Symmetry","floral_symmetry"],
+      ["Leaf type","leaf_type"],["Leaf arrangement","leaf_arrangement"],["Leaf margin","leaf_margin"],["Fruit","fruit_type"]];
+    const rows=fields.filter(([,k])=>t[k]?.trim()).map(([label,k])=>`<span class="trait-label">${esc(label)}</span><span class="trait-val">${esc(t[k])}</span>`).join("");
+    const dist=t.distinguishing_notes?`<div class="trait-distinguish"><strong>Key features:</strong> ${esc(t.distinguishing_notes)}</div>`:"";
+    $("traits-text").innerHTML=annotateGloss(`<div class="trait-grid">${rows}${dist}</div>`);
+  }else{hide("traits-box")}
+  // Check if any wrong — retry those
+  const anyWrong=c._traitQuestions.some(q=>!q._correct);
+  if(anyWrong){
+    // Keep only wrong questions for retry
+    const retryCard={...c,_traitQuestions:c._traitQuestions.filter(q=>!q._correct).map(q=>({...q,answered:false,_correct:undefined,
+      options:q.options?shuffle(q.options.map(o=>({...o}))):undefined})),
+      _revealed:false,_traitScore:0};
+    retryCard._traitTotal=retryCard._traitQuestions.length;
+    S.retryQueue.push(retryCard);
+    $("retry-notice").textContent=`${retryCard._traitQuestions.length} wrong \u2014 you\u2019ll see those again.`;show("retry-notice");
+  }
+  hide("btn-row-submit");show("btn-row-next");
+  S.completedCards++;
+  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Traits</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  const isLast=S.cardIndex+1>=S.deck.length&&S.retryQueue.length===0;
+  $("btn-next").textContent=isLast?"See Results \u2192":"Next \u2192";
+}
+
+async function buildDeck(obs,dueOnly){
+  const now=Date.now(),count=Math.min(S.qCount,obs.length);
+  console.log(`buildDeck: qCount=${S.qCount}, obs.length=${obs.length}, count=${count}, dueOnly=${dueOnly}`);
+  const existing=await dbAllUser(S.currentUser);const srsMap=new Map();
+  for(const c of existing)srsMap.set(c.taxonKey,c);
+  console.log(`DB has ${existing.length} cards. DB keys:`,existing.map(c=>c.taxonKey));
+  const due=[],notDue=[],fresh=[];
+  for(const o of obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs)fresh.push(o);else if(srs.nextReview<=now)due.push(o);else notDue.push(o)}
+  console.log(`Fresh (new): ${fresh.map(o=>o.taxon?.name).join(", ")}`);
+  console.log(`Due: ${due.map(o=>o.taxon?.name).join(", ")}`);
+  let pool;
+  if(dueOnly){pool=shuffle(due)}
+  else{
+    const available=[...shuffle(fresh),...shuffle(due)];
+    if(available.length===0){showErr("You\u2019re all caught up! No new or due cards right now. Come back later.");return}
+    pool=available.slice(0,count);
+  }
+  console.log(`Deck: ${fresh.length} new, ${due.length} due, ${notDue.length} not due → picked ${pool.length}`);
+  console.log(`Selected: ${pool.map(o=>o.taxon?.name).join(", ")}`);
+  if(pool.length===0){showErr(dueOnly?"No cards are due right now!":"No cards available.");return}
+  S.deck=[];S.sessionResults=[];
+  for(const o of pool){const k=S.currentUser+":"+taxonKey(o);
+    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:o.taxon.preferred_common_name||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+    const card={obs:o,srs,family:o._family||"",common:o.taxon.preferred_common_name||"",species:o.taxon.name||"",familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false};
+    if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
+    S.deck.push(card)}
+  S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=pool.length;S.completedCards=0;
+  showScreen("quiz");renderCard()}
+
+/* ── Quiz ── */
+async function renderCard(){
+  const c=S.deck[S.cardIndex];c._revealed=false;c._srsRated=false;
+  $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
+  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  const o=c.obs;
+  const ds=o.observed_on_details?.date||o.observed_on||"";
+  let dateStr="";
+  try{dateStr=ds?new Date(ds).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"";}catch{dateStr=ds}
+  $("q-prompt").textContent="Identify this observation";
+  const userP={type:"photo",url:o.photos[0].url?.replace("square","medium"),observer:"You",yours:true};
+  const lat=parseFloat(o.geojson?.coordinates?.[1]||o.location?.split(",")[0]),lng=parseFloat(o.geojson?.coordinates?.[0]||o.location?.split(",")[1]);
+  const hasGeo=!isNaN(lat)&&!isNaN(lng);
+  // Map strip
+  killMap();
+  const place=o.place_guess||"";
+  const labelParts=[place,dateStr].filter(Boolean);
+  if(hasGeo){show("map-strip");$("map-strip").classList.remove("expanded");$("map-toggle").textContent="\u25BC Expand";$("map-place-label").textContent="\u{1F4CD} "+labelParts.join(" \u00B7 ");setTimeout(()=>initMapStrip(lat,lng),50)}
+  else{hide("map-strip")}
+  // Carousel — photos only
+  renderCar([userP]);
+  fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([userP,...ex])}});
+  // Observation notes
+  const notes=o.description?.trim();
+  if(notes){$("obs-notes-text").textContent=notes;show("obs-notes")}else{hide("obs-notes")}
+  setupF("inp-family","fb-family",c.familyDone,c.family);setupF("inp-common","fb-common",c.commonDone,c.common);setupF("inp-species","fb-species",c.speciesDone,c.species);
+  hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";show("btn-row-submit");hide("btn-row-next");hide("retry-notice");
+  // Multiple choice mode
+  if(c._mcMode&&c._mcOptions){
+    hide("btn-row-submit");
+    $("q-prompt").textContent="Which species is this?";
+    document.querySelector(".fields").classList.add("hidden");
+    show("mc-panel");
+    const optDiv=$("mc-options");optDiv.innerHTML="";$("mc-feedback").textContent="";
+    c._mcOptions.forEach((opt,i)=>{
+      const btn=document.createElement("button");btn.className="mc-btn";
+      btn.innerHTML=`<strong>${esc(opt.species)}</strong>${opt.common?`<div class="mc-common">${esc(opt.common)}</div>`:""}`;
+      btn.addEventListener("click",()=>handleMC(c,i));
+      optDiv.appendChild(btn);
+    });
+  }else{
+    document.querySelector(".fields").classList.remove("hidden");
+    hide("mc-panel");
+  }
+  hide("trait-panel");
+  $("btn-submit").textContent="Check Answers";
+  $("q-card").classList.remove("fade-out");
+  if(!c._mcMode){
+    if(!c.familyDone&&c.family)$("inp-family").focus();else if(!c.commonDone&&c.common)$("inp-common").focus();else if(!c.speciesDone)$("inp-species").focus();
+  }
+}
+
+function setupF(iid,fid,done,val){const inp=$(iid),fb=$(fid);inp.value="";fb.textContent="";fb.className="correct-answer";
+  if(!val){inp.className="answer-input";inp.disabled=true;inp.placeholder="\u2014 no data \u2014"}
+  else if(done){inp.className="answer-input locked";inp.disabled=true;inp.value=val;fb.textContent="\u2713 already got this";fb.className="correct-answer show-correct"}
+  else{inp.className="answer-input";inp.disabled=false;inp.placeholder=""}}
+
+function revealCard(c){
+  ["inp-family","inp-common","inp-species"].forEach(id=>$(id).disabled=true);
+  hide("btn-row-submit");showEtym(c.species,c.common);
+  const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
+  showWiki(c.species,!allCorrect);
+  showTraits(c.species,c.family,!allCorrect);
+  // Auto-rate SRS on FIRST attempt only
+  if(!c._srsRated){
+    c._srsRated=true;
+    // Count how many active fields were correct this attempt
+    const total=c._activeFields;const right=c._correctThisAttempt;
+    let q;
+    if(right===total)q=5;        // all correct → easy
+    else if(right>=total-1)q=4;  // 1 wrong → good
+    else if(right>=1)q=3;        // some right → hard
+    else q=0;                    // all wrong/skipped → again
+    c._firstQuality=q;
+    sm2(c.srs,q);dbPut(c.srs);
+    S.sessionResults.push({species:c.species,common:c.common,quality:q,interval:c.srs.interval});
+  }
+  if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
+  show("btn-row-next");
+  const isLast=S.cardIndex+1>=S.deck.length&&(allCorrect||S.retryQueue.length<=1);
+  $("btn-next").textContent=isLast&&S.retryQueue.length===0?"See Results \u2192":"Next \u2192";
+  S.completedCards++;
+  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`}
+
+function handleMC(c,chosenIdx){
+  if(c._revealed)return;c._revealed=true;
+  const opts=c._mcOptions;const chosen=opts[chosenIdx];const correct=chosen.correct;
+  // Highlight buttons
+  const btns=$("mc-options").querySelectorAll(".mc-btn");
+  btns.forEach((btn,i)=>{
+    if(opts[i].correct)btn.classList.add("mc-correct");
+    else if(i===chosenIdx)btn.classList.add("mc-wrong");
+    else btn.classList.add("mc-dim");
+    btn.style.pointerEvents="none";
+  });
+  if(correct){
+    $("mc-feedback").textContent="\u2705 Correct!";$("mc-feedback").style.color="#4ade80";
+    c.familyDone=true;c.commonDone=true;c.speciesDone=true;
+    c._activeFields=1;c._correctThisAttempt=1;
+  }else{
+    const right=opts.find(o=>o.correct);
+    $("mc-feedback").innerHTML=`\u274C Wrong \u2014 it was <strong>${esc(right.species)}</strong>${right.common?` (${esc(right.common)})`:""}`;
+    $("mc-feedback").style.color="#f87171";
+    c._activeFields=1;c._correctThisAttempt=0;
+  }
+  // Show etymology, wiki, next button
+  showEtym(c.species,c.common);
+  showWiki(c.species,!correct);
+  showTraits(c.species,c.family,!correct);
+  // SRS
+  if(!c._srsRated){
+    c._srsRated=true;
+    const q=correct?5:0;c._firstQuality=q;
+    sm2(c.srs,q);dbPut(c.srs);
+    S.sessionResults.push({species:c.species,common:c.common,quality:q,interval:c.srs.interval});
+  }
+  const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
+  if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
+  show("btn-row-next");
+  S.completedCards++;
+  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+}
+
+function check(){const c=S.deck[S.cardIndex];if(c._revealed)return;c._revealed=true;
+  // Count active fields (fields that have data and weren't already done)
+  let active=0,correct=0;
+  const rF=chkF("inp-family","fb-family",c.familyDone,c.family);
+  const rC=chkF("inp-common","fb-common",c.commonDone,c.common);
+  const rS=chkF("inp-species","fb-species",c.speciesDone,c.species);
+  [rF,rC,rS].forEach(r=>{if(r==="correct"||r==="wrong"){active++;if(r==="correct")correct++}});
+  if(rF!=="wrong")c.familyDone=true;if(rC!=="wrong")c.commonDone=true;if(rS!=="wrong")c.speciesDone=true;
+  c._activeFields=active;c._correctThisAttempt=correct;
+  revealCard(c)}
+function chkF(iid,fid,done,val){if(!val)return"nodata";if(done)return"done";const inp=$(iid),fb=$(fid);
+  if(isMatch(inp.value,val)){inp.className="answer-input correct";fb.textContent="\u2713";fb.className="correct-answer show-correct";return"correct"}
+  inp.className="answer-input wrong";fb.textContent=val;fb.className="correct-answer show-wrong";return"wrong"}
+
+function skip(){const c=S.deck[S.cardIndex];if(c._revealed)return;c._revealed=true;
+  let active=0;
+  [c.family,c.common,c.species].forEach((v,i)=>{if(v&&![c.familyDone,c.commonDone,c.speciesDone][i])active++});
+  skF("inp-family","fb-family",c.familyDone,c.family);skF("inp-common","fb-common",c.commonDone,c.common);skF("inp-species","fb-species",c.speciesDone,c.species);
+  c._activeFields=active;c._correctThisAttempt=0;
+  revealCard(c)}
+function skF(iid,fid,done,val){if(!val||done)return;$(iid).className="answer-input skipped";$(fid).textContent=val;$(fid).className="correct-answer show-skipped"}
+
+function next(){
+  killMap();S.cardIndex++;
+  if(S.traitMode){
+    if(S.cardIndex>=S.deck.length){
+      if(S.retryQueue.length===0){traitResults();return}
+      S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0;
+    }
+    $("q-card").classList.add("fade-out");setTimeout(()=>renderTraitCard(),150);
+    return;
+  }
+  if(S.cardIndex>=S.deck.length){if(S.retryQueue.length===0){results();return}S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
+  $("q-card").classList.add("fade-out");setTimeout(()=>renderCard(),150)}
+
+function traitResults(){
+  const totalQ=S.deck.reduce((s,c)=>s+c._traitTotal,0);
+  const correctQ=S.deck.reduce((s,c)=>s+c._traitScore,0);
+  const pct=totalQ?Math.round(correctQ/totalQ*100):0;
+  $("res-emoji").textContent=pct>=90?"\u{1F3C6}":pct>=70?"\u{1F31F}":pct>=50?"\u{1F44D}":"\u{1F4DA}";
+  $("res-score").textContent=`${correctQ} / ${totalQ}`;$("res-sub").textContent="trait questions correct";
+  const bd=$("res-breakdown");bd.innerHTML="";
+  for(const c of S.deck){const nm=c.common||c.species;const row=document.createElement("div");row.className="rb-row";
+    const perfect=c._traitScore===c._traitTotal;
+    row.style.background=perfect?"rgba(74,222,128,.06)":"rgba(251,191,36,.06)";
+    row.innerHTML=`<span class="rb-icon">${perfect?"\u2705":"\u{1F7E1}"}</span><span class="rb-name">${esc(nm)}</span><span class="rb-detail" style="color:${perfect?"#4ade80":"#fbbf24"}">${c._traitScore}/${c._traitTotal} traits</span>`;
+    bd.appendChild(row)}
+  showScreen("results");
+}
+
+function results(){killMap();const perfect=S.sessionResults.filter(r=>r.quality===5).length,total=S.sessionResults.length,pct=total?Math.round(perfect/total*100):0;
+  $("res-emoji").textContent=pct>=90?"\u{1F3C6}":pct>=70?"\u{1F31F}":pct>=50?"\u{1F44D}":"\u{1F4DA}";
+  $("res-score").textContent=`${perfect} / ${total}`;$("res-sub").textContent="perfect on first attempt";
+  const bd=$("res-breakdown");bd.innerHTML="";
+  const sorted=[...S.sessionResults].sort((a,b)=>a.quality-b.quality);
+  for(const r of sorted){const nm=r.common||r.species;const row=document.createElement("div");row.className="rb-row";
+    const perfect=r.quality===5;
+    row.style.background=perfect?"rgba(74,222,128,.06)":"rgba(251,191,36,.06)";
+    row.innerHTML=`<span class="rb-icon">${perfect?"\u2705":"\u{1F534}"}</span><span class="rb-name">${esc(nm)}</span><span class="rb-detail" style="color:${perfect?"#4ade80":"#f87171"}">${perfect?"Perfect":"Needed retry"} \u2192 next in ${fmtIv(r.interval)}</span>`;
+    bd.appendChild(row)}showScreen("results")}
+
+/* ── Stats ── */
+async function showStats(){const un=(S.currentUser||$("inp-user").value.trim()).toLowerCase();if(!un){showScreen("setup");return}S.currentUser=un;
+  const cards=await dbAllUser(un);$("stats-user").textContent=`${un} \u00B7 ${cards.length} species tracked`;
+  const now=Date.now(),due=cards.filter(c=>c.nextReview<=now).length,mature=cards.filter(c=>c.interval>=10080).length,learning=cards.filter(c=>c.totalReviews>0&&c.interval<10080).length;
+  $("stats-grid").innerHTML=`<div class="stat-box"><div class="stat-num">${cards.length}</div><div class="stat-label">Total</div></div><div class="stat-box"><div class="stat-num">${mature}</div><div class="stat-label">Mature (7d+)</div></div><div class="stat-box"><div class="stat-num">${learning}</div><div class="stat-label">Learning</div></div>`;
+  $("stats-due").textContent=due>0?`${due} cards due`:"All caught up!";$("stats-due").className=due>0?"due-badge":"due-badge due-none";
+  const sorted=[...cards].sort((a,b)=>b.interval-a.interval);const sl=$("species-list");sl.innerHTML="";
+  for(const c of sorted){const nm=c.common||c.species;let sc,st;
+    if(c.totalReviews===0){sc="ease-new";st="New"}else if(c.interval>=10080){sc="ease-mature";st="Mature"}else if(c.interval>=1440){sc="ease-review";st="Review"}else{sc="ease-learning";st="Learning"}
+    const isDue=c.nextReview<=now;const row=document.createElement("div");row.className="sp-row";
+    row.innerHTML=`<span class="sp-name">${esc(nm)}<br><span class="sp-sci">${esc(c.species)}</span></span><span class="sp-interval">${c.totalReviews>0?fmtIv(c.interval):"\u2014"}</span><span class="sp-ease ${sc}">${st}</span>${isDue?'<span style="color:#f87171;font-size:10px;font-weight:700">DUE</span>':""}`;
+    sl.appendChild(row)}
+  $("tab-overview").classList.add("active");$("tab-species").classList.remove("active");show("tab-content-overview");hide("tab-content-species");showScreen("stats")}
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW error:',e));
+  });
+}
+</script>
+</body>
+</html>
