@@ -2,7 +2,7 @@
   "name": "iNat Quiz",
   "short_name": "iNat Quiz",
   "description": "Spaced repetition for your iNaturalist observations",
-  "start_url": ".",
+  "start_url": "/inat-quiz/index.html",
   "scope": "/inat-quiz/",
   "display": "standalone",
   "orientation": "portrait",
