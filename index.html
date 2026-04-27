@@ -182,6 +182,20 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .sp-sci-name{font-size:11px;color:#7c80a3;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sp-srs-col{text-align:right;flex-shrink:0;min-width:60px}
 .sp-next-str{font-size:10px;color:#555770;margin-top:2px}
+.sp-ignored{opacity:.35}
+.sp-ignored .sp-common-name{text-decoration:line-through}
+.btn-unignore{background:none;border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#7c80a3;font-size:10px;font-weight:600;cursor:pointer;padding:2px 8px;font-family:inherit;margin-top:3px;display:block}
+.btn-unignore:hover{border-color:#818cf8;color:#a5b4fc}
+.ignore-popup{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
+.ignore-popup.hidden{display:none!important}
+.ignore-popup-card{background:#1a1d30;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px 20px;text-align:center;max-width:280px;width:90%}
+.ignore-popup-title{font-size:16px;font-weight:700;color:#e2e4ef;margin-bottom:6px}
+.ignore-popup-sub{font-size:12px;color:#7c80a3;margin-bottom:18px;line-height:1.5}
+.ignore-popup-btns{display:flex;gap:8px}
+.ignore-confirm{flex:1;padding:10px 0;border-radius:10px;border:none;background:rgba(248,113,113,.15);color:#f87171;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.ignore-confirm:hover{background:rgba(248,113,113,.25)}
+.ignore-cancel{flex:1;padding:10px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#7c80a3;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.ignore-cancel:hover{border-color:rgba(255,255,255,.25);color:#e2e4ef}
 </style>
 </head>
 <body>
@@ -324,6 +338,17 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <div class="species-family-list" id="species-in-family"></div>
 </div>
 
+<div id="ignore-popup" class="ignore-popup hidden">
+  <div class="ignore-popup-card">
+    <div class="ignore-popup-title">Ignore this species?</div>
+    <div class="ignore-popup-sub" id="ignore-popup-name"></div>
+    <div class="ignore-popup-btns">
+      <button class="ignore-cancel" id="ignore-cancel">Keep</button>
+      <button class="ignore-confirm" id="ignore-confirm">Ignore</button>
+    </div>
+  </div>
+</div>
+
 <div id="lightbox" class="lightbox hidden"><img id="lb-img" src="" alt=""><div id="lb-map-wrap"></div><button id="lb-close">✕</button></div>
 <script>
 const API="https://api.inaturalist.org/v1";
@@ -459,6 +484,31 @@ $("map-toggle").addEventListener("click",e=>{
   if($("map-strip").classList.contains("expanded"))collapseMap();else expandMap();
 });
 $("btn-next").addEventListener("click",next);
+$("ignore-cancel").addEventListener("click",()=>hide("ignore-popup"));
+$("ignore-confirm").addEventListener("click",()=>{hide("ignore-popup");ignoreCurrentSpecies()});
+// Long-press on carousel to ignore
+let _lpTimer=null;
+$("carousel").addEventListener("touchstart",e=>{
+  _lpTimer=setTimeout(()=>{
+    _lpTimer=null;
+    const c=S.deck?.[S.cardIndex];if(!c)return;
+    $("ignore-popup-name").textContent=`${c.species}${c.common?" ("+c.common+")":""}`;
+    show("ignore-popup");
+  },600);
+},{passive:true});
+$("carousel").addEventListener("touchend",()=>{if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null}},{passive:true});
+$("carousel").addEventListener("touchmove",()=>{if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null}},{passive:true});
+// Desktop: mousedown long-press
+$("carousel").addEventListener("mousedown",e=>{
+  _lpTimer=setTimeout(()=>{
+    _lpTimer=null;
+    const c=S.deck?.[S.cardIndex];if(!c)return;
+    $("ignore-popup-name").textContent=`${c.species}${c.common?" ("+c.common+")":""}`;
+    show("ignore-popup");
+  },600);
+});
+$("carousel").addEventListener("mouseup",()=>{if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null}});
+$("carousel").addEventListener("mousemove",()=>{if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null}});
 document.querySelectorAll(".tab-btn").forEach(btn=>{btn.addEventListener("click",()=>{
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
   if(btn.dataset.tab==="overview"){show("tab-content-overview");hide("tab-content-species")}else{hide("tab-content-overview");show("tab-content-species")}
@@ -1231,9 +1281,12 @@ async function buildDeck(obs,dueOnly){
   console.log(`buildDeck: qCount=${S.qCount}, obs.length=${obs.length}, count=${count}, dueOnly=${dueOnly}`);
   const existing=await dbAllUser(S.currentUser);const srsMap=new Map();
   for(const c of existing)srsMap.set(c.taxonKey,c);
-  console.log(`DB has ${existing.length} cards. DB keys:`,existing.map(c=>c.taxonKey));
   const due=[],notDue=[],fresh=[];
-  for(const o of obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs)fresh.push(o);else if(srs.nextReview<=now)due.push(o);else notDue.push(o)}
+  for(const o of obs){
+    const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
+    if(srs?.ignored)continue; // skip ignored species
+    if(!srs)fresh.push(o);else if(srs.nextReview<=now)due.push(o);else notDue.push(o);
+  }
   console.log(`Fresh (new): ${fresh.map(o=>o.taxon?.name).join(", ")}`);
   console.log(`Due: ${due.map(o=>o.taxon?.name).join(", ")}`);
   let pool;
@@ -1443,6 +1496,27 @@ function check(){
     oldFG.classList.remove("slide-out-left");
     showFieldStep(c,true);
   },250);
+}
+
+async function ignoreCurrentSpecies(){
+  const c=S.deck[S.cardIndex];if(!c)return;
+  // Persist ignored flag
+  c.srs.ignored=true;
+  if(!c.srs.taxonKey)c.srs.taxonKey=S.currentUser+":"+c.species.toLowerCase();
+  if(!c.srs.username)c.srs.username=S.currentUser;
+  await dbPut(c.srs);
+  // Remove from deck and retry queue
+  S.deck.splice(S.cardIndex,1);
+  S.retryQueue=S.retryQueue.filter(r=>r.species!==c.species);
+  S.totalCards=Math.max(0,S.totalCards-1);
+  // Advance
+  if(S.deck.length===0&&S.retryQueue.length===0){results();return}
+  if(S.cardIndex>=S.deck.length){
+    if(S.retryQueue.length>0){S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
+    else{results();return}
+  }
+  killMap();$("q-card").classList.add("fade-out");
+  setTimeout(()=>renderCard(),150);
 }
 
 function next(){
