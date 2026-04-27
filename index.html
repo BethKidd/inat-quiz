@@ -204,6 +204,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <p style="font-size:11px;color:#555770;margin-top:6px">Stored in memory only. Never saved or sent anywhere except OpenAI.</p>
     <p id="error-msg" class="error hidden"></p>
     <button id="btn-start" class="btn-primary" disabled>Start Quiz →</button>
+    <button id="btn-browse-families" class="btn-secondary" style="display:none">🌿 Browse Families</button>
     <button id="btn-stats" class="btn-secondary" style="display:none">📊 View Progress</button>
     <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)">
       <label class="label">Species List Quiz</label>
@@ -394,16 +395,17 @@ function dedupe(obs){const s=new Map();for(const o of obs){const k=taxonKey(o);i
   if(ak)$("inp-apikey").value=ak;
   if(saved){
     $("inp-user").value=saved;$("btn-start").disabled=false;$("btn-stats").style.display="block";
-    await loadHome();
+    $("btn-browse-families").style.display="block";
   }
 })();
 
 /* ── Events ── */
-$("inp-user").addEventListener("input",()=>{const v=$("inp-user").value.trim();$("btn-start").disabled=!v;$("btn-stats").style.display=v?"block":"none"});
+$("inp-user").addEventListener("input",()=>{const v=$("inp-user").value.trim();$("btn-start").disabled=!v;$("btn-stats").style.display=v?"block":"none";$("btn-browse-families").style.display=v?"block":"none"});
+$("btn-browse-families").addEventListener("click",()=>loadHome());
 $("inp-user").addEventListener("keydown",e=>{if(e.key==="Enter"&&$("inp-user").value.trim())doStart()});
 document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListener("click",()=>{document.querySelectorAll("#count-row .count-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.qCount=+b.dataset.n})});
 $("btn-start").addEventListener("click",()=>doStart());
-$("btn-exit").addEventListener("click",()=>{killMap();S.allObs.length?showHome():showScreen("setup")});
+$("btn-exit").addEventListener("click",()=>{killMap();showScreen("setup")});
 $("btn-home-settings").addEventListener("click",()=>showScreen("setup"));
 $("btn-study-due-home").addEventListener("click",()=>startQuizFromHome());
 $("btn-family-back").addEventListener("click",()=>showHome());
@@ -412,14 +414,14 @@ $("btn-submit").addEventListener("click",()=>{if(S.traitMode)checkTraits();else 
 $("btn-replay").addEventListener("click",()=>{
   if(S.traitMode){
     S.traitMode=false;
-    if(S.csvMode)csvNextDeck();else showHome();
+    if(S.csvMode)csvNextDeck();else doStart();
   }else if(traitsDB.size>0&&S.allObs.length>0&&buildTraitsDeck()){
     showScreen("quiz");renderTraitCard();
   }else{
-    if(S.csvMode)csvNextDeck();else showHome();
+    if(S.csvMode)csvNextDeck();else doStart();
   }
 });
-$("btn-change").addEventListener("click",()=>S.allObs.length?showHome():showScreen("setup"));
+$("btn-change").addEventListener("click",()=>showScreen("setup"));
 $("btn-csv").addEventListener("click",()=>$("inp-csv").click());
 $("inp-csv").addEventListener("change",handleCSV);
 $("btn-start-csv").addEventListener("click",()=>doStartCSV());
@@ -660,8 +662,7 @@ async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-ms
     const tids=[...new Set(uniq.map(o=>o.taxon.id))],fm={};
     for(let i=0;i<tids.length;i+=30){const b=tids.slice(i,i+30);const tr=await fetch(`${API}/taxa/${b.join(",")}`);if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){const f=(t.ancestors||[]).find(a=>a.rank==="family");if(f)fm[t.id]=f.name}}}
     for(const o of uniq)o._family=fm[o.taxon.id]||null;
-    S.allObs=uniq;
-    if(dueOnly){await buildDeck(uniq,true)}else{await showHome()}
+    S.allObs=uniq;await buildDeck(uniq,dueOnly);
   }catch(e){showErr(`Error: ${e.message}`)}}
 function showErr(m){$("error-msg").textContent=m;show("error-msg");showScreen("setup")}
 
