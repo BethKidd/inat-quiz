@@ -301,6 +301,7 @@ function dedupe(obs){const s=new Map();for(const o of obs){const k=taxonKey(o);i
 /* ── Init ── */
 (async function(){
   await openDB();
+  initCarTouch();
   const saved=localStorage.getItem("inat_quiz_user");
   if(saved){$("inp-user").value=saved;$("btn-start").disabled=false;$("btn-stats").style.display="block"}
   const ak=localStorage.getItem("inat_quiz_apikey");
@@ -372,18 +373,59 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{btn.addEventListener("click"
 /* ── Carousel ── */
 function moveCar(d){if(cSlides.length<=1)return;cIdx=(cIdx+d+cSlides.length)%cSlides.length;updateCar()}
 function goSlide(i){cIdx=i;updateCar()}
-function updateCar(){$("carousel-track").style.transform=`translateX(-${cIdx*100}%)`;document.querySelectorAll("#carousel-dots .carousel-dot").forEach((d,i)=>d.classList.toggle("active",i===cIdx))}
+function updateCar(){
+  $("carousel-track").style.transform=`translateX(-${cIdx*100}%)`;
+  document.querySelectorAll("#carousel-dots .carousel-dot").forEach((d,i)=>d.classList.toggle("active",i===cIdx));
+  // Invalidate map if map slide is now visible
+  if(cSlides[cIdx]&&cSlides[cIdx].type==="map"&&leafMap){
+    setTimeout(()=>leafMap.invalidateSize(),50);
+  }
+}
+
+// Touch/swipe for carousel
+let _tsX=null;
+function initCarTouch(){
+  const car=$("carousel");
+  car.addEventListener("touchstart",e=>{_tsX=e.touches[0].clientX},{passive:true});
+  car.addEventListener("touchend",e=>{
+    if(_tsX===null)return;
+    const dx=e.changedTouches[0].clientX-_tsX;
+    if(Math.abs(dx)>40)moveCar(dx<0?1:-1);
+    _tsX=null;
+  },{passive:true});
+}
+
 function killMap(){if(leafMap){leafMap.remove();leafMap=null}}
-function initMapStrip(lat,lng){
-  killMap();const el=$("map-container");if(!el)return;
-  leafMap=L.map(el,{zoomControl:true,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false}).setView([lat,lng],17);
+
+function initMapInSlide(el,lat,lng,label){
+  killMap();
+  leafMap=L.map(el,{zoomControl:true,attributionControl:false,dragging:true,scrollWheelZoom:false,doubleClickZoom:true,touchZoom:true}).setView([lat,lng],17);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(leafMap);
   L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#6366f1;border:3px solid #fff;box-shadow:0 0 8px rgba(99,102,241,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(leafMap);
-  setTimeout(()=>{if(leafMap)leafMap.invalidateSize()},120)}
-function renderCar(slides){cSlides=slides;cIdx=0;const t=$("carousel-track");t.style.transform="translateX(0)";t.innerHTML="";const dots=$("carousel-dots");dots.innerHTML="";
-  slides.forEach((s,i)=>{const sl=document.createElement("div");sl.className="carousel-slide";
-    sl.innerHTML=`<img src="${s.url}" alt="" loading="${i===0?'eager':'lazy'}"><span class="carousel-badge ${s.yours?'badge-yours':'badge-other'}">${s.yours?'Your photo':'Other observer'}</span>${s.observer&&!s.yours?`<span class="carousel-observer">\u{1F4F7} ${esc(s.observer)}</span>`:''}`;
-    t.appendChild(sl);const dot=document.createElement("span");dot.className="carousel-dot"+(i===0?" active":"");dot.addEventListener("click",()=>goSlide(i));dots.appendChild(dot)})}
+  if(label){const lbl=document.createElement("div");lbl.style.cssText="position:absolute;bottom:6px;right:8px;font-size:10px;font-weight:600;color:#333;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:5px;z-index:1000;pointer-events:none";lbl.textContent="📍 "+label;el.appendChild(lbl)}
+  setTimeout(()=>{if(leafMap)leafMap.invalidateSize()},120);
+}
+
+function renderCar(slides){
+  cSlides=slides;cIdx=0;
+  const t=$("carousel-track");t.style.transform="translateX(0)";t.innerHTML="";
+  const dots=$("carousel-dots");dots.innerHTML="";
+  slides.forEach((s,i)=>{
+    const sl=document.createElement("div");sl.className="carousel-slide";
+    if(s.type==="map"){
+      sl.style.cssText="position:relative;";
+      const mapEl=document.createElement("div");mapEl.style.cssText="width:100%;height:100%";
+      sl.appendChild(mapEl);
+      t.appendChild(sl);
+      // Init map after DOM is attached
+      requestAnimationFrame(()=>initMapInSlide(mapEl,s.lat,s.lng,s.label));
+    }else{
+      sl.innerHTML=`<img src="${s.url}" alt="" loading="${i===0?'eager':'lazy'}"><span class="carousel-badge ${s.yours?'badge-yours':'badge-other'}">${s.yours?'Your photo':'Other observer'}</span>${s.observer&&!s.yours?`<span class="carousel-observer">\u{1F4F7} ${esc(s.observer)}</span>`:''}`;
+      t.appendChild(sl);
+    }
+    const dot=document.createElement("span");dot.className="carousel-dot"+(i===0?" active":"");dot.addEventListener("click",()=>goSlide(i));dots.appendChild(dot);
+  });
+}
 
 async function fetchExtra(tid,uid){
   if(photoCache.has(tid))return photoCache.get(tid);
@@ -397,10 +439,9 @@ async function fetchExtra(tid,uid){
       const p=tp.photo;if(!p)continue;
       const url=p.medium_url||p.url||"";
       if(!url)continue;
-      // Skip if it's the same user's photo
       if(p.user_id===uid)continue;
       ps.push({type:"photo",url,observer:p.attribution||"",yours:false});
-      if(ps.length>=4)break;
+      if(ps.length>=5)break;
     }
     photoCache.set(tid,ps);return ps;
   }catch{return[]}
@@ -1016,6 +1057,11 @@ async function buildDeck(obs,dueOnly){
 /* ── Quiz ── */
 async function renderCard(){
   const c=S.deck[S.cardIndex];c._revealed=false;c._srsRated=false;
+  c._fieldOrder=[];
+  if(c.family&&!c.familyDone)c._fieldOrder.push("family");
+  if(c.species&&!c.speciesDone)c._fieldOrder.push("species");
+  if(c.common&&!c.commonDone)c._fieldOrder.push("common");
+  c._fieldStep=0;
   $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
@@ -1024,29 +1070,23 @@ async function renderCard(){
   let dateStr="";
   try{dateStr=ds?new Date(ds).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"";}catch{dateStr=ds}
   $("q-prompt").textContent="Identify this observation";
-  const userP={type:"photo",url:o.photos[0].url?.replace("square","medium"),observer:"You",yours:true};
+  killMap();
+  const userPhotos=(o.photos||[]).map(p=>({type:"photo",url:(p.url||"").replace("square","medium"),observer:"You",yours:true}));
   const lat=parseFloat(o.geojson?.coordinates?.[1]||o.location?.split(",")[0]),lng=parseFloat(o.geojson?.coordinates?.[0]||o.location?.split(",")[1]);
   const hasGeo=!isNaN(lat)&&!isNaN(lng);
-  // Map strip
-  killMap();
   const place=o.place_guess||"";
   const labelParts=[place,dateStr].filter(Boolean);
-  if(hasGeo){show("map-strip");$("map-strip").classList.remove("expanded");$("map-toggle").textContent="\u25BC Expand";$("map-place-label").textContent="\u{1F4CD} "+labelParts.join(" \u00B7 ");setTimeout(()=>initMapStrip(lat,lng),50)}
-  else{hide("map-strip")}
-  // Carousel — photos only
-  renderCar([userP]);
-  fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([userP,...ex])}});
-  // Observation notes
+  const mapSlide=hasGeo?[{type:"map",lat,lng,label:labelParts.join(" · ")}]:[];
+  hide("map-strip");
+  renderCar([...userPhotos,...mapSlide]);
+  fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([...userPhotos,...mapSlide,...ex])}});
   const notes=o.description?.trim();
   if(notes){$("obs-notes-text").textContent=notes;show("obs-notes")}else{hide("obs-notes")}
-  setupF("inp-family","fb-family",c.familyDone,c.family);setupF("inp-common","fb-common",c.commonDone,c.common);setupF("inp-species","fb-species",c.speciesDone,c.species);
-  hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";show("btn-row-submit");hide("btn-row-next");hide("retry-notice");
-  // Multiple choice mode
+  hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("btn-row-next");hide("retry-notice");
   if(c._mcMode&&c._mcOptions){
-    hide("btn-row-submit");
     $("q-prompt").textContent="Which species is this?";
     document.querySelector(".fields").classList.add("hidden");
-    show("mc-panel");
+    show("mc-panel");hide("btn-row-submit");
     const optDiv=$("mc-options");optDiv.innerHTML="";$("mc-feedback").textContent="";
     c._mcOptions.forEach((opt,i)=>{
       const btn=document.createElement("button");btn.className="mc-btn";
@@ -1057,18 +1097,38 @@ async function renderCard(){
   }else{
     document.querySelector(".fields").classList.remove("hidden");
     hide("mc-panel");
+    show("btn-row-submit");
+    showFieldStep(c);
   }
   hide("trait-panel");
-  $("btn-submit").textContent="Check Answers";
   $("q-card").classList.remove("fade-out");
-  if(!c._mcMode){
-    if(!c.familyDone&&c.family)$("inp-family").focus();else if(!c.commonDone&&c.common)$("inp-common").focus();else if(!c.speciesDone)$("inp-species").focus();
+}
+
+function showFieldStep(c){
+  ["family","common","species"].forEach(f=>{
+    $("inp-"+f).closest(".field-group").classList.add("hidden");
+    $("inp-"+f).value="";$("inp-"+f).className="answer-input";
+    $("fb-"+f).textContent="";$("fb-"+f).className="correct-answer";
+  });
+  if(c._revealed){
+    ["family","common","species"].forEach(f=>$("inp-"+f).closest(".field-group").classList.remove("hidden"));
+    return;
   }
+  if(c.familyDone&&c.family){$("inp-family").closest(".field-group").classList.remove("hidden");setupF("inp-family","fb-family",true,c.family)}
+  if(c.speciesDone&&c.species){$("inp-species").closest(".field-group").classList.remove("hidden");setupF("inp-species","fb-species",true,c.species)}
+  if(c.commonDone&&c.common){$("inp-common").closest(".field-group").classList.remove("hidden");setupF("inp-common","fb-common",true,c.common)}
+  const step=c._fieldOrder[c._fieldStep];
+  if(!step){check();return}
+  $("inp-"+step).closest(".field-group").classList.remove("hidden");
+  $("inp-"+step).disabled=false;
+  const isLast=c._fieldStep>=c._fieldOrder.length-1;
+  $("btn-submit").textContent=isLast?"Check Answer":"Next →";
+  setTimeout(()=>$("inp-"+step).focus(),80);
 }
 
 function setupF(iid,fid,done,val){const inp=$(iid),fb=$(fid);inp.value="";fb.textContent="";fb.className="correct-answer";
-  if(!val){inp.className="answer-input";inp.disabled=true;inp.placeholder="\u2014 no data \u2014"}
-  else if(done){inp.className="answer-input locked";inp.disabled=true;inp.value=val;fb.textContent="\u2713 already got this";fb.className="correct-answer show-correct"}
+  if(!val){inp.className="answer-input";inp.disabled=true;inp.placeholder="— no data —"}
+  else if(done){inp.className="answer-input locked";inp.disabled=true;inp.value=val;fb.textContent="✓ already got this";fb.className="correct-answer show-correct"}
   else{inp.className="answer-input";inp.disabled=false;inp.placeholder=""}}
 
 function revealCard(c){
@@ -1139,26 +1199,47 @@ function handleMC(c,chosenIdx){
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
 }
 
-function check(){const c=S.deck[S.cardIndex];if(c._revealed)return;c._revealed=true;
-  // Count active fields (fields that have data and weren't already done)
-  let active=0,correct=0;
-  const rF=chkF("inp-family","fb-family",c.familyDone,c.family);
-  const rC=chkF("inp-common","fb-common",c.commonDone,c.common);
-  const rS=chkF("inp-species","fb-species",c.speciesDone,c.species);
-  [rF,rC,rS].forEach(r=>{if(r==="correct"||r==="wrong"){active++;if(r==="correct")correct++}});
-  if(rF!=="wrong")c.familyDone=true;if(rC!=="wrong")c.commonDone=true;if(rS!=="wrong")c.speciesDone=true;
-  c._activeFields=active;c._correctThisAttempt=correct;
-  revealCard(c)}
+function check(){
+  const c=S.deck[S.cardIndex];
+  if(c._revealed)return;
+  const step=c._fieldOrder[c._fieldStep];
+  if(!step){return}
+  // Check current field
+  const fieldMap={family:["inp-family","fb-family",c.family],species:["inp-species","fb-species",c.species],common:["inp-common","fb-common",c.common]};
+  const [iid,fid,val]=fieldMap[step];
+  const result=chkF(iid,fid,false,val);
+  if(result==="correct")c[step+"Done"]=true;
+  // Accumulate tracking
+  if(!c._activeFields)c._activeFields=0;
+  if(!c._correctThisAttempt)c._correctThisAttempt=0;
+  c._activeFields++;
+  if(result==="correct")c._correctThisAttempt++;
+  const isLast=c._fieldStep>=c._fieldOrder.length-1;
+  if(isLast){
+    // Final field — reveal everything
+    c._revealed=true;
+    revealCard(c);
+  }else{
+    c._fieldStep++;
+    showFieldStep(c);
+  }
+}
 function chkF(iid,fid,done,val){if(!val)return"nodata";if(done)return"done";const inp=$(iid),fb=$(fid);
-  if(isMatch(inp.value,val)){inp.className="answer-input correct";fb.textContent="\u2713";fb.className="correct-answer show-correct";return"correct"}
+  if(isMatch(inp.value,val)){inp.className="answer-input correct";fb.textContent="✓";fb.className="correct-answer show-correct";return"correct"}
   inp.className="answer-input wrong";fb.textContent=val;fb.className="correct-answer show-wrong";return"wrong"}
 
-function skip(){const c=S.deck[S.cardIndex];if(c._revealed)return;c._revealed=true;
-  let active=0;
-  [c.family,c.common,c.species].forEach((v,i)=>{if(v&&![c.familyDone,c.commonDone,c.speciesDone][i])active++});
-  skF("inp-family","fb-family",c.familyDone,c.family);skF("inp-common","fb-common",c.commonDone,c.common);skF("inp-species","fb-species",c.speciesDone,c.species);
-  c._activeFields=active;c._correctThisAttempt=0;
-  revealCard(c)}
+function skip(){const c=S.deck[S.cardIndex];if(c._revealed)return;
+  // Skip remaining fields
+  if(!c._activeFields)c._activeFields=0;
+  if(!c._correctThisAttempt)c._correctThisAttempt=0;
+  c._fieldOrder.slice(c._fieldStep).forEach(step=>{
+    const fieldMap={family:["inp-family","fb-family",c.family],species:["inp-species","fb-species",c.species],common:["inp-common","fb-common",c.common]};
+    const [iid,fid,val]=fieldMap[step];
+    if(val){skF(iid,fid,false,val);c._activeFields++;}
+  });
+  c._revealed=true;
+  revealCard(c);
+}
 function skF(iid,fid,done,val){if(!val||done)return;$(iid).className="answer-input skipped";$(fid).textContent=val;$(fid).className="correct-answer show-skipped"}
 
 function next(){
