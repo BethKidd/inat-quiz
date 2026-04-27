@@ -41,7 +41,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#818cf8,#a5b4fc);transition:width .4s}
 .round-badge{background:rgba(129,140,248,.15);color:#a5b4fc;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px}
 .remaining-badge{background:rgba(251,191,36,.12);color:#fbbf24;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px}
-.q-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:24px;backdrop-filter:blur(20px);transition:opacity .3s,transform .3s}
+.q-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:24px;backdrop-filter:blur(20px);transition:opacity .3s,transform .3s;overflow-y:auto}
 .q-card.fade-out{opacity:0;transform:translateY(12px)}
 .prompt{font-size:17px;font-weight:600;text-align:center;margin-bottom:16px}
 .carousel{position:relative;border-radius:16px;overflow:hidden;margin-bottom:12px;background:#0a0c18;aspect-ratio:3/2;user-select:none}
@@ -109,6 +109,14 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .tab-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#7c80a3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .tab-btn.active{border-color:#818cf8;background:rgba(129,140,248,.1);color:#e2e4ef}
 .hidden{display:none!important}
+#screen-quiz{height:100dvh;display:flex;flex-direction:column;padding:16px;overflow:hidden}
+#screen-quiz .top-bar{flex-shrink:0}
+#screen-quiz .q-card{flex:1;min-height:0;overflow-y:auto}
+.lightbox{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;touch-action:none}
+.lightbox.hidden{display:none!important}
+#lb-img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;transition:transform .1s}
+#lb-map-wrap{width:100%;height:100%}
+#lb-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mc-btn{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #3a3f58;background:rgba(255,255,255,.04);color:#e2e4ef;font-size:14px;font-family:inherit;cursor:pointer;text-align:left;transition:all .15s}
 .mc-btn:hover{border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.06)}
 .mc-btn.mc-correct{border-color:#4ade80;background:rgba(74,222,128,.1);color:#4ade80}
@@ -413,15 +421,16 @@ function renderCar(slides){
   slides.forEach((s,i)=>{
     const sl=document.createElement("div");sl.className="carousel-slide";
     if(s.type==="map"){
-      sl.style.cssText="position:relative;";
-      const mapEl=document.createElement("div");mapEl.style.cssText="width:100%;height:100%";
+      sl.style.cssText="position:relative;cursor:pointer";
+      const mapEl=document.createElement("div");mapEl.style.cssText="width:100%;height:100%;pointer-events:none";
       sl.appendChild(mapEl);
       t.appendChild(sl);
-      // Init map after DOM is attached
       requestAnimationFrame(()=>initMapInSlide(mapEl,s.lat,s.lng,s.label));
+      sl.addEventListener("click",()=>openLightboxMap(s.lat,s.lng,s.label));
     }else{
-      sl.innerHTML=`<img src="${s.url}" alt="" loading="${i===0?'eager':'lazy'}"><span class="carousel-badge ${s.yours?'badge-yours':'badge-other'}">${s.yours?'Your photo':'Other observer'}</span>${s.observer&&!s.yours?`<span class="carousel-observer">\u{1F4F7} ${esc(s.observer)}</span>`:''}`;
+      sl.innerHTML=`<img src="${s.url}" alt="" loading="${i===0?'eager':'lazy'}" style="cursor:pointer"><span class="carousel-badge ${s.yours?'badge-yours':'badge-other'}">${s.yours?'Your photo':'Other observer'}</span>${s.observer&&!s.yours?`<span class="carousel-observer">\u{1F4F7} ${esc(s.observer)}</span>`:''}`;
       t.appendChild(sl);
+      sl.querySelector("img").addEventListener("click",()=>openLightboxImg(s.url));
     }
     const dot=document.createElement("span");dot.className="carousel-dot"+(i===0?" active":"");dot.addEventListener("click",()=>goSlide(i));dots.appendChild(dot);
   });
@@ -1083,6 +1092,7 @@ async function renderCard(){
   const notes=o.description?.trim();
   if(notes){$("obs-notes-text").textContent=notes;show("obs-notes")}else{hide("obs-notes")}
   hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("btn-row-next");hide("retry-notice");
+  // Notes stay visible throughout
   if(c._mcMode&&c._mcOptions){
     $("q-prompt").textContent="Which species is this?";
     document.querySelector(".fields").classList.add("hidden");
@@ -1132,7 +1142,16 @@ function setupF(iid,fid,done,val){const inp=$(iid),fb=$(fid);inp.value="";fb.tex
   else{inp.className="answer-input";inp.disabled=false;inp.placeholder=""}}
 
 function revealCard(c){
-  ["inp-family","inp-common","inp-species"].forEach(id=>$(id).disabled=true);
+  // Show all fields with final state
+  const fieldDefs=[["family","inp-family","fb-family"],["species","inp-species","fb-species"],["common","inp-common","fb-common"]];
+  fieldDefs.forEach(([f,iid,fid])=>{
+    const val=c[f];const fg=$(iid).closest(".field-group");
+    if(!val){fg.classList.add("hidden");return}
+    fg.classList.remove("hidden");$(iid).disabled=true;
+    if(c[f+"Done"]){$(iid).className="answer-input correct";$(fid).textContent="\u2713";$(fid).className="correct-answer show-correct"}
+    else if($(iid).className.includes("wrong")){/* already styled */}
+    else{$(iid).className="answer-input skipped";$(iid).value=val;$(fid).textContent=val;$(fid).className="correct-answer show-skipped"}
+  });
   hide("btn-row-submit");showEtym(c.species,c.common);
   const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
   showWiki(c.species,!allCorrect);
@@ -1296,11 +1315,57 @@ async function showStats(){const un=(S.currentUser||$("inp-user").value.trim()).
   $("tab-overview").classList.add("active");$("tab-species").classList.remove("active");show("tab-content-overview");hide("tab-content-species");showScreen("stats")}
 </script>
 <script>
+/* ── Lightbox ── */
+let lbLeafMap=null;
+function openLightboxImg(url){
+  const lb=$("lightbox");const img=$("lb-img");const mw=$("lb-map-wrap");
+  img.src=url;img.style.transform="scale(1)";
+  show("lightbox");lb.classList.remove("hidden");
+  img.classList.remove("hidden");mw.classList.add("hidden");
+  // Pinch-to-zoom
+  let lastDist=null,scale=1;
+  lb.ontouchstart=e=>{if(e.touches.length===2)lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)};
+  lb.ontouchmove=e=>{if(e.touches.length===2&&lastDist){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);scale=Math.min(5,Math.max(1,scale*(d/lastDist)));img.style.transform=`scale(${scale})`;lastDist=d;e.preventDefault();}};
+  lb.ontouchend=e=>{if(e.touches.length<2)lastDist=null};
+}
+function openLightboxMap(lat,lng,label){
+  const lb=$("lightbox");const img=$("lb-img");const mw=$("lb-map-wrap");
+  show("lightbox");lb.classList.remove("hidden");
+  img.classList.add("hidden");mw.classList.remove("hidden");mw.innerHTML="";
+  const el=document.createElement("div");el.style.cssText="width:100%;height:100%";mw.appendChild(el);
+  if(lbLeafMap){lbLeafMap.remove();lbLeafMap=null}
+  lbLeafMap=L.map(el,{zoomControl:true,attributionControl:false,dragging:true,scrollWheelZoom:true,touchZoom:true}).setView([lat,lng],16);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(lbLeafMap);
+  L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#6366f1;border:3px solid #fff"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(lbLeafMap);
+  setTimeout(()=>lbLeafMap.invalidateSize(),100);
+  lb.ontouchstart=null;lb.ontouchmove=null;
+}
+function closeLightbox(){
+  hide("lightbox");
+  if(lbLeafMap){lbLeafMap.remove();lbLeafMap=null}
+  $("lb-img").src="";$("lb-map-wrap").innerHTML="";
+}
+$("lb-close").addEventListener("click",closeLightbox);
+$("lightbox").addEventListener("click",e=>{if(e.target===$("lightbox"))closeLightbox()});
+
+/* ── Visual Viewport (keyboard fix) ── */
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',()=>{
+    const sq=$("screen-quiz");
+    if(sq&&!$("screen-quiz").classList.contains("hidden"))sq.style.height=window.visualViewport.height+'px';
+  });
+}
+
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW error:',e));
   });
 }
 </script>
+<div id="lightbox" class="lightbox hidden">
+  <img id="lb-img" src="" alt="">
+  <div id="lb-map-wrap"></div>
+  <button id="lb-close">✕</button>
+</div>
 </body>
 </html>
