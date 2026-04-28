@@ -521,7 +521,11 @@ $("btn-back-setup").addEventListener("click",()=>showScreen("setup"));
 $("btn-study-due").addEventListener("click",()=>doStart(true));
 $("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
 ["inp-family","inp-common","inp-species"].forEach(id=>{$(id).addEventListener("keyup",e=>{if(e.key==="Enter"||e.keyCode===13){e.stopPropagation();const c=S.deck[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}})});
-document.querySelectorAll(".step-btn").forEach(b=>{b.addEventListener("click",e=>{e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c||c._revealed)return;check()})});
+document.querySelectorAll(".step-btn").forEach(b=>{
+  const stepAction=e=>{e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c||c._revealed)return;check()};
+  b.addEventListener("touchend",stepAction,{passive:false});
+  b.addEventListener("click",stepAction);
+});
 document.addEventListener("keyup",e=>{if((e.key==="Enter"||e.keyCode===13)&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
   const c=S.deck?.[S.cardIndex];
   if(S.traitMode&&c&&!c._revealed){checkTraits();return}
@@ -545,7 +549,7 @@ $("map-toggle").addEventListener("click",e=>{
   e.stopPropagation();
   if($("map-strip").classList.contains("expanded"))collapseMap();else expandMap();
 });
-$("btn-next").addEventListener("click",next);
+$("btn-next").addEventListener("click",next);$("btn-next").addEventListener("touchend",e=>{e.preventDefault();next()},{passive:false});
 $("ignore-cancel").addEventListener("click",()=>hide("ignore-popup"));
 $("ignore-popup").addEventListener("click",e=>{if(e.target===$("ignore-popup"))hide("ignore-popup")});
 $("ignore-confirm").addEventListener("click",()=>ignoreCurrentSpecies());
