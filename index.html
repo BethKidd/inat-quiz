@@ -184,6 +184,20 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .trait-distinguish{grid-column:1/-1;margin-top:4px;padding-top:6px;border-top:1px solid rgba(34,211,238,.1);color:#e2e4ef;font-size:12px;line-height:1.5}
 .gloss{border-bottom:1px dotted rgba(34,211,238,.4);cursor:help;position:relative}
 .gloss:hover::after{content:attr(data-def);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e4ef;border:1px solid rgba(34,211,238,.3);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:400;font-style:normal;white-space:normal;width:220px;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4);line-height:1.4}
+/* ── Settings screen ── */
+#screen-setup{background:#f4f2ed;min-height:100vh;padding:20px 0 40px;color:#1c2b22}
+#screen-setup h1{color:#1c2b22;font-family:'Lora',Georgia,serif;font-weight:600;font-size:22px}
+#screen-setup .card{background:#fff;border:1px solid #d8ece2;border-radius:16px;box-shadow:0 1px 8px rgba(0,0,0,.07);backdrop-filter:none}
+#screen-setup .label{color:#2a5e40}
+#screen-setup .input{background:#fff;border:1.5px solid #c8ddd2;color:#1c2b22;border-radius:10px}
+#screen-setup .input:focus{border-color:#3d8b5e;box-shadow:0 0 0 3px rgba(61,139,94,.13);outline:none}
+#screen-setup .input::placeholder{color:#a8c4b4}
+#screen-setup .count-btn{background:#fff;border:1.5px solid #c8ddd2;color:#3d8b5e}
+#screen-setup .count-btn.active{background:#3d8b5e;border-color:#3d8b5e;color:#fff}
+#screen-setup .btn-primary{background:#3d8b5e;border-radius:12px}
+#screen-setup .btn-secondary{color:#3d8b5e;border:1.5px solid #c8ddd2;background:transparent;border-radius:12px}
+#screen-setup .footer-text{color:#6b8f78}
+#screen-setup .error{color:#dc2626}
 /* ── Home & Family screens ── */
 #screen-home,#screen-family{padding-bottom:32px;background:#f4f2ed;min-height:100vh}
 .home-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 14px 0}
@@ -256,8 +270,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 <!-- Settings screen -->
 <div id="screen-setup" class="container center">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;justify-content:center">
-    <button id="btn-settings-back" style="background:none;border:none;color:#818cf8;font-size:22px;cursor:pointer;padding:0">‹</button>
-    <h1 style="font-size:24px;font-weight:800">Settings</h1>
+    <button id="btn-settings-back" style="background:none;border:none;color:#3d8b5e;font-size:22px;cursor:pointer;padding:0">‹</button>
+    <h1>Settings</h1>
   </div>
   <div class="card">
     <label class="label">iNaturalist Username</label>
@@ -269,23 +283,23 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <button class="count-btn" data-n="15">15</button>
       <button class="count-btn" data-n="20">20</button>
     </div>
-    <label class="label" style="margin-top:20px">OpenAI API Key <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#555770">(optional — for etymology)</span></label>
+    <label class="label" style="margin-top:20px">OpenAI API Key <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#6b8f78">(optional — for etymology)</span></label>
     <input type="password" id="inp-apikey" class="input" placeholder="sk-..." style="font-size:13px">
-    <p style="font-size:11px;color:#555770;margin-top:6px">Stored in memory only. Never saved or sent anywhere except OpenAI.</p>
+    <p style="font-size:11px;color:#6b8f78;margin-top:6px">Stored in memory only. Never saved or sent anywhere except OpenAI.</p>
     <p id="error-msg" class="error hidden"></p>
     <button id="btn-start" class="btn-primary">Save &amp; Return</button>
-    <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)">
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e4f0ea">
       <label class="label">Species List Quiz</label>
-      <p style="font-size:12px;color:#555770;margin-bottom:10px">Upload a CSV/text file with one scientific name per line.</p>
+      <p style="font-size:12px;color:#6b8f78;margin-bottom:10px">Upload a CSV/text file with one scientific name per line.</p>
       <input type="file" id="inp-csv" accept=".csv,.txt,.tsv" style="display:none">
-      <button id="btn-csv" class="btn-secondary" style="margin-top:0">📋 Upload Species List</button>
-      <p id="csv-status" style="font-size:12px;color:#7c80a3;margin-top:6px" class="hidden"></p>
-      <button id="btn-start-csv" class="btn-primary hidden" style="margin-top:10px;background:linear-gradient(135deg,#34d399,#059669)">Start List Quiz →</button>
+      <button id="btn-csv" class="btn-secondary" style="margin-top:0">Upload Species List</button>
+      <p id="csv-status" style="font-size:12px;color:#6b8f78;margin-top:6px" class="hidden"></p>
+      <button id="btn-start-csv" class="btn-primary hidden" style="margin-top:10px">Start List Quiz →</button>
       <div style="margin-top:12px">
         <input type="file" id="inp-traits" accept=".csv" style="display:none">
-        <button id="btn-traits" class="btn-secondary" style="margin-top:0">🔬 Upload Traits Database</button>
-        <p id="traits-status" style="font-size:12px;color:#7c80a3;margin-top:6px" class="hidden"></p>
-        <button id="btn-start-traits" class="btn-primary hidden" style="margin-top:10px;background:linear-gradient(135deg,#22d3ee,#0891b2)">Start Traits Quiz 🔬 →</button>
+        <button id="btn-traits" class="btn-secondary" style="margin-top:0">Upload Traits Database</button>
+        <p id="traits-status" style="font-size:12px;color:#6b8f78;margin-top:6px" class="hidden"></p>
+        <button id="btn-start-traits" class="btn-primary hidden" style="margin-top:10px">Start Traits Quiz →</button>
       </div>
     </div>
   </div>
