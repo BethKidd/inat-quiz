@@ -311,7 +311,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     </div>
     <div class="map-strip hidden" id="map-strip"><div id="map-container" style="width:100%;height:100%"></div><div class="map-place-label" id="map-place-label"></div><button type="button" class="map-toggle" id="map-toggle">▲ Minimize</button></div>
     <div id="obs-notes" class="hidden" style="font-size:12px;color:#2a5e40;background:#e4f0ea;border:none;border-radius:8px;padding:7px 11px 8px;margin-bottom:8px;font-style:normal;line-height:1.4"><span style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#3d8b5e;display:block;margin-bottom:2px">Your notes</span><span id="obs-notes-text"></span></div>
-    <form class="fields field-stage" id="quiz-form" autocomplete="off">
+    <form class="fields field-stage" id="quiz-form" autocomplete="off" onsubmit="quizSubmit(event)">
       <div class="field-group"><div class="field-label">Family <span class="hint">e.g. Rosaceae</span></div><div class="input-row"><input type="text" id="inp-family" class="answer-input" autocomplete="off" spellcheck="false"><button type="submit" class="btn-mini-arrow step-btn" data-step="family" title="Next (or press Enter)">→</button></div><div class="correct-answer" id="fb-family"></div></div>
       <div class="field-group"><div class="field-label">Species <span class="hint">e.g. Rosa canina</span></div><div class="input-row"><input type="text" id="inp-species" class="answer-input" autocomplete="off" spellcheck="false"><button type="submit" class="btn-mini-arrow step-btn" data-step="species" title="Next (or press Enter)">→</button></div><div class="correct-answer" id="fb-species"></div></div>
       <div class="field-group"><div class="field-label">Common Name <span class="hint">e.g. Dog Rose</span></div><div class="input-row"><input type="text" id="inp-common" class="answer-input" autocomplete="off" spellcheck="false"><button type="submit" class="btn-mini-arrow step-btn" data-step="common" title="Next (or press Enter)">→</button></div><div class="correct-answer" id="fb-common"></div></div>
@@ -520,7 +520,7 @@ $("btn-view-stats").addEventListener("click",()=>showStats());
 $("btn-back-setup").addEventListener("click",()=>showScreen("setup"));
 $("btn-study-due").addEventListener("click",()=>doStart(true));
 $("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
-$("quiz-form").addEventListener("submit",e=>{e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c)return;if(c._revealed)next();else check()});
+function quizSubmit(e){e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}
 document.addEventListener("keyup",e=>{if((e.key==="Enter"||e.keyCode===13)&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
   const c=S.deck?.[S.cardIndex];
   if(S.traitMode&&c&&!c._revealed){checkTraits();return}
