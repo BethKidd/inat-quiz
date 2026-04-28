@@ -44,7 +44,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .q-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:24px;backdrop-filter:blur(20px);transition:opacity .3s,transform .3s;overflow-y:auto}
 .q-card.fade-out{opacity:0;transform:translateY(12px)}
 .prompt{font-size:15px;font-weight:600;text-align:center;margin-bottom:8px}
-.carousel{position:relative;border-radius:12px;overflow:hidden;margin-bottom:8px;background:#0a0c18;aspect-ratio:3/2;user-select:none}
+.carousel{position:relative;border-radius:12px;overflow:hidden;margin-bottom:8px;background:#0a0c18;aspect-ratio:4/3;user-select:none}
 .carousel-track{display:flex;height:100%;transition:transform .35s ease;width:100%}
 .carousel-slide{width:100%;min-width:100%;height:100%;position:relative;flex-shrink:0;overflow:hidden}
 .carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
@@ -200,9 +200,30 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 </head>
 <body>
 
+<!-- Main home screen -->
+<div id="screen-home-main" class="hidden" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+  <div style="position:absolute;top:16px;right:16px">
+    <button id="btn-open-settings" style="background:none;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#8688a5;font-size:18px;cursor:pointer;width:38px;height:38px;display:flex;align-items:center;justify-content:center">⚙</button>
+  </div>
+  <div style="text-align:center;margin-bottom:40px">
+    <div style="font-size:52px;margin-bottom:8px">🦎</div>
+    <h1 style="font-size:32px;font-weight:800;letter-spacing:-0.02em">iNat Quiz</h1>
+    <p id="home-main-sub" style="font-size:13px;color:#7c80a3;margin-top:6px"></p>
+  </div>
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px">
+    <button id="btn-learn" class="btn-primary" style="margin-top:0;font-size:18px;padding:18px 0;border-radius:16px">Learn</button>
+    <button id="btn-practise" class="btn-primary" style="margin-top:0;font-size:18px;padding:18px 0;border-radius:16px;background:linear-gradient(135deg,#34d399,#059669)">Practise</button>
+    <button id="btn-families-main" class="btn-primary" style="margin-top:0;font-size:18px;padding:18px 0;border-radius:16px;background:linear-gradient(135deg,#f59e0b,#d97706)">Families</button>
+  </div>
+  <p id="home-main-err" class="error hidden" style="margin-top:16px"></p>
+</div>
+
+<!-- Settings screen -->
 <div id="screen-setup" class="container center">
-  <div class="logo-icon">🦎</div><h1>iNat Quiz</h1>
-  <p class="subtitle">Spaced repetition for your iNaturalist observations</p>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;justify-content:center">
+    <button id="btn-settings-back" style="background:none;border:none;color:#818cf8;font-size:22px;cursor:pointer;padding:0">‹</button>
+    <h1 style="font-size:24px;font-weight:800">Settings</h1>
+  </div>
   <div class="card">
     <label class="label">iNaturalist Username</label>
     <input type="text" id="inp-user" class="input" placeholder="e.g. kueda">
@@ -217,9 +238,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <input type="password" id="inp-apikey" class="input" placeholder="sk-..." style="font-size:13px">
     <p style="font-size:11px;color:#555770;margin-top:6px">Stored in memory only. Never saved or sent anywhere except OpenAI.</p>
     <p id="error-msg" class="error hidden"></p>
-    <button id="btn-start" class="btn-primary" disabled>Start Quiz →</button>
-    <button id="btn-browse-families" class="btn-secondary" style="display:none">🌿 Browse Families</button>
-    <button id="btn-stats" class="btn-secondary" style="display:none">📊 View Progress</button>
+    <button id="btn-start" class="btn-primary">Save &amp; Return</button>
     <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)">
       <label class="label">Species List Quiz</label>
       <p style="font-size:12px;color:#555770;margin-bottom:10px">Upload a CSV/text file with one scientific name per line.</p>
@@ -238,7 +257,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <p class="footer-text">Progress saved in your browser via IndexedDB.</p>
 </div>
 
-<div id="screen-loading" class="container center hidden"><div class="spinner"></div><p id="loading-text" style="font-size:15px;color:#c0c3db">Loading...</p></div>
+<div id="screen-loading" class="hidden" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0"><div class="spinner"></div><p id="loading-text" style="font-size:15px;color:#c0c3db">Loading...</p></div>
 
 <div id="screen-quiz" class="container hidden">
   <div class="top-bar">
@@ -403,7 +422,7 @@ function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Ma
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
 function hide(id){$(id).classList.add("hidden")}
-function showScreen(n){["screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family"].forEach(s=>s==="screen-"+n?show(s):hide(s))}
+function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family"].forEach(s=>s==="screen-"+n?show(s):hide(s))}
 function esc(s){if(!s)return"";const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").replace(/[-–—]/g," ").replace(/[^a-z0-9' ]/g,"").replace(/\s+/g," ")}
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
@@ -419,18 +438,25 @@ function dedupe(obs){const s=new Map();for(const o of obs){const k=taxonKey(o);i
   const ak=localStorage.getItem("inat_quiz_apikey");
   if(ak)$("inp-apikey").value=ak;
   if(saved){
-    $("inp-user").value=saved;$("btn-start").disabled=false;$("btn-stats").style.display="block";
-    $("btn-browse-families").style.display="block";
+    $("inp-user").value=saved;
+    updateHomeMainSub();
+    showScreen("home-main");
+  }else{
+    showScreen("setup");
   }
 })();
 
 /* ── Events ── */
-$("inp-user").addEventListener("input",()=>{const v=$("inp-user").value.trim();$("btn-start").disabled=!v;$("btn-stats").style.display=v?"block":"none";$("btn-browse-families").style.display=v?"block":"none"});
-$("btn-browse-families").addEventListener("click",()=>loadHome());
-$("inp-user").addEventListener("keydown",e=>{if(e.key==="Enter"&&$("inp-user").value.trim())doStart()});
+$("inp-user").addEventListener("input",()=>{const v=$("inp-user").value.trim();if(v)localStorage.setItem("inat_quiz_user",v);updateHomeMainSub()});
+$("inp-user").addEventListener("keydown",e=>{if(e.key==="Enter")saveSettingsAndReturn()});
 document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListener("click",()=>{document.querySelectorAll("#count-row .count-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.qCount=+b.dataset.n})});
-$("btn-start").addEventListener("click",()=>doStart());
-$("btn-exit").addEventListener("click",()=>{killMap();showScreen("setup")});
+$("btn-start").addEventListener("click",saveSettingsAndReturn);
+$("btn-settings-back").addEventListener("click",()=>showScreen("home-main"));
+$("btn-open-settings").addEventListener("click",()=>showScreen("setup"));
+$("btn-learn").addEventListener("click",()=>startFromHome(false));
+$("btn-practise").addEventListener("click",()=>startFromHome(true));
+$("btn-families-main").addEventListener("click",()=>loadHome());
+$("btn-exit").addEventListener("click",()=>{killMap();showScreen("home-main")});
 $("btn-home-settings").addEventListener("click",()=>showScreen("setup"));
 $("btn-study-due-home").addEventListener("click",()=>startQuizFromHome());
 $("btn-family-back").addEventListener("click",()=>showHome());
@@ -439,14 +465,14 @@ $("btn-submit").addEventListener("click",()=>{if(S.traitMode)checkTraits();else 
 $("btn-replay").addEventListener("click",()=>{
   if(S.traitMode){
     S.traitMode=false;
-    if(S.csvMode)csvNextDeck();else doStart();
+    if(S.csvMode)csvNextDeck();else showScreen("home-main");
   }else if(traitsDB.size>0&&S.allObs.length>0&&buildTraitsDeck()){
     showScreen("quiz");renderTraitCard();
   }else{
-    if(S.csvMode)csvNextDeck();else doStart();
+    if(S.csvMode)csvNextDeck();else showScreen("home-main");
   }
 });
-$("btn-change").addEventListener("click",()=>showScreen("setup"));
+$("btn-change").addEventListener("click",()=>showScreen("home-main"));
 $("btn-csv").addEventListener("click",()=>$("inp-csv").click());
 $("inp-csv").addEventListener("change",handleCSV);
 $("btn-start-csv").addEventListener("click",()=>doStartCSV());
@@ -714,7 +740,30 @@ async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-ms
     for(const o of uniq)o._family=fm[o.taxon.id]||null;
     S.allObs=uniq;await buildDeck(uniq,dueOnly);
   }catch(e){showErr(`Error: ${e.message}`)}}
-function showErr(m){$("error-msg").textContent=m;show("error-msg");showScreen("setup")}
+function updateHomeMainSub(){
+  const un=localStorage.getItem("inat_quiz_user")||"";
+  $("home-main-sub").textContent=un?`Signed in as ${un}`:"Add your iNaturalist username in Settings";
+}
+function saveSettingsAndReturn(){
+  const un=$("inp-user").value.trim();
+  if(un)localStorage.setItem("inat_quiz_user",un);
+  const ak=$("inp-apikey").value.trim();if(ak)localStorage.setItem("inat_quiz_apikey",ak);
+  updateHomeMainSub();
+  showScreen("home-main");
+}
+async function startFromHome(practiseMode){
+  const un=localStorage.getItem("inat_quiz_user");
+  if(!un){$("home-main-err").textContent="Add your iNaturalist username in Settings first.";show("home-main-err");return}
+  hide("home-main-err");
+  S.csvMode=false;S.traitMode=false;
+  if(S.allObs.length&&S.currentUser===un.toLowerCase()){
+    // Obs already loaded — go straight to deck
+    await buildDeck(S.allObs,practiseMode);
+  }else{
+    await doStart(practiseMode);
+  }
+}
+function showErr(m){$("home-main-err").textContent=m;show("home-main-err");showScreen("home-main")}
 
 /* ── Home screen ── */
 async function loadHome(){
@@ -1500,16 +1549,18 @@ function check(){
 
 async function ignoreCurrentSpecies(){
   const c=S.deck[S.cardIndex];if(!c)return;
-  // Persist ignored flag
-  c.srs.ignored=true;
-  if(!c.srs.taxonKey)c.srs.taxonKey=S.currentUser+":"+c.species.toLowerCase();
-  if(!c.srs.username)c.srs.username=S.currentUser;
-  await dbPut(c.srs);
-  // Remove from deck and retry queue
+  // Build a complete SRS record with ignored flag
+  const k=S.currentUser+":"+c.species.toLowerCase();
+  const existing=await dbGet(k);
+  const record=existing||{taxonKey:k,username:S.currentUser,species:c.species,common:c.common||"",family:c.family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+  record.ignored=true;
+  await dbPut(record);
+  c.srs=record;
+  // Remove this species from deck and retry queue
   S.deck.splice(S.cardIndex,1);
   S.retryQueue=S.retryQueue.filter(r=>r.species!==c.species);
   S.totalCards=Math.max(0,S.totalCards-1);
-  // Advance
+  hide("ignore-popup");
   if(S.deck.length===0&&S.retryQueue.length===0){results();return}
   if(S.cardIndex>=S.deck.length){
     if(S.retryQueue.length>0){S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
