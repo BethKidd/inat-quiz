@@ -305,8 +305,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <p class="prompt" id="q-prompt">Identify this observation</p>
     <div class="carousel" id="carousel">
       <div class="carousel-track" id="carousel-track"></div>
-      <button type="button" class="carousel-nav carousel-prev" id="car-prev">‹</button>
-      <button type="button" class="carousel-nav carousel-next" id="car-next">›</button>
+      <button type="button" class="carousel-nav carousel-prev" id="car-prev" onclick="moveCar(-1)">‹</button>
+      <button type="button" class="carousel-nav carousel-next" id="car-next" onclick="moveCar(1)">›</button>
       <div class="carousel-dots" id="carousel-dots"></div>
     </div>
     <div class="map-strip hidden" id="map-strip"><div id="map-container" style="width:100%;height:100%"></div><div class="map-place-label" id="map-place-label"></div><button type="button" class="map-toggle" id="map-toggle">▲ Minimize</button></div>
