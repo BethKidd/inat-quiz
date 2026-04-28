@@ -520,9 +520,9 @@ $("btn-view-stats").addEventListener("click",()=>showStats());
 $("btn-back-setup").addEventListener("click",()=>showScreen("setup"));
 $("btn-study-due").addEventListener("click",()=>doStart(true));
 $("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
-["inp-family","inp-common","inp-species"].forEach(id=>{$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.stopPropagation();const c=S.deck[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}})});
+["inp-family","inp-common","inp-species"].forEach(id=>{$(id).addEventListener("keyup",e=>{if(e.key==="Enter"||e.keyCode===13){e.stopPropagation();const c=S.deck[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}})});
 document.querySelectorAll(".step-btn").forEach(b=>{b.addEventListener("click",e=>{e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c||c._revealed)return;check()})});
-document.addEventListener("keydown",e=>{if(e.key==="Enter"&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
+document.addEventListener("keyup",e=>{if((e.key==="Enter"||e.keyCode===13)&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
   const c=S.deck?.[S.cardIndex];
   if(S.traitMode&&c&&!c._revealed){checkTraits();return}
   if(c&&c._revealed)next();
