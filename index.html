@@ -117,8 +117,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz #obs-notes{margin-bottom:6px!important;padding:7px 11px 8px!important}
 /* ── Green theme for quiz screen ── */
 #screen-quiz{background:#f4f2ed}
-#screen-quiz .q-card{background:#fff;border:none;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);padding:16px 16px 24px;margin:10px 12px 0}
+#screen-quiz .q-card{background:#fff;border:none;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);padding:16px 16px 24px;margin:8px 10px 0;-webkit-overflow-scrolling:touch}
 #screen-quiz .prompt{font-family:'Lora',Georgia,serif;font-style:normal;font-weight:600;font-size:17px;color:#1c2b22;margin-bottom:14px}
+#screen-quiz .progress-track{background:#d6ebe1}
 #screen-quiz .progress-fill{background:linear-gradient(90deg,#3d8b5e,#52a876)}
 #screen-quiz .round-badge{background:#e4f0ea;color:#2a5e40;border:none}
 #screen-quiz .remaining-badge{background:#e4f0ea;color:#2a5e40;border:none}
@@ -127,10 +128,27 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz .field-label .hint{color:#6b9e82}
 #screen-quiz .answer-input{border:1.5px solid #c8ddd2;background:#fff;color:#1c2b22}
 #screen-quiz .answer-input:focus{border-color:#3d8b5e;box-shadow:0 0 0 3px rgba(61,139,94,.13)}
+#screen-quiz .answer-input.correct{border-color:#3d8b5e;background:#f0fdf4;color:#166534}
+#screen-quiz .answer-input.wrong{border-color:#dc2626;background:#fef2f2;color:#991b1b}
+#screen-quiz .answer-input.skipped{border-color:#d97706;background:#fffbeb;color:#92400e}
 #screen-quiz .btn-mini-arrow{border-color:#3d8b5e;background:#3d8b5e;color:#fff}
 #screen-quiz .btn-mini-arrow:hover{background:#2e7d52;border-color:#2e7d52}
 #screen-quiz .top-bar{color:#556b5e}
 #screen-quiz #btn-close-quiz{color:#3d8b5e}
+/* Next button */
+#btn-next{background:#3d8b5e;box-shadow:0 4px 16px rgba(61,139,94,.35)}
+/* Info boxes after reveal */
+#screen-quiz .etym-note{background:#f0f7f3;border-color:#c8ddd2;color:#2a5e40}
+#screen-quiz .etym-note .etym-label{color:#3d8b5e}
+#screen-quiz .etym-loading{color:#6b8f78}
+#screen-quiz #traits-box{background:#f0f7f3!important;border-color:#c8ddd2!important}
+#screen-quiz #traits-box .etym-label{color:#3d8b5e!important}
+#screen-quiz #wiki-box{background:#f0f7f3!important;border-color:#c8ddd2!important}
+#screen-quiz #wiki-box .etym-label{color:#3d8b5e!important}
+/* Trait label colours for light bg */
+#screen-quiz .trait-label{color:#3d8b5e}
+#screen-quiz .trait-val{color:#2a3d2e}
+#screen-quiz .trait-distinguish{color:#2a3d2e;border-top-color:rgba(61,139,94,.15)}
 .field-stage{position:relative;overflow:hidden;min-height:84px}
 .field-stage .field-group{transition:transform .25s ease,opacity .25s ease}
 .field-stage .field-group.slide-out-left{transform:translateX(-110%);opacity:0}
