@@ -126,6 +126,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz .badge-yours{background:rgba(61,139,94,.82);color:#fff}
 #screen-quiz .field-label{color:#2a5e40}
 #screen-quiz .field-label .hint{color:#6b9e82}
+#screen-quiz .hint.revealed-correct{color:#3d8b5e;font-style:normal;font-weight:700;font-size:13px;text-transform:none;letter-spacing:0}
+#screen-quiz .hint.revealed-wrong{color:#dc2626;font-style:normal;font-size:12px;text-transform:none;letter-spacing:0}
+#screen-quiz .hint.revealed-skipped{color:#b45309;font-style:normal;font-size:12px;text-transform:none;letter-spacing:0}
 #screen-quiz .answer-input{border:1.5px solid #c8ddd2;background:#fff;color:#1c2b22}
 #screen-quiz .answer-input:focus{border-color:#3d8b5e;box-shadow:0 0 0 3px rgba(61,139,94,.13)}
 #screen-quiz .answer-input.correct{border-color:#3d8b5e;background:#f0fdf4;color:#166534}
@@ -1457,8 +1460,12 @@ function showFieldStep(c,animateIn){
     const fg=$("inp-"+f).closest(".field-group");
     fg.classList.add("hidden");fg.classList.remove("slide-out-left","slide-in-right");
     $("inp-"+f).value="";$("inp-"+f).className="answer-input";$("inp-"+f).disabled=false;
-    $("fb-"+f).textContent="";$("fb-"+f).className="correct-answer";
+    $("fb-"+f).textContent="";$("fb-"+f).className="correct-answer";$("fb-"+f).style.display="";
     const sb=fg.querySelector(".step-btn");if(sb)sb.style.display="";
+    const ir=fg.querySelector(".input-row");if(ir)ir.style.display="";
+    const hint=fg.querySelector(".hint");
+    const hd={family:"e.g. Rosaceae",species:"e.g. Rosa canina",common:"e.g. Dog Rose"};
+    if(hint){hint.textContent=hd[f]||"";hint.className="hint";}
   });
   if(c._revealed)return;
   const step=c._fieldOrder[c._fieldStep];
@@ -1480,15 +1487,16 @@ function revealCard(c){
     inp.disabled=true;
     const result=(c._results||{})[f];
     const userVal=(c._answers||{})[f]||"";
+    const hint=fg.querySelector(".hint");
+    const ir=fg.querySelector(".input-row");
+    if(ir)ir.style.display="none";
+    fb.textContent="";fb.className="correct-answer";fb.style.display="none";
     if(result==="correct"||c[f+"Done"]){
-      inp.value=val;inp.className="answer-input correct";
-      fb.textContent="\u2713";fb.className="correct-answer show-correct";
+      if(hint){hint.textContent="\u2713";hint.className="hint revealed-correct";}
     }else if(result==="wrong"){
-      inp.value=userVal;inp.className="answer-input wrong";
-      fb.textContent=val;fb.className="correct-answer show-wrong";
+      if(hint){hint.textContent=val;hint.className="hint revealed-wrong";}
     }else{
-      inp.value="";inp.className="answer-input skipped";
-      fb.textContent=val;fb.className="correct-answer show-skipped";
+      if(hint){hint.textContent=val;hint.className="hint revealed-skipped";}
     }
   });
   hide("btn-row-submit");showEtym(c.species,c.common);
