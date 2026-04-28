@@ -117,7 +117,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz #obs-notes{margin-bottom:6px!important;padding:7px 11px 8px!important}
 /* ── Green theme for quiz screen ── */
 #screen-quiz{background:#f4f2ed}
-#screen-quiz .q-card{background:#fff;border:none;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);padding:16px 16px 24px;margin:8px 10px 0;-webkit-overflow-scrolling:touch}
+#screen-quiz .q-card{background:#fff;border:none;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);padding:16px 16px 24px;margin:8px 10px 0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #screen-quiz .prompt{font-family:'Lora',Georgia,serif;font-style:normal;font-weight:600;font-size:17px;color:#1c2b22;margin-bottom:14px}
 #screen-quiz .progress-track{background:#d6ebe1}
 #screen-quiz .progress-fill{background:linear-gradient(90deg,#3d8b5e,#52a876)}
@@ -292,7 +292,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <p class="footer-text">Progress saved in your browser via IndexedDB.</p>
 </div>
 
-<div id="screen-loading" class="hidden" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0"><div class="spinner"></div><p id="loading-text" style="font-size:15px;color:#c0c3db">Loading...</p></div>
+<div id="screen-loading" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0"><div class="spinner" style="border-color:#d6ebe1;border-top-color:#3d8b5e"></div><p id="loading-text" style="font-size:15px;color:#6b8f78">Loading...</p></div>
 
 <div id="screen-quiz" class="container hidden">
   <div class="top-bar">
@@ -334,8 +334,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <div id="btn-row-submit" class="hidden"><button class="btn-submit" id="btn-submit">→</button></div>
     <button class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)">→</button>
     <div class="retry-notice hidden" id="retry-notice"></div>
-    <button id="btn-ignore-link" style="display:block;width:100%;background:none;border:none;color:#2e3250;font-size:11px;cursor:pointer;font-family:inherit;padding:8px 0 0;text-align:center;margin-top:4px">ignore this species</button>
   </div>
+  <button id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:6px 0 2px;text-align:center;width:100%;flex-shrink:0">ignore this species</button>
 </div>
 
 <div id="screen-results" class="container center hidden">
@@ -1348,7 +1348,7 @@ function checkTraits(){
     S.retryQueue.push(retryCard);
     $("retry-notice").textContent=`${retryCard._traitQuestions.length} wrong \u2014 you\u2019ll see those again.`;show("retry-notice");
   }
-  hide("btn-row-submit");show("btn-next");
+  hide("btn-row-submit");show("btn-next");show("btn-ignore-link");
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Traits</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
@@ -1416,7 +1416,7 @@ async function renderCard(){
   fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([...userPhotos,...mapSlide,...ex])}});
   const notes=o.description?.trim();
   if(notes){$("obs-notes-text").textContent=notes;show("obs-notes")}else{hide("obs-notes")}
-  hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("btn-next");hide("retry-notice");
+  hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("btn-next");hide("retry-notice");hide("btn-ignore-link");
   // Notes stay visible throughout
   if(c._mcMode&&c._mcOptions){
     $("q-prompt").textContent="Which species is this?";
@@ -1497,7 +1497,7 @@ function revealCard(c){
     S.sessionResults.push({species:c.species,common:c.common,quality:q,interval:c.srs.interval});
   }
   if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
-  show("btn-next");
+  show("btn-next");show("btn-ignore-link");
   const isLast=S.cardIndex+1>=S.deck.length&&(allCorrect||S.retryQueue.length<=1);
   $("btn-next").innerHTML=isLast&&S.retryQueue.length===0?"\u2713":"\u2192";
   $("btn-next").title=isLast&&S.retryQueue.length===0?"See results (Enter)":"Next (Enter)";
@@ -1539,7 +1539,7 @@ function handleMC(c,chosenIdx){
   }
   const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
-  show("btn-next");
+  show("btn-next");show("btn-ignore-link");
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
