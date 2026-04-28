@@ -296,7 +296,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
 <div id="screen-quiz" class="container hidden">
   <div class="top-bar">
-    <button id="btn-exit" style="background:none;border:none;color:#8688a5;font-size:18px;cursor:pointer;padding:0 4px;font-family:inherit" title="Exit to home">✕</button>
+    <button type="button" id="btn-exit" style="background:none;border:none;color:#8688a5;font-size:18px;cursor:pointer;padding:0 4px;font-family:inherit" title="Exit to home">✕</button>
     <span id="q-counter">1/5</span>
     <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
     <span id="round-info" style="display:flex;align-items:center;gap:6px"></span>
@@ -305,11 +305,11 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <p class="prompt" id="q-prompt">Identify this observation</p>
     <div class="carousel" id="carousel">
       <div class="carousel-track" id="carousel-track"></div>
-      <button class="carousel-nav carousel-prev" id="car-prev">‹</button>
-      <button class="carousel-nav carousel-next" id="car-next">›</button>
+      <button type="button" class="carousel-nav carousel-prev" id="car-prev">‹</button>
+      <button type="button" class="carousel-nav carousel-next" id="car-next">›</button>
       <div class="carousel-dots" id="carousel-dots"></div>
     </div>
-    <div class="map-strip hidden" id="map-strip"><div id="map-container" style="width:100%;height:100%"></div><div class="map-place-label" id="map-place-label"></div><button class="map-toggle" id="map-toggle">▲ Minimize</button></div>
+    <div class="map-strip hidden" id="map-strip"><div id="map-container" style="width:100%;height:100%"></div><div class="map-place-label" id="map-place-label"></div><button type="button" class="map-toggle" id="map-toggle">▲ Minimize</button></div>
     <div id="obs-notes" class="hidden" style="font-size:12px;color:#2a5e40;background:#e4f0ea;border:none;border-radius:8px;padding:7px 11px 8px;margin-bottom:8px;font-style:normal;line-height:1.4"><span style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#3d8b5e;display:block;margin-bottom:2px">Your notes</span><span id="obs-notes-text"></span></div>
     <form class="fields field-stage" id="quiz-form" autocomplete="off">
       <div class="field-group"><div class="field-label">Family <span class="hint">e.g. Rosaceae</span></div><div class="input-row"><input type="text" id="inp-family" class="answer-input" autocomplete="off" spellcheck="false"><button type="submit" class="btn-mini-arrow step-btn" data-step="family" title="Next (or press Enter)">→</button></div><div class="correct-answer" id="fb-family"></div></div>
@@ -331,11 +331,11 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <div id="etym-box" class="etym-note hidden"><div class="etym-label">📖 Etymology</div><div id="etym-text"></div></div>
     <div id="traits-box" class="etym-note hidden" style="background:rgba(34,211,238,.05);border-color:rgba(34,211,238,.15);max-height:260px;overflow-y:auto"><div class="etym-label" style="color:#22d3ee">🔬 Key Traits</div><div id="traits-text"></div></div>
     <div id="wiki-box" class="etym-note hidden" style="background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.15);max-height:200px;overflow-y:auto"><div class="etym-label" style="color:#fbbf24">🌿 About this species</div><div id="wiki-text" style="white-space:pre-wrap"></div></div>
-    <div id="btn-row-submit" class="hidden"><button class="btn-submit" id="btn-submit">→</button></div>
-    <button class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)">→</button>
+    <div id="btn-row-submit" class="hidden"><button type="button" class="btn-submit" id="btn-submit">→</button></div>
+    <button type="button" class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)">→</button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div>
-  <button id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:6px 0 2px;text-align:center;width:100%;flex-shrink:0">ignore this species</button>
+  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:6px 0 2px;text-align:center;width:100%;flex-shrink:0">ignore this species</button>
 </div>
 
 <div id="screen-results" class="container center hidden">
