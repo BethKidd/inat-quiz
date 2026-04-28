@@ -1462,7 +1462,6 @@ function showFieldStep(c,animateIn){
     $("inp-"+f).value="";$("inp-"+f).className="answer-input";$("inp-"+f).disabled=false;
     $("fb-"+f).textContent="";$("fb-"+f).className="correct-answer";$("fb-"+f).style.display="";
     const sb=fg.querySelector(".step-btn");if(sb)sb.style.display="";
-    const ir=fg.querySelector(".input-row");if(ir)ir.style.display="";
     const hint=fg.querySelector(".hint");
     const hd={family:"e.g. Rosaceae",species:"e.g. Rosa canina",common:"e.g. Dog Rose"};
     if(hint){hint.textContent=hd[f]||"";hint.className="hint";}
@@ -1488,14 +1487,15 @@ function revealCard(c){
     const result=(c._results||{})[f];
     const userVal=(c._answers||{})[f]||"";
     const hint=fg.querySelector(".hint");
-    const ir=fg.querySelector(".input-row");
-    if(ir)ir.style.display="none";
     fb.textContent="";fb.className="correct-answer";fb.style.display="none";
     if(result==="correct"||c[f+"Done"]){
+      inp.value=val;inp.className="answer-input correct";
       if(hint){hint.textContent="\u2713";hint.className="hint revealed-correct";}
     }else if(result==="wrong"){
+      inp.value=userVal;inp.className="answer-input wrong";
       if(hint){hint.textContent=val;hint.className="hint revealed-wrong";}
     }else{
+      inp.value="";inp.className="answer-input skipped";
       if(hint){hint.textContent=val;hint.className="hint revealed-skipped";}
     }
   });
