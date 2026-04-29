@@ -15,7 +15,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:linear-gradient(145deg,#0c0e1a,#151933,#1a1040);display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef}
+body{min-height:100vh;background:#f4f2ed;display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef}
 a{color:#818cf8;text-decoration:none}.container{max-width:540px;width:100%}.center{text-align:center}
 .logo-icon{font-size:48px;margin-bottom:8px}
 h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
@@ -251,6 +251,13 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .sp-ignored .sp-common-name{text-decoration:line-through}
 .btn-unignore{background:none;border:1px solid #c8ddd2;border-radius:6px;color:#6b8f78;font-size:10px;font-weight:600;cursor:pointer;padding:2px 8px;font-family:inherit;margin-top:3px;display:block}
 .btn-unignore:hover{border-color:#3d8b5e;color:#3d8b5e}
+/* correct overlay */
+#correct-overlay{position:fixed;inset:0;z-index:500;pointer-events:none;display:flex;align-items:center;justify-content:center}
+#correct-overlay.hidden{display:none!important}
+.correct-tick-wrap{width:96px;height:96px;border-radius:50%;background:#3d8b5e;display:flex;align-items:center;justify-content:center;animation:tickPop .45s cubic-bezier(.175,.885,.32,1.275) forwards,tickFade .35s ease 1s forwards}
+.correct-tick-wrap span{font-size:50px;color:#fff;line-height:1;margin-top:-2px}
+@keyframes tickPop{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
+@keyframes tickFade{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.85)}}
 .ignore-popup{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
 .ignore-popup.hidden{display:none!important}
 .ignore-popup-card{background:#1a1d30;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px 20px;text-align:center;max-width:280px;width:90%}
@@ -423,13 +430,15 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <div class="species-family-list" id="species-in-family"></div>
 </div>
 
+<div id="correct-overlay" class="hidden"><div class="correct-tick-wrap"><span>✓</span></div></div>
+
 <div id="ignore-popup" class="ignore-popup hidden">
   <div class="ignore-popup-card">
     <div class="ignore-popup-title">Ignore this species?</div>
     <div class="ignore-popup-sub" id="ignore-popup-name"></div>
     <div class="ignore-popup-btns">
-      <button class="ignore-cancel" id="ignore-cancel">Keep</button>
-      <button class="ignore-confirm" id="ignore-confirm">Ignore</button>
+      <button class="ignore-cancel" id="ignore-cancel" type="button" onclick="hide('ignore-popup')">Keep</button>
+      <button class="ignore-confirm" id="ignore-confirm" type="button" onclick="ignoreCurrentSpecies()">Ignore</button>
     </div>
   </div>
 </div>
@@ -439,6 +448,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 const API="https://api.inaturalist.org/v1";
 const SP_RANKS=new Set(["species","subspecies","variety","form","hybrid","infraspecies"]);
 const TREE_RANKS=["kingdom","phylum","class","order","family"];
+const collapsedNodes=new Set();
 const DB_NAME="inat_quiz_srs";const DB_VER=1;const STORE="cards";
 
 /* ── IndexedDB ── */
@@ -866,7 +876,6 @@ async function fetchTaxonomy(uniq){
   for(const o of uniq){o._family=fm[o.taxon.id]||null;o._treeRanks=tm[o.taxon.id]||{}}
 }
 
-const collapsedNodes=new Set();
 function buildPhyloTree(obs){
   const root={children:new Map()};
   for(const o of obs){
@@ -1487,6 +1496,15 @@ async function renderCard(){
   fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([...userPhotos,...mapSlide,...ex])}});
   const notes=o.description?.trim();
   if(notes){$("obs-notes-text").textContent=notes;show("obs-notes")}else{hide("obs-notes")}
+  requestAnimationFrame(()=>{
+    const car=document.querySelector("#q-card .carousel");if(!car)return;
+    const notesEl=$("obs-notes");
+    if(!notesEl.classList.contains("hidden")){
+      const excess=Math.max(0,notesEl.offsetHeight-52);
+      if(excess>0){car.style.height=Math.max(70,car.offsetWidth*0.6-excess)+"px";return}
+    }
+    car.style.height="";
+  });
   hide("etym-box");$("etym-text").textContent="";hide("wiki-box");$("wiki-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("btn-next");hide("retry-notice");hide("btn-ignore-link");
   // Notes stay visible throughout
   if(c._mcMode&&c._mcOptions){
@@ -1508,6 +1526,7 @@ async function renderCard(){
   }
   hide("trait-panel");
   $("q-card").classList.remove("fade-out");
+  $("q-card").scrollTop=0;
 }
 
 function showFieldStep(c,animateIn){
@@ -1571,6 +1590,7 @@ function revealCard(c){
     c._firstQuality=q;
     sm2(c.srs,q);dbPut(c.srs);
     S.sessionResults.push({species:c.species,common:c.common,quality:q,interval:c.srs.interval});
+    if(q===5){show("correct-overlay");setTimeout(()=>hide("correct-overlay"),1400);}
   }
   if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
@@ -1663,9 +1683,10 @@ async function ignoreCurrentSpecies(){
   record.ignored=true;
   await dbPut(record);
   c.srs=record;
-  // Remove this species from deck and retry queue
+  // Remove from deck, retry queue, and allObs so it doesn't reappear this session
   S.deck.splice(S.cardIndex,1);
   S.retryQueue=S.retryQueue.filter(r=>r.species!==c.species);
+  S.allObs=S.allObs.filter(o=>o.taxon.name!==c.species);
   S.totalCards=Math.max(0,S.totalCards-1);
   hide("ignore-popup");
   if(S.deck.length===0&&S.retryQueue.length===0){results();return}
