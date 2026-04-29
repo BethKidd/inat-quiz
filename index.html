@@ -201,6 +201,19 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-setup .btn-secondary{color:#3d8b5e;border:1.5px solid #c8ddd2;background:transparent;border-radius:12px}
 #screen-setup .footer-text{color:#6b8f78}
 #screen-setup .error{color:#dc2626}
+/* ── Phylogenetic tree ── */
+.tree-branch-row{display:flex;align-items:center;gap:6px;padding:9px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;touch-action:manipulation}
+.tree-branch-row:active{background:#e8f4ec}
+.tree-chevron{color:#6b9e82;font-size:11px;width:14px;text-align:center;flex-shrink:0}
+.tree-rank-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#a8c4b4;flex-shrink:0;min-width:44px}
+.tree-branch-name{font-size:14px;color:#1c2b22;font-style:italic;flex:1}
+.tree-family-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;background:#fff;touch-action:manipulation}
+.tree-family-row:active{background:#f0fdf4}
+.tree-fam-name{font-size:14px;font-weight:600;color:#1c2b22;font-style:italic;flex:1}
+.tree-fam-meta{font-size:12px;color:#6b8f78;white-space:nowrap}
+.tree-due{color:#3d8b5e;font-weight:600}
+.tree-arrow{color:#a8c4b4;font-size:16px;margin-left:2px;flex-shrink:0}
+.tree-children{border-left:2px solid #d8ece2}
 /* ── Home & Family screens ── */
 #screen-home,#screen-family{padding-bottom:32px;background:#f4f2ed;min-height:100vh}
 .home-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 14px 0}
@@ -425,6 +438,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 <script>
 const API="https://api.inaturalist.org/v1";
 const SP_RANKS=new Set(["species","subspecies","variety","form","hybrid","infraspecies"]);
+const TREE_RANKS=["kingdom","phylum","class","order","family"];
 const DB_NAME="inat_quiz_srs";const DB_VER=1;const STORE="cards";
 
 /* ── IndexedDB ── */
@@ -782,9 +796,7 @@ async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-ms
     console.log(`After filtering: ${good.length} species-level obs with photos`);
     const uniq=dedupe(good);if(uniq.length<4){showErr(`Only ${uniq.length} species-level observations found. Need at least 4.`);return}
     $("loading-text").textContent="Fetching taxonomy\u2026";
-    const tids=[...new Set(uniq.map(o=>o.taxon.id))],fm={};
-    for(let i=0;i<tids.length;i+=30){const b=tids.slice(i,i+30);const tr=await fetch(`${API}/taxa/${b.join(",")}`);if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){const f=(t.ancestors||[]).find(a=>a.rank==="family");if(f)fm[t.id]=f.name}}}
-    for(const o of uniq)o._family=fm[o.taxon.id]||null;
+    await fetchTaxonomy(uniq);
     S.allObs=uniq;await buildDeck(uniq,dueOnly);
   }catch(e){showErr(`Error: ${e.message}`)}}
 function updateHomeMainSub(){
@@ -830,12 +842,74 @@ async function loadHome(){
     const good=all.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
     const uniq=dedupe(good);
     $("loading-text").textContent="Fetching taxonomy…";
-    const tids=[...new Set(uniq.map(o=>o.taxon.id))],fm={};
-    for(let i=0;i<tids.length;i+=30){const b=tids.slice(i,i+30);try{const tr=await fetch(`${API}/taxa/${b.join(",")}`);if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){const f=(t.ancestors||[]).find(a=>a.rank==="family");if(f)fm[t.id]=f.name}}}catch{}}
-    for(const o of uniq)o._family=fm[o.taxon.id]||null;
+    await fetchTaxonomy(uniq);
     S.allObs=uniq;S.csvMode=false;
     await showHome();
   }catch(e){showScreen("setup")}
+}
+
+async function fetchTaxonomy(uniq){
+  const tids=[...new Set(uniq.map(o=>o.taxon.id))];
+  const fm={},tm={};
+  for(let i=0;i<tids.length;i+=30){
+    const b=tids.slice(i,i+30);
+    try{
+      const tr=await fetch(`${API}/taxa/${b.join(",")}`);
+      if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){
+        const anc={};
+        for(const r of TREE_RANKS){const a=(t.ancestors||[]).find(x=>x.rank===r);if(a)anc[r]=a.name;}
+        if(TREE_RANKS.includes(t.rank))anc[t.rank]=t.name;
+        fm[t.id]=anc.family||null;tm[t.id]=anc;
+      }}
+    }catch{}
+  }
+  for(const o of uniq){o._family=fm[o.taxon.id]||null;o._treeRanks=tm[o.taxon.id]||{}}
+}
+
+const collapsedNodes=new Set();
+function buildPhyloTree(obs){
+  const root={children:new Map()};
+  for(const o of obs){
+    const tr=o._treeRanks||{};
+    let node=root;
+    for(const r of TREE_RANKS){
+      const name=tr[r]||"(Unknown)";
+      if(!node.children.has(name))node.children.set(name,{name,rank:r,children:new Map(),obs:[]});
+      node=node.children.get(name);
+      if(r==="family")node.obs.push(o);
+    }
+  }
+  return root;
+}
+function renderPhyloNode(child,depth,srsMap,now){
+  const wrap=document.createElement("div");
+  if(child.rank==="family"){
+    const row=document.createElement("div");
+    row.className="tree-family-row";
+    row.style.paddingLeft=`${14+depth*16}px`;
+    let nDue=0;for(const o of child.obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)nDue++;}
+    row.innerHTML=`<span class="tree-fam-name">${esc(child.name)}</span><span class="tree-fam-meta">${child.obs.length}${nDue>0?` &middot; <span class="tree-due">${nDue} due</span>`:""}</span><span class="tree-arrow">›</span>`;
+    row.addEventListener("click",()=>showFamily(child.name,child.obs,srsMap));
+    wrap.appendChild(row);
+  }else{
+    const nodeId=`${child.rank}:${child.name}`;
+    const isCollapsed=collapsedNodes.has(nodeId);
+    const row=document.createElement("div");
+    row.className="tree-branch-row";
+    row.style.paddingLeft=`${14+depth*16}px`;
+    row.innerHTML=`<span class="tree-chevron">${isCollapsed?"▸":"▾"}</span><span class="tree-rank-tag">${child.rank}</span><span class="tree-branch-name">${esc(child.name)}</span>`;
+    const childWrap=document.createElement("div");
+    childWrap.className="tree-children";
+    childWrap.style.display=isCollapsed?"none":"";
+    for(const[,gc]of child.children)childWrap.appendChild(renderPhyloNode(gc,depth+1,srsMap,now));
+    row.addEventListener("click",()=>{
+      const col=collapsedNodes.has(nodeId);
+      if(col){collapsedNodes.delete(nodeId);childWrap.style.display="";row.querySelector(".tree-chevron").textContent="▾"}
+      else{collapsedNodes.add(nodeId);childWrap.style.display="none";row.querySelector(".tree-chevron").textContent="▸"}
+    });
+    wrap.appendChild(row);wrap.appendChild(childWrap);
+  }
+  return wrap;
 }
 
 async function showHome(){
@@ -850,27 +924,9 @@ async function showHome(){
   const studyBtn=$("btn-study-due-home");
   if(dueCount>0){studyBtn.textContent=`Study ${dueCount} due →`;studyBtn.style.opacity="1";studyBtn.disabled=false}
   else{studyBtn.textContent="All caught up! ✔";studyBtn.style.opacity=".5";studyBtn.disabled=true}
-  // Build family map
-  const families=new Map();
-  for(const o of S.allObs){const fam=o._family||"(Unknown)";if(!families.has(fam))families.set(fam,[]);families.get(fam).push(o)}
-  const sorted=[...families.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
   const list=$("family-list");list.innerHTML="";
-  for(const[fam,obs]of sorted){
-    let nNew=0,nLearning=0,nReview=0,nMature=0,nDue=0;
-    for(const o of obs){
-      const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
-      if(!srs||srs.totalReviews===0)nNew++;
-      else if(srs.interval>=10080)nMature++;
-      else if(srs.interval>=DAY)nReview++;
-      else nLearning++;
-      if(!srs||srs.nextReview<=now)nDue++;
-    }
-    const t=obs.length;const pct=n=>t?Math.round(n/t*100):0;
-    const card=document.createElement("div");card.className="family-card";
-    card.innerHTML=`<div class="fam-row"><div><div class="fam-name">${esc(fam)}</div><div class="fam-count">${t} species${nDue>0?` &middot; <span class="fam-due">${nDue} due</span>`:""}</div></div><div class="fam-arrow">›</div></div><div class="fam-bar"><div class="fam-seg seg-mature" style="width:${pct(nMature)}%"></div><div class="fam-seg seg-review" style="width:${pct(nReview)}%"></div><div class="fam-seg seg-learning" style="width:${pct(nLearning)}%"></div><div class="fam-seg seg-new" style="width:${pct(nNew)}%"></div></div>`;
-    card.addEventListener("click",()=>showFamily(fam,obs,srsMap));
-    list.appendChild(card);
-  }
+  const tree=buildPhyloTree(S.allObs);
+  for(const[,child]of tree.children)list.appendChild(renderPhyloNode(child,0,srsMap,now));
   showScreen("home");
 }
 
@@ -951,14 +1007,15 @@ async function handleCSV(){
     }
     console.log(`CSV: searched ${names.length} names, found ${taxonMap.size} with photos`);
     $("loading-text").textContent=`Fetching taxonomy for ${taxonMap.size} species\u2026`;
-    const tids=[...taxonMap.keys()];const fm={};
+    const tids=[...taxonMap.keys()];const fm={},tm={};
     for(let i=0;i<tids.length;i+=30){
       const b=tids.slice(i,i+30);
       try{
         const tr=await fetch(`${API}/taxa/${b.join(",")}`);
         if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){
-          const f=(t.ancestors||[]).find(a=>a.rank==="family");
-          if(f)fm[t.id]=f.name;
+          const anc={};for(const r of TREE_RANKS){const a=(t.ancestors||[]).find(x=>x.rank===r);if(a)anc[r]=a.name;}
+          if(TREE_RANKS.includes(t.rank))anc[t.rank]=t.name;
+          fm[t.id]=anc.family||null;tm[t.id]=anc;
           if(t.default_photo)taxonMap.set(t.id,{...taxonMap.get(t.id),...t});
         }}
       }catch{}
@@ -975,7 +1032,7 @@ async function handleCSV(){
         photos:[{url:photoUrl.replace(/\/medium\./,"/square.").replace(/\/original\./,"/square.")}],
         user:{login:photo.attribution||"iNaturalist"},
         place_guess:"",observed_on:"",observed_on_details:{},geojson:null,location:null,
-        _family:fm[taxon.id]||null
+        _family:fm[taxon.id]||null,_treeRanks:tm[taxon.id]||{}
       });
     }
     if(obs.length<4){showErr(`Only found ${obs.length} species with photos on iNaturalist. Need at least 4.`);return}
@@ -1265,9 +1322,7 @@ async function doStartTraits(){
       }
       const good=allResults.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
       const uniq=dedupe(good);
-      const tids=[...new Set(uniq.map(o=>o.taxon.id))],fm={};
-      for(let i=0;i<tids.length;i+=30){const b=tids.slice(i,i+30);const tr=await fetch(`${API}/taxa/${b.join(",")}`);if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){const f=(t.ancestors||[]).find(a=>a.rank==="family");if(f)fm[t.id]=f.name}}}
-      for(const o of uniq)o._family=fm[o.taxon.id]||null;
+      await fetchTaxonomy(uniq);
       S.allObs=uniq;S.csvMode=false;
     }catch(e){showErr(`Error: ${e.message}`);return}
   }
