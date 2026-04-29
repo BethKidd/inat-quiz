@@ -225,7 +225,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 /* family leaf */
 .tree-family-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;background:#fff;touch-action:manipulation}
 .tree-family-row:active{background:#f0fdf4}
-.tree-fam-name{font-size:14px;font-weight:600;color:#1c2b22;font-style:italic;flex:1;font-family:'Lora',Georgia,serif}
+.tree-fam-name{font-size:13px;font-weight:400;color:#3d5c43;font-style:italic;flex:1;font-family:inherit}
 .tree-fam-meta{font-size:12px;color:#6b8f78;white-space:nowrap}
 .tree-due{color:#3d8b5e;font-weight:600}
 .tree-arrow{color:#a8c4b4;font-size:16px;margin-left:2px;flex-shrink:0}
@@ -918,7 +918,7 @@ function renderPhyloNode(child,depth,srsMap,now){
   if(child.rank==="family"){
     const row=document.createElement("div");
     row.className="tree-family-row";
-    row.style.paddingLeft=`${14+depth*16}px`;
+    row.style.paddingLeft=`${14+depth*20}px`;
     let nDue=0;for(const o of child.obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)nDue++;}
     row.innerHTML=`<span class="tree-fam-name">${esc(child.name)}</span><span class="tree-fam-meta">${child.obs.length}${nDue>0?` &middot; <span class="tree-due">${nDue} due</span>`:""}</span><span class="tree-arrow">›</span>`;
     row.addEventListener("click",()=>showFamily(child.name,child.obs,srsMap));
@@ -928,7 +928,7 @@ function renderPhyloNode(child,depth,srsMap,now){
     const isCollapsed=collapsedNodes.has(nodeId);
     const row=document.createElement("div");
     row.className=`tree-branch-row tree-rank-${child.rank}`;
-    row.style.paddingLeft=`${14+depth*16}px`;
+    row.style.paddingLeft=`${14+depth*20}px`;
     row.innerHTML=`<span class="tree-chevron">${isCollapsed?"▸":"▾"}</span><span class="tree-rank-tag">${child.rank}</span><span class="tree-branch-name">${esc(child.name)}</span>`;
     if(child.rank==="order"){
       const studyBtn=document.createElement("button");
