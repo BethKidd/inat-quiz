@@ -119,6 +119,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz{background:#f4f2ed}
 #screen-quiz .q-card{background:#fff;border:none;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);padding:16px 16px 24px;margin:8px 10px 0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #screen-quiz .prompt{font-family:'Lora',Georgia,serif;font-style:normal;font-weight:600;font-size:17px;color:#1c2b22;margin-bottom:14px}
+.prompt-label{color:#3d8b5e}
 #screen-quiz .progress-track{background:#d6ebe1}
 #screen-quiz .progress-fill{background:linear-gradient(90deg,#3d8b5e,#52a876)}
 #screen-quiz .round-badge{background:#e4f0ea;color:#2a5e40;border:none}
@@ -511,7 +512,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:""};
 const photoCache=new Map(),etymCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 
@@ -844,7 +845,7 @@ async function startFromHome(practiseMode){
   const un=localStorage.getItem("inat_quiz_user");
   if(!un){$("home-main-err").textContent="Add your iNaturalist username in Settings first.";show("home-main-err");return}
   hide("home-main-err");
-  S.csvMode=false;S.traitMode=false;
+  S.csvMode=false;S.traitMode=false;S.deckLabel="";
   if(S.allObs.length&&S.currentUser===un.toLowerCase()){
     // Obs already loaded — go straight to deck
     await buildDeck(S.allObs,practiseMode);
@@ -934,7 +935,8 @@ function renderPhyloNode(child,depth,srsMap,now){
     let orderCNHtml="";
     if(child.rank==="order"){
       // Shorten verbose CN to first noun phrase before any comma
-      const short=cn=>cn.split(/,| and /)[0].replace(/\s*(family|Family)$/,"").trim();
+      const toTitle=s=>s.replace(/\b\w/g,c=>c.toUpperCase());
+      const short=cn=>toTitle(cn.split(/,| and /)[0].replace(/\s*(family|Family)$/,"").trim());
       const cns=[...new Set([...child.children.values()].map(f=>f.cn&&short(f.cn)).filter(Boolean))];
       if(cns.length===1)orderCNHtml=`<span class="tree-order-cn">(${esc(cns[0])})</span>`;
       else if(cns.length===2)orderCNHtml=`<span class="tree-order-cn">(${esc(cns[0])} and ${esc(cns[1])})</span>`;
@@ -947,6 +949,7 @@ function renderPhyloNode(child,depth,srsMap,now){
       studyBtn.textContent="Study";
       studyBtn.addEventListener("click",e=>{
         e.stopPropagation();
+        S.deckLabel=child.name;
         const orderObs=collectDescendantObs(child);
         buildDeck(orderObs,false);
       });
@@ -1021,7 +1024,7 @@ function showFamily(fam,obs,srsMap){
   showScreen("family");
 }
 
-function startQuizFromHome(){S.csvMode=false;S.traitMode=false;buildDeck(S.allObs,false)}
+function startQuizFromHome(){S.csvMode=false;S.traitMode=false;S.deckLabel="";buildDeck(S.allObs,false)}
 function startQuizFromFamily(){
   S.csvMode=false;S.traitMode=false;
   const filtered=_familyObs;
@@ -1528,7 +1531,7 @@ async function renderCard(){
   const ds=o.observed_on_details?.date||o.observed_on||"";
   let dateStr="";
   try{dateStr=ds?new Date(ds).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"";}catch{dateStr=ds}
-  $("q-prompt").textContent="Identify this observation";
+  $("q-prompt").innerHTML=S.deckLabel?`<span class="prompt-label">${esc(S.deckLabel)}</span>: Identify this observation`:"Identify this observation";
   killMap();
   const userPhotos=(o.photos||[]).map(p=>({type:"photo",url:(p.url||"").replace("square","medium"),observer:"You",yours:true}));
   const lat=parseFloat(o.geojson?.coordinates?.[1]||o.location?.split(",")[0]),lng=parseFloat(o.geojson?.coordinates?.[0]||o.location?.split(",")[1]);
