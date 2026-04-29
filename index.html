@@ -920,7 +920,7 @@ function renderPhyloNode(child,depth,srsMap,now){
   if(child.rank==="family"){
     const row=document.createElement("div");
     row.className="tree-family-row";
-    row.style.paddingLeft=`${14+2*10+(depth-2)*26+10}px`;
+    row.style.paddingLeft=`${14+2*10+(depth-2)*26+70}px`;
     let nDue=0;for(const o of child.obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)nDue++;}
     row.innerHTML=`<span class="tree-fam-name">${esc(child.name)}</span><span class="tree-fam-meta">${child.obs.length}${nDue>0?` &middot; <span class="tree-due">${nDue} due</span>`:""}</span><span class="tree-arrow">›</span>`;
     row.addEventListener("click",()=>showFamily(child.name,child.obs,srsMap));

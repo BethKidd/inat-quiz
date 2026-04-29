@@ -1,4 +1,4 @@
-const CACHE = 'inat-quiz-v36';
+const CACHE = 'inat-quiz-v37';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
