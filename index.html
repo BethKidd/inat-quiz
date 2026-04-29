@@ -1599,7 +1599,8 @@ function revealCard(c){
   $("btn-next").title=isLast&&S.retryQueue.length===0?"See results (Enter)":"Next (Enter)";
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`}
+  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  setTimeout(()=>$("btn-next").focus(),50);}
 
 function handleMC(c,chosenIdx){
   if(c._revealed)return;c._revealed=true;
@@ -1639,6 +1640,7 @@ function handleMC(c,chosenIdx){
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  setTimeout(()=>$("btn-next").focus(),50);
 }
 
 function check(){
