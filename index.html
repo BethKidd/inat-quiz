@@ -202,18 +202,36 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-setup .footer-text{color:#6b8f78}
 #screen-setup .error{color:#dc2626}
 /* ── Phylogenetic tree ── */
-.tree-branch-row{display:flex;align-items:center;gap:6px;padding:9px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;touch-action:manipulation}
+.tree-branch-row{display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;touch-action:manipulation;padding:10px 14px}
 .tree-branch-row:active{background:#e8f4ec}
-.tree-chevron{color:#6b9e82;font-size:11px;width:14px;text-align:center;flex-shrink:0}
-.tree-rank-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#a8c4b4;flex-shrink:0;min-width:44px}
-.tree-branch-name{font-size:14px;color:#1c2b22;font-style:italic;flex:1}
+.tree-chevron{color:#6b9e82;font-size:11px;width:14px;text-align:center;flex-shrink:0;opacity:.7}
+.tree-rank-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;flex-shrink:0;min-width:46px}
+.tree-branch-name{flex:1}
+/* kingdom */
+.tree-rank-kingdom{background:#1c2b22;border-bottom:none;padding:13px 16px}
+.tree-rank-kingdom .tree-rank-tag{color:#6aab85}
+.tree-rank-kingdom .tree-branch-name{font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#f4f2ed;font-style:normal}
+.tree-rank-kingdom .tree-chevron{color:#6aab85;opacity:1}
+/* phylum */
+.tree-rank-phylum{background:#f0f7f3}
+.tree-rank-phylum .tree-rank-tag{color:#3d8b5e}
+.tree-rank-phylum .tree-branch-name{font-size:15px;font-weight:700;color:#1c2b22;font-style:italic}
+/* class */
+.tree-rank-class .tree-rank-tag{color:#4a9c6e}
+.tree-rank-class .tree-branch-name{font-size:14px;font-weight:600;color:#1c2b22;font-style:italic}
+/* order */
+.tree-rank-order .tree-rank-tag{color:#6b9e82}
+.tree-rank-order .tree-branch-name{font-size:13px;font-weight:500;color:#3d5c43;font-style:italic;letter-spacing:.01em}
+/* family leaf */
 .tree-family-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;background:#fff;touch-action:manipulation}
 .tree-family-row:active{background:#f0fdf4}
-.tree-fam-name{font-size:14px;font-weight:600;color:#1c2b22;font-style:italic;flex:1}
+.tree-fam-name{font-size:14px;font-weight:600;color:#1c2b22;font-style:italic;flex:1;font-family:'Lora',Georgia,serif}
 .tree-fam-meta{font-size:12px;color:#6b8f78;white-space:nowrap}
 .tree-due{color:#3d8b5e;font-weight:600}
 .tree-arrow{color:#a8c4b4;font-size:16px;margin-left:2px;flex-shrink:0}
-.tree-children{border-left:2px solid #d8ece2}
+.tree-children{border-left:3px solid #d8ece2;margin-left:0}
+.tree-study-btn{margin-left:auto;flex-shrink:0;background:#eaf5ee;border:1px solid #b0d9c0;border-radius:8px;color:#2e7d52;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.tree-study-btn:active{background:#d4eedb}
 /* ── Home & Family screens ── */
 #screen-home,#screen-family{padding-bottom:32px;background:#f4f2ed;min-height:100vh}
 .home-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 14px 0}
@@ -890,6 +908,11 @@ function buildPhyloTree(obs){
   }
   return root;
 }
+function collectDescendantObs(node){
+  const result=[];
+  function walk(n){if(n.obs)result.push(...n.obs);for(const[,c]of n.children)walk(c);}
+  walk(node);return result;
+}
 function renderPhyloNode(child,depth,srsMap,now){
   const wrap=document.createElement("div");
   if(child.rank==="family"){
@@ -904,9 +927,20 @@ function renderPhyloNode(child,depth,srsMap,now){
     const nodeId=`${child.rank}:${child.name}`;
     const isCollapsed=collapsedNodes.has(nodeId);
     const row=document.createElement("div");
-    row.className="tree-branch-row";
+    row.className=`tree-branch-row tree-rank-${child.rank}`;
     row.style.paddingLeft=`${14+depth*16}px`;
     row.innerHTML=`<span class="tree-chevron">${isCollapsed?"▸":"▾"}</span><span class="tree-rank-tag">${child.rank}</span><span class="tree-branch-name">${esc(child.name)}</span>`;
+    if(child.rank==="order"){
+      const studyBtn=document.createElement("button");
+      studyBtn.className="tree-study-btn";
+      studyBtn.textContent="Study";
+      studyBtn.addEventListener("click",e=>{
+        e.stopPropagation();
+        const orderObs=collectDescendantObs(child);
+        buildDeck(orderObs,false);
+      });
+      row.appendChild(studyBtn);
+    }
     const childWrap=document.createElement("div");
     childWrap.className="tree-children";
     childWrap.style.display=isCollapsed?"none":"";
