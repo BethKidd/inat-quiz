@@ -222,6 +222,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 /* order */
 .tree-rank-order .tree-rank-tag{color:#6b9e82}
 .tree-rank-order .tree-branch-name{font-size:13px;font-weight:500;color:#3d5c43;font-style:italic;letter-spacing:.01em}
+.tree-name-group{display:flex;flex-direction:column;flex:1;min-width:0}
+.tree-order-cn{font-size:11px;color:#7a9e8a;font-style:normal;font-weight:400;margin-top:1px}
 /* family leaf */
 .tree-family-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;background:#fff;touch-action:manipulation}
 .tree-family-row:active{background:#f0fdf4}
@@ -885,13 +887,13 @@ async function fetchTaxonomy(uniq){
       const tr=await fetch(`${API}/taxa/${b.join(",")}`);
       if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){
         const anc={};
-        for(const r of TREE_RANKS){const a=(t.ancestors||[]).find(x=>x.rank===r);if(a)anc[r]=a.name;}
+        for(const r of TREE_RANKS){const a=(t.ancestors||[]).find(x=>x.rank===r);if(a){anc[r]=a.name;if(r==="family")anc.familyCN=a.preferred_common_name||null;}}
         if(TREE_RANKS.includes(t.rank))anc[t.rank]=t.name;
         fm[t.id]=anc.family||null;tm[t.id]=anc;
       }}
     }catch{}
   }
-  for(const o of uniq){o._family=fm[o.taxon.id]||null;o._treeRanks=tm[o.taxon.id]||{}}
+  for(const o of uniq){o._family=fm[o.taxon.id]||null;o._treeRanks=tm[o.taxon.id]||{};o._familyCN=tm[o.taxon.id]?.familyCN||null;}
 }
 
 function buildPhyloTree(obs){
@@ -903,7 +905,7 @@ function buildPhyloTree(obs){
       const name=tr[r]||"(Unknown)";
       if(!node.children.has(name))node.children.set(name,{name,rank:r,children:new Map(),obs:[]});
       node=node.children.get(name);
-      if(r==="family")node.obs.push(o);
+      if(r==="family"){node.obs.push(o);if(!node.cn&&o._familyCN)node.cn=o._familyCN;}
     }
   }
   return root;
@@ -918,7 +920,7 @@ function renderPhyloNode(child,depth,srsMap,now){
   if(child.rank==="family"){
     const row=document.createElement("div");
     row.className="tree-family-row";
-    row.style.paddingLeft=`${14+depth*20}px`;
+    row.style.paddingLeft=`${14+depth*26+10}px`;
     let nDue=0;for(const o of child.obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)nDue++;}
     row.innerHTML=`<span class="tree-fam-name">${esc(child.name)}</span><span class="tree-fam-meta">${child.obs.length}${nDue>0?` &middot; <span class="tree-due">${nDue} due</span>`:""}</span><span class="tree-arrow">›</span>`;
     row.addEventListener("click",()=>showFamily(child.name,child.obs,srsMap));
@@ -928,8 +930,17 @@ function renderPhyloNode(child,depth,srsMap,now){
     const isCollapsed=collapsedNodes.has(nodeId);
     const row=document.createElement("div");
     row.className=`tree-branch-row tree-rank-${child.rank}`;
-    row.style.paddingLeft=`${14+depth*20}px`;
-    row.innerHTML=`<span class="tree-chevron">${isCollapsed?"▸":"▾"}</span><span class="tree-rank-tag">${child.rank}</span><span class="tree-branch-name">${esc(child.name)}</span>`;
+    row.style.paddingLeft=`${14+depth*26}px`;
+    let orderCNHtml="";
+    if(child.rank==="order"){
+      // Shorten verbose CN to first noun phrase before any comma
+      const short=cn=>cn.split(/,| and /)[0].replace(/\s*(family|Family)$/,"").trim();
+      const cns=[...new Set([...child.children.values()].map(f=>f.cn&&short(f.cn)).filter(Boolean))];
+      if(cns.length===1)orderCNHtml=`<span class="tree-order-cn">(${esc(cns[0])})</span>`;
+      else if(cns.length===2)orderCNHtml=`<span class="tree-order-cn">(${esc(cns[0])} and ${esc(cns[1])})</span>`;
+      else if(cns.length>2)orderCNHtml=`<span class="tree-order-cn">(${esc(cns[0])}, ${esc(cns[1])}, and Allies)</span>`;
+    }
+    row.innerHTML=`<span class="tree-chevron">${isCollapsed?"▸":"▾"}</span><span class="tree-rank-tag">${child.rank}</span><span class="tree-name-group"><span class="tree-branch-name">${esc(child.name)}</span>${orderCNHtml}</span>`;
     if(child.rank==="order"){
       const studyBtn=document.createElement("button");
       studyBtn.className="tree-study-btn";
