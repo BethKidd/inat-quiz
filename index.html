@@ -8,8 +8,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Nomina Naturae">
-<title>Nomina Naturae</title>
+<meta name="apple-mobile-web-app-title" content="Nomina Naturæ">
+<title>Nomina Naturæ</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Lora:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -268,6 +268,11 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .home-title{font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;line-height:1.1}
 .home-sub{font-size:12px;color:#6b8f78;margin-top:3px}
 .home-settings-btn{background:#fff;border:1px solid #c8ddd2;border-radius:10px;color:#3d8b5e;font-size:12px;cursor:pointer;padding:6px 10px;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.home-nav-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#3d8b5e;border:none;border-radius:8px;padding:11px 32px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:background 0.1s;letter-spacing:0.01em}
+.home-nav-btn:active{background:#2a6342}
+.home-leaf-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#82c97a;border:none;border-radius:8px;padding:7px 20px;min-width:90px;text-align:center;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.10);transition:background 0.1s;letter-spacing:0.01em}
+.home-leaf-btn:active{background:#4fa070}
+.home-leaf-btn:active{color:#ff6a00}
 .home-due-bar{padding:10px 14px 0}
 #btn-study-due-home{background:#3d8b5e;border-color:#3d8b5e}
 .family-list{padding:0 14px;margin-top:10px}
@@ -321,21 +326,34 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 <body>
 
 <!-- Main home screen -->
-<div id="screen-home-main" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
-  <div style="position:absolute;top:16px;right:16px">
-    <button id="btn-open-settings" style="background:#fff;border:1px solid #c8ddd2;border-radius:10px;color:#3d8b5e;font-size:18px;cursor:pointer;width:38px;height:38px;display:flex;align-items:center;justify-content:center">⚙</button>
+<div id="screen-home-main" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;overflow:hidden">
+  <!-- Top-right: signed-in label + settings -->
+  <div style="position:absolute;top:18px;right:16px;text-align:right">
+    <p id="home-main-sub" style="font-size:11px;color:#6b8f78;margin-bottom:8px"></p>
+    <button id="btn-open-settings" style="background:none;border:none;cursor:pointer;padding:0;display:block;margin-left:auto">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b8f78" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
   </div>
-  <div style="text-align:center;margin-bottom:40px">
-    <div style="font-size:52px;margin-bottom:8px">🍃</div>
-    <h1 style="font-family:'Lora',Georgia,serif;font-size:32px;font-weight:700;letter-spacing:-0.01em;color:#1c2b22">Nomina Naturae</h1>
-    <p id="home-main-sub" style="font-size:13px;color:#6b8f78;margin-top:6px"></p>
+  <!-- Cladogram SVG decoration -->
+  <svg id="home-tree-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible" fill="none"></svg>
+  <!-- Title block — positioned by JS -->
+  <div id="home-title-block" style="position:absolute">
+    <h1 style="font-family:'Lora',Georgia,serif;font-size:clamp(34px,11vw,52px);font-weight:700;color:#1c2b22;line-height:1.1;letter-spacing:-0.01em">Nomina<br>Naturæ</h1>
   </div>
-  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px">
-    <button id="btn-learn" class="btn-primary" style="margin-top:0;font-size:18px;padding:18px 0;border-radius:16px;background:#3d8b5e;border:none">Learn</button>
-    <button id="btn-terms" style="margin-top:0;font-size:18px;padding:18px 0;border-radius:16px;background:transparent;border:1.5px solid #3d8b5e;color:#3d8b5e;font-weight:700;font-family:inherit;cursor:pointer;width:100%">Terms</button>
-    <button id="btn-families-main" style="margin-top:0;font-size:18px;padding:18px 0;border-radius:16px;background:transparent;border:1.5px solid #3d8b5e;color:#3d8b5e;font-weight:700;font-family:inherit;cursor:pointer;width:100%">Taxa</button>
+  <!-- Buttons — positioned by JS -->
+  <div id="home-learn-wrap" style="position:absolute;left:50%;transform:translateX(-50%)">
+    <button id="btn-learn" class="home-nav-btn">Learn</button>
   </div>
-  <p id="home-main-err" class="error hidden" style="margin-top:16px"></p>
+  <div id="home-taxa-wrap" style="position:absolute">
+    <button id="btn-families-main" class="home-leaf-btn">Taxa</button>
+  </div>
+  <div id="home-terms-wrap" style="position:absolute">
+    <button id="btn-terms" class="home-leaf-btn">Terms</button>
+  </div>
+  <p id="home-main-err" class="error hidden" style="position:absolute;bottom:24px;left:0;right:0;text-align:center;padding:0 24px"></p>
 </div>
 
 <!-- Settings screen -->
@@ -472,7 +490,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 <div id="screen-home" class="container hidden">
   <div class="home-header">
     <div>
-      <div class="home-title" id="home-title">Nomina Naturae</div>
+      <div class="home-title" id="home-title">Nomina Naturæ</div>
       <div class="home-sub" id="home-sub"></div>
     </div>
     <button class="home-settings-btn" id="btn-home-back">← Home</button>
@@ -573,7 +591,7 @@ function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Ma
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
 function hide(id){$(id).classList.add("hidden")}
-function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms"].forEach(s=>s==="screen-"+n?show(s):hide(s))}
+function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms"].forEach(s=>s==="screen-"+n?show(s):hide(s));if(n==="home-main"){updateHomeMainSub();requestAnimationFrame(layoutHomeMain);}}
 function esc(s){if(!s)return"";const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").replace(/[-–—]/g," ").replace(/[^a-z0-9' ]/g,"").replace(/\s+/g," ")}
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
@@ -923,7 +941,60 @@ async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-ms
   }catch(e){showErr(`Error: ${e.message}`)}}
 function updateHomeMainSub(){
   const un=localStorage.getItem("inat_quiz_user")||"";
-  $("home-main-sub").textContent=un?`Signed in as ${un}`:"Add your iNaturalist username in Settings";
+  $("home-main-sub").textContent=un?`Signed in as ${un}`:"";
+}
+function layoutHomeMain(){
+  const h=window.innerHeight,w=window.innerWidth;
+  // Position Learn (centred) and Terms (right-anchored) first
+  $("home-learn-wrap").style.top=Math.round(h*0.53)+"px";
+  const taxaTop=Math.round(h*0.70);
+  $("home-terms-wrap").style.top=taxaTop+"px";
+  $("home-terms-wrap").style.right=Math.round(w*0.06)+"px";
+  $("home-taxa-wrap").style.top=taxaTop+"px";
+  $("home-title-block").style.top=Math.round(h*0.33)+"px";
+  $("home-title-block").style.right="64px";
+  // After first rAF the positions are committed; measure and mirror Taxa symmetrically
+  requestAnimationFrame(()=>{
+    const learn=$("btn-learn").getBoundingClientRect();
+    const terms=$("btn-terms").getBoundingClientRect();
+    const taxaEl=$("btn-families-main");
+    const learnMidX=learn.left+learn.width/2;
+    const termsMidX=terms.left+terms.width/2;
+    const dist=termsMidX-learnMidX;          // how far Terms is to the right of Learn
+    const taxaMidX=learnMidX-dist;           // mirror: same distance to the left
+    const taxaW=taxaEl.getBoundingClientRect().width||110;
+    const taxaLeft=Math.max(4,Math.round(taxaMidX-taxaW/2));
+    $("home-taxa-wrap").style.left=taxaLeft+"px";
+    // Title block fills the gap right of taxa and left of settings button
+    $("home-title-block").style.left=(taxaLeft+taxaW+10)+"px";
+    requestAnimationFrame(drawHomeTree);
+  });
+}
+function drawHomeTree(){
+  const svg=$("home-tree-svg");if(!svg)return;
+  const learn=$("btn-learn").getBoundingClientRect();
+  const taxa=$("btn-families-main").getBoundingClientRect();
+  const terms=$("btn-terms").getBoundingClientRect();
+  const learnMidX=Math.round(learn.left+learn.width/2);
+  const taxaMidX=Math.round(taxa.left+taxa.width/2);
+  const termsMidX=Math.round(terms.left+terms.width/2);
+  const trunkX=taxaMidX;                       // vertical trunk runs through Taxa centre
+  const learnNodeY=Math.round(learn.top-28);   // junction: trunk meets Learn branch
+  const taxaNodeY=Math.round(taxa.top-28);     // junction: Learn branch splits to Taxa/Terms
+  const r=10; // corner radius
+  const d=[
+    // trunk: top → learnNodeY (straight, no corner)
+    `M${trunkX} 0 V${learnNodeY}`,
+    // off-screen left branch (straight, rounded end via linecap)
+    `M-30 ${learnNodeY} H${trunkX}`,
+    // L-shape: from trunk junction, right toward Learn then curve down through Learn to taxaNodeY
+    `M${trunkX} ${learnNodeY} H${learnMidX-r} Q${learnMidX} ${learnNodeY} ${learnMidX} ${learnNodeY+r} V${taxaNodeY}`,
+    // branch left to Taxa: curve at corner
+    `M${learnMidX} ${taxaNodeY} H${taxaMidX+r} Q${taxaMidX} ${taxaNodeY} ${taxaMidX} ${taxaNodeY+r} V${taxa.top}`,
+    // branch right to Terms: curve at corner
+    `M${learnMidX} ${taxaNodeY} H${termsMidX-r} Q${termsMidX} ${taxaNodeY} ${termsMidX} ${taxaNodeY+r} V${terms.top}`
+  ].join(' ');
+  svg.innerHTML=`<path d="${d}" stroke="#4a7c5f" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 function saveSettingsAndReturn(){
   const un=$("inp-user").value.trim();
@@ -1966,6 +2037,9 @@ if(window.visualViewport){
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW error:',e));
+  });
+  window.addEventListener('resize',()=>{
+    if(!document.getElementById('screen-home-main').classList.contains('hidden'))layoutHomeMain();
   });
 }
 </script>
