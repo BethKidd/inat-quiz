@@ -988,8 +988,8 @@ async function _fetchHomeStats(un){
     const now=Date.now();
     const active=cards.filter(c=>!c.ignored);
     const studied=active.filter(c=>c.totalReviews>0).length;
+    const inMemory=active.filter(c=>c.interval>=10080).length;   // ≥1 week = mature/long-term
     const due=active.filter(c=>c.nextReview<=now&&c.totalReviews>0).length;
-    const inMemory=active.filter(c=>c.totalReviews>0&&c.nextReview>now).length;
     // Show DB-based counts immediately while iNat loads
     $("home-stat-memory").textContent=`${inMemory} species in memory`;
     $("home-stat-taxa").textContent=`${due} due`;
@@ -1002,7 +1002,7 @@ async function _fetchHomeStats(un){
     const sd=await sr.json();
     const inatTotal=sd.total_results||0;
     const newCount=Math.max(0,inatTotal-studied);
-    $("home-stat-learn").innerHTML=`<div>${newCount} new</div><div>${due} due</div>`;
+    $("home-stat-learn").innerHTML=`<div>${newCount} new</div>`;
   }catch(e){
     // iNat unreachable — fall back to DB-only new count
     const cards=await dbAllUser(un).catch(()=>[]);
@@ -1048,7 +1048,7 @@ function layoutHomeMain(){
       const termsR=$("btn-terms").getBoundingClientRect();
       // Learn stats: vertically centred, just right of learn button
       $("home-stat-learn").style.left=(Math.round(learnR.right)+5)+"px";
-      $("home-stat-learn").style.top=Math.round(learnR.top+(learnR.height/2)-18)+"px";
+      $("home-stat-learn").style.top=Math.round(learnR.top+(learnR.height/2)-8)+"px";
       // Taxa stat: centred below taxa button
       $("home-stat-taxa").style.left=Math.round(taxaR.left)+"px";
       $("home-stat-taxa").style.width=Math.round(taxaR.width)+"px";
