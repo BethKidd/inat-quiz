@@ -672,14 +672,12 @@ $("btn-study-due-home").addEventListener("click",()=>startQuizFromHome());
 $("btn-family-back").addEventListener("click",()=>showHome());
 $("btn-study-family").addEventListener("click",()=>startQuizFromFamily());
 $("btn-submit").addEventListener("click",()=>{if(S.traitMode)checkTraits();else check()});
-$("btn-replay").addEventListener("click",()=>{
-  if(S.traitMode){
-    S.traitMode=false;
-    if(S.csvMode)csvNextDeck();else showScreen("home-main");
-  }else if(traitsDB.size>0&&S.allObs.length>0&&buildTraitsDeck()){
-    showScreen("quiz");renderTraitCard();
-  }else{
-    if(S.csvMode)csvNextDeck();else showScreen("home-main");
+$("btn-replay").addEventListener("click",async()=>{
+  S.traitMode=false;
+  if(S.csvMode){csvNextDeck();}
+  else{
+    try{await buildDeck(S.allObs,false);}
+    catch(e){showErr("Error starting session: "+e.message);}
   }
 });
 $("btn-results-home").addEventListener("click",()=>showScreen("home-main"));
