@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body { margin: 20px; background: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; gap: 16px; }
+svg { border: 1px solid #eee; border-radius: 8px; max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<svg id="logo" viewBox="0 0 500 500" width="500" height="500" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('logo');
+const CX = 250, CY = 250;
+const COLOR = '#2d6a4f';
+const SW = 1.8;
+
+function deg2rad(d) { return d * Math.PI / 180; }
+function pt(r, deg) {
+  const a = deg2rad(deg);
+  return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
+}
+function fmt(n) { return Math.round(n * 10) / 10; }
+
+function arcSeg(r, a1, a2) {
+  // Always go clockwise from a1 to a2
+  const p1 = pt(r, a1), p2 = pt(r, a2);
+  let span = ((a2 - a1) % 360 + 360) % 360;
+  const large = span > 180 ? 1 : 0;
+  return `M${fmt(p1.x)} ${fmt(p1.y)} A${r} ${r} 0 ${large} 1 ${fmt(p2.x)} ${fmt(p2.y)}`;
+}
+
+function lineSeg(r1, r2, deg) {
+  const p1 = pt(r1, deg), p2 = pt(r2, deg);
+  return `M${fmt(p1.x)} ${fmt(p1.y)} L${fmt(p2.x)} ${fmt(p2.y)}`;
+}
+
+// ── Tree topology ────────────────────────────────────────────────────────────
+// 18 terminal taxa, grouped into 4 main clades
+function leaf(angle) { return { leaf: true, angle }; }
+function node(...ch) { return { children: ch }; }
+
+const TREE = node(
+  node(                          // Clade A  ~0–62°
+    node(leaf(0),  leaf(20)),
+    node(leaf(42), leaf(62))
+  ),
+  node(                          // Clade B  ~84–168°
+    node(
+      node(leaf(84), leaf(104)),
+      leaf(126)
+    ),
+    node(leaf(148), leaf(168))
+  ),
+  node(                          // Clade C  ~188–248°
+    node(leaf(188), leaf(208)),
+    node(leaf(228), leaf(248))
+  ),
+  node(                          // Clade D  ~268–348°
+    node(leaf(268), leaf(288)),
+    node(
+      node(leaf(308), leaf(328)),
+      leaf(348)
+    )
+  )
+);
+
+// ── Compute angular ranges ───────────────────────────────────────────────────
+function computeAngles(n) {
+  if (n.leaf) { n.minA = n.maxA = n.mid = n.angle; return; }
+  n.children.forEach(computeAngles);
+  n.minA = Math.min(...n.children.map(c => c.minA));
+  n.maxA = Math.max(...n.children.map(c => c.maxA));
+  n.mid  = (n.minA + n.maxA) / 2;
+}
+computeAngles(TREE);
+
+// ── Assign radii by depth ────────────────────────────────────────────────────
+const DEPTH_R  = [42, 80, 116, 146, 166];
+const LEAF_R   = 182;
+const LEAF_TIP = 204;   // end of terminal bar
+
+function assignR(n, depth) {
+  if (n.leaf) { n.r = LEAF_R; return; }
+  n.r = DEPTH_R[Math.min(depth, DEPTH_R.length - 1)];
+  n.children.forEach(c => assignR(c, depth + 1));
+}
+assignR(TREE, 0);
+
+// ── Collect all path segments ────────────────────────────────────────────────
+const segs = [];
+
+function drawNode(n) {
+  if (n.leaf) {
+    segs.push(lineSeg(n.r, LEAF_TIP, n.angle));
+    return;
+  }
+  // Arc at this node's radius, from first child mid to last child mid
+  const mids = n.children.map(c => c.mid).sort((a, b) => a - b);
+  segs.push(arcSeg(n.r, mids[0], mids[mids.length - 1]));
+  // Radial spokes to each child
+  n.children.forEach(c => {
+    segs.push(lineSeg(n.r, c.r, c.mid));
+    drawNode(c);
+  });
+}
+
+// Root: tight inner spiral arc + short spokes to each main clade
+// The spiral: arc at shrinking radii from 38 down to 14 over ~300°
+// Approximate with two arcs for a C/ammonite feel
+segs.push(arcSeg(38, 30, 310));   // outer curl  ~280° clockwise
+segs.push(arcSeg(20, 60, 290));   // inner curl  ~230° clockwise
+segs.push(lineSeg(38, 20, 30));   // join outer to inner at start
+segs.push(lineSeg(38, 20, 310));  // join outer to inner at end
+
+// Spokes from the outer curl to each clade root
+TREE.children.forEach(c => {
+  segs.push(lineSeg(38, c.r, c.mid));
+  drawNode(c);
+});
+
+// Render all segments as one <path>
+const mainPath = document.createElementNS(SVG_NS, 'path');
+mainPath.setAttribute('d', segs.join(' '));
+mainPath.setAttribute('stroke', COLOR);
+mainPath.setAttribute('stroke-width', SW);
+mainPath.setAttribute('fill', 'none');
+mainPath.setAttribute('stroke-linecap', 'round');
+mainPath.setAttribute('stroke-linejoin', 'round');
+svg.appendChild(mainPath);
+
+// Centre dot
+const dot = document.createElementNS(SVG_NS, 'circle');
+dot.setAttribute('cx', CX); dot.setAttribute('cy', CY);
+dot.setAttribute('r', 4); dot.setAttribute('fill', COLOR);
+svg.appendChild(dot);
+
+// Terminal dots
+function addLeafDots(n) {
+  if (n.leaf) {
+    const p = pt(LEAF_TIP + 3, n.angle);
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('cx', fmt(p.x)); c.setAttribute('cy', fmt(p.y));
+    c.setAttribute('r', 2.5); c.setAttribute('fill', COLOR);
+    svg.appendChild(c);
+  } else { n.children.forEach(addLeafDots); }
+}
+addLeafDots(TREE);
+</script>
+</body>
+</html>
