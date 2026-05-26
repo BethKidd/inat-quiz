@@ -312,8 +312,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .correct-tick-wrap span{font-size:50px;color:#fff;line-height:1;margin-top:-2px}
 @keyframes tickPop{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
 @keyframes tickFade{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.85)}}
-.score-flash{position:absolute;top:14px;right:14px;font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;z-index:200;pointer-events:none;opacity:0}
-@keyframes scorePop{0%{opacity:0;transform:scale(.6) translateY(4px)}15%{opacity:1;transform:scale(1.15) translateY(0)}35%{opacity:1;transform:scale(1) translateY(0)}75%{opacity:1;transform:scale(1) translateY(0)}100%{opacity:0;transform:scale(1) translateY(-8px)}}
+.score-flash{position:absolute;top:16px;right:16px;font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;z-index:200;pointer-events:none;opacity:0}
+@keyframes scorePop{0%{opacity:0;transform:scale(.5)}25%{opacity:1;transform:scale(1.25)}60%{transform:scale(0.95)}100%{opacity:1;transform:scale(1)}}
 .score-flash.pop{animation:scorePop 1.1s ease-out forwards}
 .ignore-popup{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(28,43,34,.45);backdrop-filter:blur(4px)}
 .ignore-popup.hidden{display:none!important}
@@ -433,6 +433,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <span id="round-info" style="display:flex;align-items:center;gap:6px"></span>
   </div>
   <div class="q-card" id="q-card">
+    <div id="score-flash" class="score-flash"></div>
     <p class="prompt" id="q-prompt">Identify this observation</p>
     <div class="carousel" id="carousel">
       <div class="carousel-track" id="carousel-track"></div>
@@ -467,7 +468,6 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <button type="button" class="btn-next-floating hidden" id="btn-next" onclick="next()" title="Next (or press Enter)">→</button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div>
-  <div id="score-flash" class="score-flash"></div>
   <!-- Keyboard anchor: keeps soft keyboard alive during field transitions -->
   <input id="kb-anchor" type="text" inputmode="text" aria-hidden="true" tabindex="-1"
     style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0">
@@ -637,11 +637,15 @@ function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Ma
 function tc(s){return(s||"").replace(/\b\w/g,c=>c.toUpperCase())}
 function flashScore(s){
   const el=$("score-flash");
-  el.className="score-flash";
+  el.style.animation="none";
   el.textContent=s>0?`+${s}`:String(s);
-  el.style.color=s>=9?"#2a5c3f":s>=5?"#3d8b5e":s>=1?"#d97706":"#dc2626";
-  void el.offsetWidth;
-  el.classList.add("pop");
+  el.style.color=s>=9?"#3d8b5e":s>=5?"#52a876":s>=1?"#d97706":"#dc2626";
+  requestAnimationFrame(()=>{
+    el.style.animation="";
+    el.style.opacity="";
+    el.classList.remove("pop");
+    requestAnimationFrame(()=>el.classList.add("pop"));
+  });
 }
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
@@ -1836,6 +1840,7 @@ async function renderCard(){
   const labelParts=[place,dateStr].filter(Boolean);
   const mapSlide=hasGeo?[{type:"map",lat,lng,label:labelParts.join(" · ")}]:[];
   hide("map-strip");
+  const sf=$("score-flash");sf.style.animation="none";sf.classList.remove("pop");sf.style.opacity="0";
   renderCar([...userPhotos,...mapSlide]);
   fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([...userPhotos,...mapSlide,...ex])}});
   const notes=o.description?.trim();
