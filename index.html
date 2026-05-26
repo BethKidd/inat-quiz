@@ -1119,16 +1119,18 @@ function showErr(m){$("home-main-err").textContent=m;show("home-main-err");showS
 /* ── Home screen ── */
 async function loadHome(){
   const un=localStorage.getItem("inat_quiz_user");if(!un)return;
+  // If observations are already cached for this user, skip the API round-trip
+  if(S.allObs.length&&S.currentUser===un.toLowerCase()){await showHome();return}
   showScreen("loading");$("loading-text").textContent="Loading your observations…";
   try{
-    const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(!ur.ok)throw Error("API error");
-    const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
-    if(!m){showScreen("setup");return}
-    const login=m.login;S.currentUser=login.toLowerCase();
+    // Use autocomplete to get canonical login casing, fall back to stored username
+    let canonLogin=un;
+    try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(ur.ok){const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());if(m)canonLogin=m.login;}}catch{}
+    S.currentUser=canonLogin.toLowerCase();
     $("loading-text").textContent=`Loading observations…`;
     let all=[];const cb=Date.now();
     for(let p=1;p<=5;p++){
-      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
+      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(canonLogin)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
       if(!r.ok)break;const d=await r.json();all.push(...(d.results||[]));if((d.results||[]).length<200)break;
     }
     const good=all.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
@@ -1137,7 +1139,7 @@ async function loadHome(){
     await fetchTaxonomy(uniq);
     S.allObs=uniq;S.csvMode=false;
     await showHome();
-  }catch(e){showScreen("setup")}
+  }catch(e){showErr("Couldn't load observations. Check your connection and try again.")}
 }
 
 async function fetchTaxonomy(uniq){
