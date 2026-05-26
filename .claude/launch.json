@@ -4,7 +4,7 @@
     {
       "name": "iNat Quiz (static)",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "3000"],
+      "runtimeArgs": ["-m", "http.server", "3000", "--directory", "/Users/bethkidd/inat-quiz-pwa"],
       "port": 3000
     }
   ]

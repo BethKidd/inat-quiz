@@ -311,16 +311,19 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .correct-tick-wrap span{font-size:50px;color:#fff;line-height:1;margin-top:-2px}
 @keyframes tickPop{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
 @keyframes tickFade{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.85)}}
-.ignore-popup{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
+.ignore-popup{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(28,43,34,.45);backdrop-filter:blur(4px)}
 .ignore-popup.hidden{display:none!important}
-.ignore-popup-card{background:#1a1d30;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px 20px;text-align:center;max-width:280px;width:90%}
-.ignore-popup-title{font-size:16px;font-weight:700;color:#e2e4ef;margin-bottom:6px}
-.ignore-popup-sub{font-size:12px;color:#7c80a3;margin-bottom:18px;line-height:1.5}
-.ignore-popup-btns{display:flex;gap:8px}
-.ignore-confirm{flex:1;padding:10px 0;border-radius:10px;border:none;background:rgba(248,113,113,.15);color:#f87171;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-.ignore-confirm:hover{background:rgba(248,113,113,.25)}
-.ignore-cancel{flex:1;padding:10px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#7c80a3;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-.ignore-cancel:hover{border-color:rgba(255,255,255,.25);color:#e2e4ef}
+.ignore-popup-card{background:#f4f2ed;border:1px solid #c8d8cc;border-radius:18px;padding:24px 20px;text-align:center;max-width:300px;width:90%;box-shadow:0 8px 32px rgba(28,43,34,.15)}
+.ignore-popup-title{font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#1c2b22;margin-bottom:5px}
+.ignore-popup-sub{font-size:12px;color:#5a7a6a;margin-bottom:18px;line-height:1.5;font-style:italic}
+.ignore-popup-btns{display:flex;flex-direction:column;gap:8px}
+.ignore-confirm{padding:12px 16px;border-radius:10px;border:1px solid rgba(160,60,60,.25);background:rgba(160,60,60,.08);color:#7a2828;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;line-height:1.3}
+.ignore-confirm:hover{background:rgba(160,60,60,.14)}
+.ignore-obs{padding:12px 16px;border-radius:10px;border:1px solid rgba(61,139,94,.3);background:rgba(61,139,94,.08);color:#2a5c3f;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;line-height:1.3}
+.ignore-obs:hover{background:rgba(61,139,94,.14)}
+.ignore-cancel{padding:10px 0;border-radius:10px;border:1px solid #c8d8cc;background:transparent;color:#5a7a6a;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.ignore-cancel:hover{border-color:#3d8b5e;color:#1c2b22}
+.ignore-btn-label{font-size:11px;font-weight:400;opacity:.7;display:block;margin-top:2px}
 </style>
 </head>
 <body>
@@ -460,7 +463,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <button type="button" class="btn-next-floating hidden" id="btn-next" onclick="next()" title="Next (or press Enter)">→</button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div>
-  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:6px 0 2px;text-align:center;width:100%;flex-shrink:0">ignore this species</button>
+  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:6px 0 2px;text-align:center;width:100%;flex-shrink:0" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">ignore</button>
 </div>
 
 <div id="screen-terms" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
@@ -548,13 +551,14 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
 <div id="correct-overlay" class="hidden"><div class="correct-tick-wrap"><span>✓</span></div></div>
 
-<div id="ignore-popup" class="ignore-popup hidden">
+<div id="ignore-popup" class="ignore-popup hidden" onclick="if(event.target===this)hide('ignore-popup')">
   <div class="ignore-popup-card">
-    <div class="ignore-popup-title">Ignore this species?</div>
+    <div class="ignore-popup-title">Ignore?</div>
     <div class="ignore-popup-sub" id="ignore-popup-name"></div>
     <div class="ignore-popup-btns">
-      <button class="ignore-cancel" id="ignore-cancel" type="button" onclick="hide('ignore-popup')">Keep</button>
-      <button class="ignore-confirm" id="ignore-confirm" type="button" onclick="ignoreCurrentSpecies()">Ignore</button>
+      <button class="ignore-confirm" id="ignore-confirm" type="button" onclick="ignoreCurrentSpecies()">Ignore species<span class="ignore-btn-label">removes all observations of this species from study</span></button>
+      <button class="ignore-obs" id="ignore-obs-btn" type="button" onclick="ignoreCurrentObservation()">Ignore this observation<span class="ignore-btn-label">hides this photo — species stays if you have others</span></button>
+      <button class="ignore-cancel" id="ignore-cancel" type="button" onclick="hide('ignore-popup')">Cancel</button>
     </div>
   </div>
 </div>
@@ -631,7 +635,17 @@ function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").r
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
 function isMatch(u,c){const a=normalize(u),b=normalize(c);if(!a||!b)return false;if(a===b)return true;return b.length>4&&lev(a,b)<=2}
 function taxonKey(o){return(o.taxon?.name||"").toLowerCase()}
-function dedupe(obs){const s=new Map();for(const o of obs){const k=taxonKey(o);if(k&&!s.has(k))s.set(k,o)}return[...s.values()]}
+function getIgnoredObsIds(){try{return new Set(JSON.parse(localStorage.getItem("inat_ignored_obs")||"[]"))}catch{return new Set()}}
+function addIgnoredObsId(id){const s=getIgnoredObsIds();s.add(String(id));localStorage.setItem("inat_ignored_obs",JSON.stringify([...s]))}
+function dedupe(obs){
+  const ignoredIds=getIgnoredObsIds();
+  const s=new Map();
+  // First pass: prefer non-ignored observations
+  for(const o of obs){const k=taxonKey(o);if(k&&!s.has(k)&&!ignoredIds.has(String(o.id)))s.set(k,o)}
+  // Second pass: if a species has ONLY ignored observations, still include one (species itself not ignored)
+  // — nothing to do here since species-level ignore is handled separately
+  return[...s.values()]
+}
 
 /* ── Init ── */
 (async function(){
@@ -730,14 +744,6 @@ $("map-toggle").addEventListener("click",e=>{
   if($("map-strip").classList.contains("expanded"))collapseMap();else expandMap();
 });
 $("btn-next").addEventListener("click",next);$("btn-next").addEventListener("touchend",e=>{e.preventDefault();next()},{passive:false});
-$("ignore-cancel").addEventListener("click",()=>hide("ignore-popup"));
-$("ignore-popup").addEventListener("click",e=>{if(e.target===$("ignore-popup"))hide("ignore-popup")});
-$("ignore-confirm").addEventListener("click",()=>ignoreCurrentSpecies());
-$("btn-ignore-link").addEventListener("click",()=>{
-  const c=S.deck?.[S.cardIndex];if(!c)return;
-  $("ignore-popup-name").textContent=`${c.species}${c.common?" · "+c.common:""}`;
-  show("ignore-popup");
-});
 document.querySelectorAll(".tab-btn").forEach(btn=>{btn.addEventListener("click",()=>{
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
   if(btn.dataset.tab==="overview"){show("tab-content-overview");hide("tab-content-species")}else{hide("tab-content-overview");show("tab-content-species")}
@@ -1552,10 +1558,13 @@ async function handleTraits(){
   show("btn-start-traits");
 }
 
-function buildTraitsDeck(){
+async function buildTraitsDeck(){
   if(traitsDB.size===0)return false;
+  // Filter out ignored species before building deck
+  const existing=await dbAllUser(S.currentUser);
+  const ignoredSet=new Set(existing.filter(c=>c.ignored).map(c=>c.species?.toLowerCase()));
   // Use allObs if available, otherwise build from traitsDB keys
-  let candidates=S.allObs.filter(o=>traitsDB.has(o.taxon.name.toLowerCase()));
+  let candidates=S.allObs.filter(o=>traitsDB.has(o.taxon.name.toLowerCase())&&!ignoredSet.has(o.taxon.name.toLowerCase()));
   if(candidates.length===0)return false;
   const count=Math.min(S.qCount,candidates.length);
   const pool=shuffle(candidates).slice(0,count);
@@ -1639,7 +1648,7 @@ async function doStartTraits(){
     }catch(e){showErr(`Error: ${e.message}`);return}
   }
   S.traitMode=true;
-  if(buildTraitsDeck()){
+  if(await buildTraitsDeck()){
     showScreen("quiz");renderTraitCard();
   }else{
     showErr("No species found matching between your observations and traits database.");
@@ -2001,6 +2010,26 @@ async function ignoreCurrentSpecies(){
   S.deck.splice(S.cardIndex,1);
   S.retryQueue=S.retryQueue.filter(r=>r.species!==c.species);
   S.allObs=S.allObs.filter(o=>o.taxon.name!==c.species);
+  S.totalCards=Math.max(0,S.totalCards-1);
+  hide("ignore-popup");
+  if(S.deck.length===0&&S.retryQueue.length===0){results();return}
+  if(S.cardIndex>=S.deck.length){
+    if(S.retryQueue.length>0){S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
+    else{results();return}
+  }
+  killMap();$("q-card").classList.add("fade-out");
+  setTimeout(()=>renderCard(),150);
+}
+
+function ignoreCurrentObservation(){
+  // Persist the obs ID so dedupe skips it in future sessions
+  // The species remains if other observations exist
+  const c=S.deck[S.cardIndex];if(!c)return;
+  const obsId=c.obs?.id;
+  if(obsId)addIgnoredObsId(obsId);
+  // Remove from current session deck and retry queue
+  S.deck.splice(S.cardIndex,1);
+  S.retryQueue=S.retryQueue.filter(r=>r.obs?.id!==obsId);
   S.totalCards=Math.max(0,S.totalCards-1);
   hide("ignore-popup");
   if(S.deck.length===0&&S.retryQueue.length===0){results();return}
