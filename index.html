@@ -1867,7 +1867,7 @@ function showFieldStep(c,animateIn){
   const fg=$("inp-"+step).closest(".field-group");
   fg.classList.remove("hidden");
   if(animateIn){fg.classList.add("slide-in-right");setTimeout(()=>fg.classList.remove("slide-in-right"),300)}
-  setTimeout(()=>$("inp-"+step).focus(),animateIn?260:80);
+  setTimeout(()=>$("inp-"+step).focus({preventScroll:true}),animateIn?260:80);
 }
 
 function revealCard(c){
