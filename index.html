@@ -312,6 +312,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .correct-tick-wrap span{font-size:50px;color:#fff;line-height:1;margin-top:-2px}
 @keyframes tickPop{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
 @keyframes tickFade{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.85)}}
+.score-flash{position:absolute;top:14px;right:14px;font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;z-index:200;pointer-events:none;opacity:0}
+@keyframes scorePop{0%{opacity:0;transform:scale(.6) translateY(4px)}15%{opacity:1;transform:scale(1.15) translateY(0)}35%{opacity:1;transform:scale(1) translateY(0)}75%{opacity:1;transform:scale(1) translateY(0)}100%{opacity:0;transform:scale(1) translateY(-8px)}}
+.score-flash.pop{animation:scorePop 1.1s ease-out forwards}
 .ignore-popup{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(28,43,34,.45);backdrop-filter:blur(4px)}
 .ignore-popup.hidden{display:none!important}
 .ignore-popup-card{background:#f4f2ed;border:1px solid #c8d8cc;border-radius:18px;padding:24px 20px;text-align:center;max-width:300px;width:90%;box-shadow:0 8px 32px rgba(28,43,34,.15)}
@@ -464,6 +467,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <button type="button" class="btn-next-floating hidden" id="btn-next" onclick="next()" title="Next (or press Enter)">→</button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div>
+  <div id="score-flash" class="score-flash"></div>
   <!-- Keyboard anchor: keeps soft keyboard alive during field transitions -->
   <input id="kb-anchor" type="text" inputmode="text" aria-hidden="true" tabindex="-1"
     style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0">
@@ -630,6 +634,15 @@ let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0;
 
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function tc(s){return(s||"").replace(/\b\w/g,c=>c.toUpperCase())}
+function flashScore(s){
+  const el=$("score-flash");
+  el.className="score-flash";
+  el.textContent=s>0?`+${s}`:String(s);
+  el.style.color=s>=9?"#2a5c3f":s>=5?"#3d8b5e":s>=1?"#d97706":"#dc2626";
+  void el.offsetWidth;
+  el.classList.add("pop");
+}
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
 function hide(id){$(id).classList.add("hidden")}
@@ -1391,9 +1404,9 @@ async function csvNextDeck(){
   S.deck=[];S.sessionResults=[];
   for(const o of pool){
     const k=S.currentUser+":"+taxonKey(o);
-    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:o.taxon.preferred_common_name||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:tc(o.taxon.preferred_common_name)||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
     const isFresh=freshSet.has(taxonKey(o));
-    const card={obs:o,srs,family:o._family||"",common:o.taxon.preferred_common_name||"",species:o.taxon.name||"",
+    const card={obs:o,srs,family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",
       familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false,
       _mcMode:isFresh&&S.csvMode};
     if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
@@ -1405,8 +1418,8 @@ async function csvNextDeck(){
       let distractors=shuffle(sameFamily).slice(0,3);
       if(distractors.length<3)distractors=[...distractors,...shuffle(diffFamily).slice(0,3-distractors.length)];
       card._mcOptions=shuffle([
-        {species:o.taxon.name,common:o.taxon.preferred_common_name||"",family:fam||"",correct:true},
-        ...distractors.map(d=>({species:d.taxon.name,common:d.taxon.preferred_common_name||"",family:d._family||"",correct:false}))
+        {species:o.taxon.name,common:tc(o.taxon.preferred_common_name)||"",family:fam||"",correct:true},
+        ...distractors.map(d=>({species:d.taxon.name,common:tc(d.taxon.preferred_common_name)||"",family:d._family||"",correct:false}))
       ]);
     }
     S.deck.push(card);
@@ -1619,7 +1632,7 @@ async function buildTraitsDeck(){
       }
       return{...f,answer,mc:false,answered:false};
     });
-    const card={obs:o,species:o.taxon.name,common:o.taxon.preferred_common_name||"",family:traits.family||"",
+    const card={obs:o,species:o.taxon.name,common:tc(o.taxon.preferred_common_name)||"",family:traits.family||"",
       _traitMode:true,_traitQuestions:questions,_revealed:false,_traitScore:0,_traitTotal:questions.length};
     S.deck.push(card);
   }
@@ -1779,8 +1792,8 @@ async function buildDeck(obs,dueOnly){
   if(pool.length===0){showErr(dueOnly?"No cards are due right now!":"No cards available.");return}
   S.deck=[];S.sessionResults=[];
   for(const o of pool){const k=S.currentUser+":"+taxonKey(o);
-    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:o.taxon.preferred_common_name||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
-    const card={obs:o,srs,order:o._treeRanks?.order||"",family:o._family||"",common:o.taxon.preferred_common_name||"",species:o.taxon.name||"",orderDone:false,familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false};
+    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:tc(o.taxon.preferred_common_name)||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+    const card={obs:o,srs,order:o._treeRanks?.order||"",family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",orderDone:false,familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false};
     if(!card.order)card.orderDone=true;if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
     S.deck.push(card)}
   S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=pool.length;S.completedCards=0;
@@ -1928,6 +1941,7 @@ function revealCard(c){
     else q=0;
     c._firstQuality=q;
     sm2(c.srs,q);dbPut(c.srs);
+    flashScore(right>=total?10:right>=2?5:right>=1?2:0);
     if(q===5){show("correct-overlay");setTimeout(()=>hide("correct-overlay"),1400);}
   }
   // Push to leaderboard when card is fully correct (may be after retries)
