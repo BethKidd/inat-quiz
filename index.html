@@ -1789,7 +1789,7 @@ async function buildDeck(obs,dueOnly){
 /* ── Quiz ── */
 function cardSessionScore(c){
   const right=c._firstPassCorrect||0,total=c._firstPassTotal||1;
-  let base=right>=total?5:right>=2?3:right>=1?1:0;
+  let base=right>=total?10:right>=2?5:right>=1?2:0;
   return base-(c._retryCount||0);
 }
 async function renderCard(){
@@ -2103,18 +2103,18 @@ function results(){
   killMap();
   const total=S.sessionResults.length;
   const totalScore=S.sessionResults.reduce((s,r)=>s+r.score,0);
-  const maxScore=total*5;
-  const pct=maxScore?Math.max(0,Math.round(totalScore/maxScore*100)):0;
-  const col=pct>=70?"#3d8b5e":pct>=40?"#d97706":"#dc2626";
-  $("res-score-ring").style.background=col;$("res-score-ring").textContent=totalScore;
-  $("res-score").textContent=`${totalScore} pts`;
-  $("res-sub").textContent=`of ${maxScore} possible \u00b7 ${total} species`;
+  const maxScore=total*10;
+  const score100=maxScore?Math.max(0,Math.round(totalScore/maxScore*100)):0;
+  const col=score100>=70?"#3d8b5e":score100>=40?"#d97706":"#dc2626";
+  $("res-score-ring").style.background=col;$("res-score-ring").textContent=`${score100}%`;
+  $("res-score").textContent=`${score100}%`;
+  $("res-sub").textContent=`${total} species · ${totalScore} / ${maxScore} pts`;
   const bd=$("res-breakdown");bd.innerHTML="";
   const sorted=[...S.sessionResults].sort((a,b)=>b.score-a.score);
   for(const r of sorted){
     const row=document.createElement("div");row.className="rb-row";
     const s=r.score;
-    const scoreCol=s>=5?"#2a5c3f":s>=3?"#3d8b5e":s>=1?"#d97706":s===0?"#b45309":"#dc2626";
+    const scoreCol=s>=9?"#2a5c3f":s>=5?"#3d8b5e":s>=1?"#d97706":s===0?"#888":"#dc2626";
     const rowBg=s>=3?"rgba(61,139,94,.06)":s>=1?"rgba(217,119,6,.05)":"rgba(220,38,38,.05)";
     row.style.background=rowBg;
     row.innerHTML=`<span class="rb-name">${esc(r.common||r.species)}<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(r.species)}</span></span><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>`;
