@@ -463,6 +463,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <button type="button" class="btn-next-floating hidden" id="btn-next" onclick="next()" title="Next (or press Enter)">→</button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div>
+  <!-- Keyboard anchor: keeps soft keyboard alive during field transitions -->
+  <input id="kb-anchor" type="text" inputmode="text" aria-hidden="true" tabindex="-1"
+    style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0">
   <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:6px 0 2px;text-align:center;width:100%;flex-shrink:0" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">ignore</button>
 </div>
 
@@ -1867,7 +1870,7 @@ function showFieldStep(c,animateIn){
   const fg=$("inp-"+step).closest(".field-group");
   fg.classList.remove("hidden");
   if(animateIn){fg.classList.add("slide-in-right");setTimeout(()=>fg.classList.remove("slide-in-right"),300)}
-  setTimeout(()=>$("inp-"+step).focus({preventScroll:true}),animateIn?260:80);
+  setTimeout(()=>$("inp-"+step).focus({preventScroll:true}),animateIn?30:80);
 }
 
 function revealCard(c){
@@ -1992,6 +1995,8 @@ function check(){
   const oldFG=inp.closest(".field-group");
   oldFG.classList.add("slide-out-left");
   c._fieldStep++;
+  // Focus the anchor immediately to keep the keyboard alive during the transition
+  $("kb-anchor").focus({preventScroll:true});
   setTimeout(()=>{
     oldFG.classList.add("hidden");
     oldFG.classList.remove("slide-out-left");
