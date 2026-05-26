@@ -105,8 +105,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .rb-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;margin-bottom:4px;font-size:13px}
 .rb-icon{font-size:14px;font-weight:800;flex-shrink:0;width:20px;text-align:center}
 .rb-ok{color:#3d8b5e}.rb-fail{color:#dc2626}
-.rb-name{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1c2b22}
+.rb-name{font-weight:600;flex:1;min-width:0;color:#1c2b22}
 .rb-detail{color:#6b8f78;font-size:12px;white-space:nowrap}
+.rb-score{font-size:15px;font-weight:800;flex-shrink:0;min-width:32px;text-align:right}
 .tab-row{display:flex;gap:4px;margin-bottom:20px}
 .tog-row{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:#1c2b22;padding:4px 0}
 .tog-cb{width:17px;height:17px;accent-color:#3d8b5e;cursor:pointer;flex-shrink:0}
@@ -1786,8 +1787,19 @@ async function buildDeck(obs,dueOnly){
   showScreen("quiz");renderCard()}
 
 /* ── Quiz ── */
+function cardSessionScore(c){
+  const right=c._firstPassCorrect||0,total=c._firstPassTotal||1;
+  let base=right>=total?5:right>=2?3:right>=1?1:0;
+  return base-(c._retryCount||0);
+}
 async function renderCard(){
-  const c=S.deck[S.cardIndex];c._revealed=false;c._srsRated=false;
+  const c=S.deck[S.cardIndex];c._revealed=false;
+  // If this card has been seen before, it's a retry — count the penalty
+  if(c._firstPassDone){
+    c._retryCount=(c._retryCount||0)+1;
+    c._correctThisAttempt=0;
+    c._activeFields=0;
+  }
   const _ef=getEnabledFields();
   c._fieldOrder=[];
   if(_ef.includes("order")&&c.order&&!c.orderDone)c._fieldOrder.push("order");
@@ -1903,20 +1915,25 @@ function revealCard(c){
   const allCorrect=(!_ef2.includes("order")||c.orderDone)&&(!_ef2.includes("family")||c.familyDone)&&(!_ef2.includes("species")||c.speciesDone)&&(!_ef2.includes("common")||c.commonDone);
   showWiki(c.species);
   showTraits(c.species,c.family,!allCorrect);
-  // Auto-rate SRS on FIRST attempt only
-  if(!c._srsRated){
-    c._srsRated=true;
-    // Count how many active fields were correct this attempt
+  // Rate SRS and record first-pass data on first reveal only
+  if(!c._firstPassDone){
+    c._firstPassDone=true;
+    c._firstPassCorrect=c._correctThisAttempt;
+    c._firstPassTotal=c._activeFields;
     const total=c._activeFields;const right=c._correctThisAttempt;
     let q;
-    if(right===total)q=5;        // all correct → easy
-    else if(right>=total-1)q=4;  // 1 wrong → good
-    else if(right>=1)q=3;        // some right → hard
-    else q=0;                    // all wrong/skipped → again
+    if(right===total)q=5;
+    else if(right>=total-1)q=4;
+    else if(right>=1)q=3;
+    else q=0;
     c._firstQuality=q;
     sm2(c.srs,q);dbPut(c.srs);
-    S.sessionResults.push({species:c.species,common:c.common,quality:q,interval:c.srs.interval});
     if(q===5){show("correct-overlay");setTimeout(()=>hide("correct-overlay"),1400);}
+  }
+  // Push to leaderboard when card is fully correct (may be after retries)
+  if(allCorrect&&!c._sessionResultPushed){
+    c._sessionResultPushed=true;
+    S.sessionResults.push({species:c.species,common:c.common,score:cardSessionScore(c)});
   }
   if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
@@ -1953,14 +1970,19 @@ function handleMC(c,chosenIdx){
   showEtym(c.species,c.common);
   showWiki(c.species);
   showTraits(c.species,c.family,!correct);
-  // SRS
-  if(!c._srsRated){
-    c._srsRated=true;
+  // SRS + first-pass data (MC counts as 1 field)
+  if(!c._firstPassDone){
+    c._firstPassDone=true;
+    c._firstPassCorrect=correct?1:0;
+    c._firstPassTotal=1;
     const q=correct?5:0;c._firstQuality=q;
     sm2(c.srs,q);dbPut(c.srs);
-    S.sessionResults.push({species:c.species,common:c.common,quality:q,interval:c.srs.interval});
   }
   const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
+  if(allCorrect&&!c._sessionResultPushed){
+    c._sessionResultPushed=true;
+    S.sessionResults.push({species:c.species,common:c.common,score:cardSessionScore(c)});
+  }
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
   S.completedCards++;
@@ -2077,17 +2099,29 @@ function traitResults(){
   showScreen("results");
 }
 
-function results(){killMap();const perfect=S.sessionResults.filter(r=>r.quality===5).length,total=S.sessionResults.length,pct=total?Math.round(perfect/total*100):0;
-  const col=pct>=70?"#3d8b5e":pct>=50?"#d97706":"#dc2626";
-  $("res-score-ring").style.background=col;$("res-score-ring").textContent=`${pct}%`;
-  $("res-score").textContent=`${perfect} / ${total}`;$("res-sub").textContent="perfect on first attempt";
+function results(){
+  killMap();
+  const total=S.sessionResults.length;
+  const totalScore=S.sessionResults.reduce((s,r)=>s+r.score,0);
+  const maxScore=total*5;
+  const pct=maxScore?Math.max(0,Math.round(totalScore/maxScore*100)):0;
+  const col=pct>=70?"#3d8b5e":pct>=40?"#d97706":"#dc2626";
+  $("res-score-ring").style.background=col;$("res-score-ring").textContent=totalScore;
+  $("res-score").textContent=`${totalScore} pts`;
+  $("res-sub").textContent=`of ${maxScore} possible \u00b7 ${total} species`;
   const bd=$("res-breakdown");bd.innerHTML="";
-  const sorted=[...S.sessionResults].sort((a,b)=>a.quality-b.quality);
-  for(const r of sorted){const nm=r.common||r.species;const row=document.createElement("div");row.className="rb-row";
-    const ok=r.quality===5;
-    row.style.background=ok?"rgba(61,139,94,.06)":"rgba(220,38,38,.04)";
-    row.innerHTML=`<span class="rb-icon ${ok?"rb-ok":"rb-fail"}">${ok?"\u2713":"\u2717"}</span><span class="rb-name">${esc(nm)}</span><span class="rb-detail">${ok?"Perfect":"Retry"} \u00b7 next in ${fmtIv(r.interval)}</span>`;
-    bd.appendChild(row)}showScreen("results")}
+  const sorted=[...S.sessionResults].sort((a,b)=>b.score-a.score);
+  for(const r of sorted){
+    const row=document.createElement("div");row.className="rb-row";
+    const s=r.score;
+    const scoreCol=s>=5?"#2a5c3f":s>=3?"#3d8b5e":s>=1?"#d97706":s===0?"#b45309":"#dc2626";
+    const rowBg=s>=3?"rgba(61,139,94,.06)":s>=1?"rgba(217,119,6,.05)":"rgba(220,38,38,.05)";
+    row.style.background=rowBg;
+    row.innerHTML=`<span class="rb-name">${esc(r.common||r.species)}<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(r.species)}</span></span><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>`;
+    bd.appendChild(row);
+  }
+  showScreen("results");
+}
 
 /* ── Stats ── */
 async function showStats(){const un=(S.currentUser||$("inp-user").value.trim()).toLowerCase();if(!un){showScreen("setup");return}S.currentUser=un;
