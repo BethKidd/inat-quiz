@@ -2385,9 +2385,10 @@ async function showStats(){
   const MAX_IV=30*1440;
   const sl=$("species-list");sl.innerHTML="";
   // Split into display groups
-  const grpDue=reviewed.filter(c=>c.nextReview<=now);
-  const grpLearning=reviewed.filter(c=>c.nextReview>now&&c.interval<MATURE_IV);
-  const grpMature=reviewed.filter(c=>c.nextReview>now&&c.interval>=MATURE_IV);
+  const DAY_MS=24*60*60*1000;
+  const grpDue=reviewed.filter(c=>c.nextReview<=now+DAY_MS);
+  const grpLearning=reviewed.filter(c=>c.nextReview>now+DAY_MS&&c.interval<MATURE_IV);
+  const grpMature=reviewed.filter(c=>c.nextReview>now+DAY_MS&&c.interval>=MATURE_IV);
   function makeHeading(label,count,col,bg){
     const h=document.createElement("div");
     h.style.cssText=`display:flex;align-items:center;gap:8px;margin:14px 0 6px 2px`;
@@ -2398,7 +2399,7 @@ async function showStats(){
   function makeRow(c,grp){
     const nd=nameDisplay(c.species,c.common);
     const minsUntil=(c.nextReview-now)/60000;
-    const dueStr=grp==="new"?"New":grp==="due"?"Due now":"in "+fmtIv(minsUntil);
+    const dueStr=grp==="new"?"New":grp==="due"?(minsUntil<=0?"Due now":"in "+fmtIv(minsUntil)):"in "+fmtIv(minsUntil);
     const dueCol=grp==="new"?"#9bb8a8":grp==="due"?"#e05252":grp==="learning"?"#c07830":"#3d8b5e";
     const pct=grp==="new"?0:Math.min(100,Math.round(c.interval/MAX_IV*100));
     const barCol=grp==="new"?"#c8ddd2":grp==="due"?"#f87171":grp==="learning"?"#fbbf24":"#3d8b5e";
@@ -2409,9 +2410,9 @@ async function showStats(){
     row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-weight:600;font-size:13px;color:#1c2b22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:8px">${esc(nd.primary)}</span><span style="font-size:11px;color:${dueCol};font-weight:600;white-space:nowrap;flex-shrink:0">${dueStr}</span></div><div style="display:flex;align-items:center;gap:8px">${nd.secondary?`<span style="font-size:11px;font-style:italic;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;max-width:50%">${esc(nd.secondary)}</span>`:"<span></span>"}<div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%;background:${barCol}"></div></div></div>`;
     return row;
   }
-  if(grpDue.length){sl.appendChild(makeHeading("Due now",grpDue.length,"#e05252","rgba(248,113,113,.15)"));grpDue.forEach(c=>sl.appendChild(makeRow(c,"due")))}
-  if(grpLearning.length){sl.appendChild(makeHeading("Learning",grpLearning.length,"#c07830","rgba(251,191,36,.15)"));grpLearning.forEach(c=>sl.appendChild(makeRow(c,"learning")))}
-  if(grpMature.length){sl.appendChild(makeHeading("Long-term memory",grpMature.length,"#2a5c3f","rgba(42,92,63,.12)"));grpMature.forEach(c=>sl.appendChild(makeRow(c,"mature")))}
+  if(grpDue.length){sl.appendChild(makeHeading("Due today",grpDue.length,"#e05252","rgba(248,113,113,.15)"));grpDue.forEach(c=>sl.appendChild(makeRow(c,"due")))}
+  if(grpLearning.length){sl.appendChild(makeHeading("Due soon",grpLearning.length,"#c07830","rgba(251,191,36,.15)"));grpLearning.forEach(c=>sl.appendChild(makeRow(c,"learning")))}
+  if(grpMature.length){sl.appendChild(makeHeading("Memorised",grpMature.length,"#2a5c3f","rgba(42,92,63,.12)"));grpMature.forEach(c=>sl.appendChild(makeRow(c,"mature")))}
   if(fresh.length){sl.appendChild(makeHeading("New",fresh.length,"#6b8f78","rgba(107,143,120,.12)"));fresh.forEach(c=>sl.appendChild(makeRow(c,"new")))}
   showScreen("stats");
 }
