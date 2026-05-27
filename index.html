@@ -332,6 +332,36 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .ignore-cancel{padding:10px 0;border-radius:10px;border:1px solid #c8d8cc;background:transparent;color:#5a7a6a;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
 .ignore-cancel:hover{border-color:#3d8b5e;color:#1c2b22}
 .ignore-btn-label{font-size:11px;font-weight:400;opacity:.7;display:block;margin-top:2px}
+/* ── Taxonomy Quiz ── */
+#screen-taxoquiz{padding-bottom:32px}
+.tq-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;flex-shrink:0}
+.tq-header-title{font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#1c2b22}
+.tq-back-btn{background:#e4ede8;border:none;color:#3d8b5e;padding:7px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.tq-progress-row{display:flex;justify-content:space-between;align-items:center;padding:0 16px 8px;font-size:13px;font-weight:600;color:#6b8f78}
+.tq-order-block{margin:0 16px 10px;background:#fff;border:1.5px solid #c8ddd2;border-radius:18px;padding:14px 16px 12px;text-align:center}
+.tq-order-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6b8f78;margin-bottom:4px}
+.tq-order-name{font-family:'Lora',Georgia,serif;font-size:24px;font-weight:700;font-style:italic;color:#1c2b22;line-height:1.15}
+.tq-prompt{text-align:center;font-size:13px;color:#6b8f78;padding:0 16px 10px}
+.tq-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 10px}
+.tq-chip{background:#fff;border:2px solid #d4e8dd;border-radius:14px;padding:10px 10px 8px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:border-color .1s,background .1s,transform .08s;text-align:center;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tq-chip:active{transform:scale(.97)}
+.tq-chip.selected{background:#eaf5ee;border-color:#3d8b5e;color:#1c3d27}
+.tq-chip.correct{background:#d4f0e0;border-color:#3d8b5e;color:#1c5c37}
+.tq-chip.wrong{background:#fde8e8;border-color:#e05252;color:#7a1e1e}
+.tq-chip.missed{background:#fff;border-color:#3d8b5e;border-style:dashed;color:#3d5c43}
+.tq-chip-type{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9bb8a8;margin-bottom:3px}
+.tq-chip.correct .tq-chip-type{color:#3d8b5e}
+.tq-chip.wrong .tq-chip-type,.tq-chip.missed .tq-chip-type{color:inherit;opacity:.7}
+.tq-chip-name{font-family:'Lora',Georgia,serif;font-size:13px;font-style:italic;font-weight:700;line-height:1.2}
+.tq-feedback{text-align:center;min-height:20px;font-size:14px;font-weight:600;padding:0 16px 10px}
+.tq-check-btn{display:block;width:calc(100% - 32px);margin:0 16px;padding:14px 0;background:#3d8b5e;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s;-webkit-tap-highlight-color:transparent}
+.tq-check-btn:disabled{background:#c8ddd2;color:#8aaa98;cursor:default}
+.tq-check-btn.next-mode{background:#82c97a}
+.tq-results{padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.tq-results-title{font-family:'Lora',Georgia,serif;font-size:26px;font-weight:700;color:#1c2b22}
+.tq-results-score{font-size:52px;font-weight:700;color:#3d8b5e;line-height:1}
+.tq-results-denom{font-size:14px;color:#6b8f78}
+.tq-results-msg{font-size:15px;color:#3a4a40;line-height:1.5;max-width:280px}
 </style>
 </head>
 <body>
@@ -554,7 +584,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <div class="home-title" id="home-title">Nomina Naturæ</div>
       <div class="home-sub" id="home-sub"></div>
     </div>
-    <button class="home-settings-btn" id="btn-home-back" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="btn-taxoquiz-open" class="home-leaf-btn" style="font-size:14px;padding:6px 14px">Quiz</button>
+      <button class="home-settings-btn" id="btn-home-back" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home</button>
+    </div>
   </div>
   <div class="home-due-bar">
     <button class="btn-primary" id="btn-study-due-home" style="margin-top:0"></button>
@@ -571,6 +604,50 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   </div>
   <div class="fam-detail-sub" id="family-sub"></div>
   <div class="species-family-list" id="species-in-family"></div>
+</div>
+
+<!-- Taxonomy Quiz screen -->
+<div id="screen-taxoquiz" class="container hidden">
+  <div class="tq-header">
+    <div class="tq-header-title">Taxonomy Quiz</div>
+    <button class="tq-back-btn" id="btn-taxoquiz-back">← Taxa</button>
+  </div>
+  <div id="tq-quiz">
+    <div class="tq-progress-row">
+      <span id="tq-progress">1 / 10</span>
+      <span id="tq-score">0 correct</span>
+    </div>
+    <div class="tq-order-block" id="tq-order-block">
+      <div class="tq-order-label">Order</div>
+      <div class="tq-order-name" id="tq-order-name"></div>
+    </div>
+    <div class="tq-prompt">Tap all families and genera that belong to this order</div>
+    <div class="tq-grid" id="tq-grid"></div>
+    <div class="tq-feedback" id="tq-feedback"></div>
+    <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
+  </div>
+  <div id="tq-results" class="tq-results hidden">
+    <div class="tq-results-title">Quiz complete</div>
+    <div class="tq-results-score" id="tq-res-score"></div>
+    <div class="tq-results-denom" id="tq-res-denom"></div>
+    <div class="tq-results-msg" id="tq-res-msg"></div>
+    <button class="tq-check-btn" id="tq-retry-btn" style="margin:0">Try again</button>
+    <button class="tq-back-btn" id="tq-quit-btn" style="width:calc(100% - 32px)">Back to Taxa</button>
+  </div>
+</div>
+
+<!-- Taxonomy quiz species popup -->
+<div id="tq-sp-popup" class="hidden" style="position:fixed;inset:0;z-index:9000;background:rgba(28,43,34,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px 16px" onclick="if(event.target===this)hide('tq-sp-popup')">
+  <div style="background:#f0f7f3;border-radius:18px;max-height:78vh;width:100%;max-width:480px;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(28,43,34,.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;flex-shrink:0;border-bottom:1px solid #d4e8dd">
+      <div style="flex:1;min-width:0;margin-right:10px;overflow:hidden">
+        <div id="tq-sp-title" style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        <div id="tq-sp-meta" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b8f78;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      </div>
+      <button onclick="hide('tq-sp-popup')" style="background:#e4ede8;border:none;color:#3d8b5e;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+    </div>
+    <div id="tq-sp-body" style="overflow-y:auto;padding:8px 0 16px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"></div>
+  </div>
 </div>
 
 <div id="correct-overlay" class="hidden"><div class="correct-tick-wrap"><span>✓</span></div></div>
@@ -716,7 +793,7 @@ function flashScore(s){
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
 function hide(id){$(id).classList.add("hidden")}
-function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms","screen-howto"].forEach(s=>s==="screen-"+n?show(s):hide(s));if(n==="home-main"){updateHomeMainSub();requestAnimationFrame(layoutHomeMain);}}
+function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms","screen-howto","screen-taxoquiz"].forEach(s=>s==="screen-"+n?show(s):hide(s));if(n==="home-main"){updateHomeMainSub();requestAnimationFrame(layoutHomeMain);}}
 function esc(s){if(!s)return"";const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").replace(/[-–—]/g," ").replace(/[^a-z0-9' ]/g,"").replace(/\s+/g," ")}
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
@@ -2417,6 +2494,155 @@ async function installApp(){
   _installPrompt=null;
 }
 window.addEventListener('appinstalled',()=>{hide('install-banner');_installPrompt=null;});
+
+/* ── Taxonomy Quiz ── */
+const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set()};
+function tqShuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function tqRnd(min,max){return min+Math.floor(Math.random()*(max-min+1))}
+
+function tqBuildQuestions(obs){
+  const orderFams=new Map(),orderGens=new Map();
+  for(const o of obs){
+    const fam=o._treeRanks?.family,ord=o._treeRanks?.order;
+    const gen=o.taxon.name.split(" ")[0];
+    if(ord){
+      if(fam){if(!orderFams.has(ord))orderFams.set(ord,new Set());orderFams.get(ord).add(fam);}
+      if(gen){if(!orderGens.has(ord))orderGens.set(ord,new Set());orderGens.get(ord).add(gen);}
+    }
+  }
+  const allFams=[...new Set([...orderFams.values()].flatMap(s=>[...s]))];
+  const allGens=[...new Set([...orderGens.values()].flatMap(s=>[...s]))];
+  const valid=[...orderFams.entries()].filter(([,s])=>s.size>=2);
+  if(valid.length<2||allFams.length<4)return[];
+  return tqShuffle(valid.map(([order,famSet])=>{
+    const genSet=orderGens.get(order)||new Set();
+    const correctFams=tqShuffle([...famSet]).slice(0,tqRnd(1,Math.min(famSet.size,3)));
+    const correctGens=tqShuffle([...genSet]).slice(0,tqRnd(1,Math.min(genSet.size,2)));
+    const correctItems=[...correctFams.map(n=>({name:n,type:"family"})),...correctGens.map(n=>({name:n,type:"genus"}))];
+    const correctNames=new Set(correctItems.map(x=>x.name));
+    const wrongFams=tqShuffle(allFams.filter(f=>!famSet.has(f))).map(n=>({name:n,type:"family"}));
+    const wrongGens=tqShuffle(allGens.filter(g=>!genSet.has(g))).map(n=>({name:n,type:"genus"}));
+    const wrongItems=tqShuffle([...wrongFams,...wrongGens]).slice(0,Math.max(0,8-correctItems.length));
+    return{order,correct:correctNames,options:tqShuffle([...correctItems,...wrongItems])};
+  }));
+}
+
+function tqShowQuestion(){
+  hide("tq-results");show("tq-quiz");
+  TQ.checked=false;TQ.selected=new Set();
+  const q=TQ.questions[TQ.currentQ];
+  $("tq-progress").textContent=`${TQ.currentQ+1} / ${TQ.questions.length}`;
+  $("tq-score").textContent=`${TQ.score} correct`;
+  $("tq-order-name").textContent=q.order;
+  $("tq-feedback").textContent="";$("tq-feedback").style.color="";
+  const btn=$("tq-check-btn");btn.textContent="Check";btn.className="tq-check-btn";btn.disabled=true;
+  const ob=$("tq-order-block");ob.style.cursor="";ob.onclick=null;
+  const grid=$("tq-grid");grid.innerHTML="";
+  for(const opt of q.options){
+    const chip=document.createElement("div");
+    chip.className="tq-chip";chip.dataset.name=opt.name;
+    chip.innerHTML=`<span class="tq-chip-type">${esc(opt.type)}</span><span class="tq-chip-name">${esc(opt.name)}</span>`;
+    chip.addEventListener("click",()=>{
+      if(TQ.checked)return;
+      if(TQ.selected.has(opt.name)){TQ.selected.delete(opt.name);chip.classList.remove("selected");}
+      else{TQ.selected.add(opt.name);chip.classList.add("selected");}
+      $("tq-check-btn").disabled=TQ.selected.size===0;
+    });
+    grid.appendChild(chip);
+  }
+}
+
+function tqHandleCheck(){
+  const btn=$("tq-check-btn");
+  if(TQ.checked){
+    TQ.currentQ++;
+    if(TQ.currentQ>=TQ.questions.length)tqShowResults();
+    else tqShowQuestion();
+    return;
+  }
+  TQ.checked=true;
+  const q=TQ.questions[TQ.currentQ];
+  const missed=[...q.correct].filter(f=>!TQ.selected.has(f));
+  const wrong=[...TQ.selected].filter(f=>!q.correct.has(f));
+  const isFullyCorrect=missed.length===0&&wrong.length===0;
+  if(isFullyCorrect)TQ.score++;
+  $("tq-grid").querySelectorAll(".tq-chip").forEach(chip=>{
+    const name=chip.dataset.name;
+    chip.classList.remove("selected");
+    if(q.correct.has(name)&&TQ.selected.has(name))chip.classList.add("correct");
+    else if(!q.correct.has(name)&&TQ.selected.has(name))chip.classList.add("wrong");
+    else if(q.correct.has(name)&&!TQ.selected.has(name))chip.classList.add("missed");
+    const type=q.options.find(o=>o.name===name)?.type||"family";
+    chip.style.cursor="pointer";
+    chip.addEventListener("click",()=>tqShowSpeciesPopup(type,name));
+  });
+  const ob=$("tq-order-block");ob.style.cursor="pointer";ob.onclick=()=>tqShowSpeciesPopup("order",q.order);
+  const fb=$("tq-feedback");
+  if(isFullyCorrect){fb.textContent="✓ Correct!";fb.style.color="#3d8b5e";}
+  else if(wrong.length>0&&missed.length>0){fb.textContent=`${missed.length} missed, ${wrong.length} incorrect`;fb.style.color="#e05252";}
+  else if(wrong.length>0){fb.textContent=`${wrong.length} incorrect choice${wrong.length>1?"s":""}`;fb.style.color="#e05252";}
+  else{fb.textContent=`${missed.length} missed`;fb.style.color="#c07830";}
+  $("tq-score").textContent=`${TQ.score} correct`;
+  const isLast=TQ.currentQ>=TQ.questions.length-1;
+  btn.textContent=isLast?"See results →":"Next →";btn.className="tq-check-btn next-mode";btn.disabled=false;
+}
+
+function tqShowResults(){
+  hide("tq-quiz");show("tq-results");
+  const pct=Math.round(TQ.score/TQ.questions.length*100);
+  $("tq-res-score").textContent=TQ.score;
+  $("tq-res-denom").textContent=`out of ${TQ.questions.length}`;
+  const msgs=[[90,"Excellent — strong taxonomic knowledge!"],[70,"Good work — keep practising."],[50,"Getting there — try again to improve."],[0,"Tough quiz! A few more rounds will help it stick."]];
+  $("tq-res-msg").textContent=msgs.find(([t])=>pct>=t)[1];
+}
+
+function tqShowSpeciesPopup(rank,value){
+  if(!S.allObs?.length||!value)return;
+  const filtered=S.allObs.filter(o=>
+    rank==="order"?o._treeRanks?.order===value:
+    rank==="genus"?o.taxon.name.split(" ")[0]===value:
+    o._treeRanks?.family===value
+  );
+  if(!filtered.length)return;
+  const sorted=[...filtered].sort((a,b)=>(a.taxon.name||"").localeCompare(b.taxon.name||""));
+  $("tq-sp-title").textContent=value;
+  let meta=rank.charAt(0).toUpperCase()+rank.slice(1);
+  if(rank==="genus"&&filtered.length){const fam=filtered[0]._treeRanks?.family;if(fam)meta+=` · ${fam}`;}
+  $("tq-sp-meta").textContent=meta;
+  const body=$("tq-sp-body");body.innerHTML="";
+  for(const o of sorted){
+    const thumb=o.photos?.[0]?.url||"";
+    const common=tc(o.taxon.preferred_common_name)||"";
+    const latin=o.taxon.name||"";
+    const order=o._treeRanks?.order||"";
+    const family=o._treeRanks?.family||"";
+    const taxoParts=[];
+    if(order)taxoParts.push(`<span style="color:#9bb8a8">Order</span> ${esc(order)}`);
+    if(family)taxoParts.push(`<span style="color:#9bb8a8">Family</span> ${esc(family)}`);
+    const taxoLine=taxoParts.join(" &middot; ");
+    const row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:10px;padding:7px 14px";
+    row.innerHTML=`${thumb?`<img src="${esc(thumb)}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0">`:'<div style="width:44px;height:44px;border-radius:8px;background:#d4e8dd;flex-shrink:0"></div>'}<div style="min-width:0">${taxoLine?`<div style="font-size:11px;font-weight:600;color:#3a5a48;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${taxoLine}</div>`:""}<div style="font-size:14px;font-weight:600;font-style:italic;color:#1c2b22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(latin)}</div>${common?`<div style="font-size:12px;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(common)}</div>`:""}</div>`;
+    body.appendChild(row);
+  }
+  show("tq-sp-popup");
+}
+
+function openTaxoQuiz(){
+  if(!S.allObs?.length){alert("Load your observations first.");return;}
+  TQ.questions=tqBuildQuestions(S.allObs);
+  if(TQ.questions.length<2){alert("Not enough taxonomic variety to generate a quiz.");return;}
+  TQ.currentQ=0;TQ.score=0;
+  show("tq-quiz");hide("tq-results");
+  showScreen("taxoquiz");
+  tqShowQuestion();
+}
+
+$("btn-taxoquiz-open").addEventListener("click",openTaxoQuiz);
+$("btn-taxoquiz-back").addEventListener("click",()=>showScreen("home"));
+$("tq-check-btn").addEventListener("click",tqHandleCheck);
+$("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
+$("tq-quit-btn").addEventListener("click",()=>showScreen("home"));
 </script>
 </body>
 </html>
