@@ -686,7 +686,7 @@ function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)
 
 /* ── State ── */
 let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:""};
-const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map();
+const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
 
@@ -913,6 +913,13 @@ async function fetchExtra(tid,uid){
       ps.push({type:"photo",url,observer:p.attribution||"",yours:false});
       if(ps.length>=5)break;
     }
+    // Cache alternative English common names for fuzzy-matching in check()
+    const preferred=(taxon.preferred_common_name||"").toLowerCase();
+    const altNames=(taxon.names||[])
+      .filter(n=>(n.locale==="en"||(n.lexicon||"").toLowerCase().includes("english"))&&n.name)
+      .map(n=>n.name)
+      .filter(n=>n.toLowerCase()!==preferred);
+    commonNamesCache.set(tid,[...new Set(altNames)]);
     photoCache.set(tid,ps);return ps;
   }catch{return[]}
 }
@@ -1908,7 +1915,7 @@ async function renderCard(){
   hide("map-strip");
   const sf=$("score-flash");sf.style.animation="none";sf.classList.remove("pop");sf.style.opacity="0";
   renderCar([...userPhotos,...mapSlide]);
-  fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([...userPhotos,...mapSlide,...ex])}});
+  fetchExtra(o.taxon.id,o.user?.id).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([...userPhotos,...mapSlide,...ex]);c._altCommonNames=commonNamesCache.get(o.taxon.id)||[]}});
   const notes=o.description?.trim();
   if(notes){$("obs-notes-text").textContent=notes;show("obs-notes")}else{hide("obs-notes")}
   requestAnimationFrame(()=>{
@@ -2088,7 +2095,7 @@ function check(){
   const inp=$("inp-"+step);
   const userVal=inp.value;
   const correctVal=c[step];
-  const isCorrect=correctVal&&isMatch(userVal,correctVal);
+  const isCorrect=correctVal&&(isMatch(userVal,correctVal)||(step==="common"&&(c._altCommonNames||[]).some(n=>isMatch(userVal,n))));
   c._answers=c._answers||{};
   c._results=c._results||{};
   c._answers[step]=userVal;
