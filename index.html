@@ -1292,16 +1292,54 @@ function collectDescendantObs(node){
   function walk(n){if(n.obs)result.push(...n.obs);for(const[,c]of n.children)walk(c);}
   walk(node);return result;
 }
+function makeSpRow(o,srsMap,now){
+  const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
+  const isDue=!srs||srs.nextReview<=now;
+  const{primary:nm,secondary:sec}=nameDisplay(o.taxon.name,tc(o.taxon.preferred_common_name)||"");
+  let state,sc;
+  if(!srs||srs.totalReviews===0){state="New";sc="ease-new"}
+  else if(srs.interval>=MATURE_IV){state="Mature";sc="ease-mature"}
+  else if(srs.interval>=DAY){state="Review";sc="ease-review"}
+  else{state="Learning";sc="ease-learning"}
+  let nextStr="";
+  if(srs&&srs.totalReviews>0){nextStr=isDue?"Due now":"in "+fmtIv(Math.max(0,(srs.nextReview-now)/60000))}
+  const thumb=o.photos?.[0]?.url||"";
+  const spRow=document.createElement("div");spRow.className="sp-row-home";
+  spRow.style.cssText=`padding-left:14px;padding-right:14px`;
+  spRow.innerHTML=`${thumb?`<img class="sp-thumb" src="${esc(thumb)}" alt="" loading="lazy">`:'<div class="sp-thumb"></div>'}<div class="sp-info"><div class="sp-common-name">${esc(nm)}</div>${sec?`<div class="sp-sci-name">${esc(sec)}</div>`:""}</div><div class="sp-srs-col"><span class="sp-ease ${sc}">${state}</span>${nextStr?`<div class="sp-next-str">${esc(nextStr)}</div>`:""}</div>`;
+  return spRow;
+}
 function renderPhyloNode(child,depth,srsMap,now){
   const wrap=document.createElement("div");
   if(child.rank==="family"){
+    const nodeId=`family:${child.name}`;
+    const isCollapsed=!collapsedNodes.has(nodeId+"_open");
+    const famIndent=14+2*10+(depth-2)*26;
     const row=document.createElement("div");
     row.className="tree-family-row";
-    row.style.paddingLeft=`${14+2*10+(depth-2)*26+70}px`;
+    row.style.paddingLeft=`${famIndent}px`;
     let nDue=0;for(const o of child.obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)nDue++;}
-    row.innerHTML=`<span class="tree-fam-name">${esc(child.name)}</span><span class="tree-fam-meta">${child.obs.length}${nDue>0?` &middot; <span class="tree-due">${nDue} due</span>`:""}</span><span class="tree-arrow">›</span>`;
-    row.addEventListener("click",()=>showFamily(child.name,child.obs,srsMap));
-    wrap.appendChild(row);
+    row.innerHTML=`<span class="tree-chevron" style="margin-right:2px">${isCollapsed?"▸":"▾"}</span><span class="tree-fam-name">${esc(child.name)}</span><span class="tree-fam-meta">${child.obs.length}${nDue>0?` &middot; <span class="tree-due">${nDue} due</span>`:""}</span>`;
+    if(nDue>0){const sb=document.createElement("button");sb.className="tree-study-btn";sb.textContent="Study";sb.addEventListener("click",e=>{e.stopPropagation();S.deckLabel=child.name;buildDeck(child.obs,false);});row.appendChild(sb);}
+    const spWrap=document.createElement("div");
+    spWrap.style.display=isCollapsed?"none":"";
+    const spIndent=famIndent+28;
+    const populateSpecies=()=>{
+      if(spWrap._populated)return;spWrap._populated=true;
+      const sorted=[...child.obs].sort((a,b)=>{
+        const na=nameDisplay(a.taxon.name,tc(a.taxon.preferred_common_name)||"").primary.toLowerCase();
+        const nb=nameDisplay(b.taxon.name,tc(b.taxon.preferred_common_name)||"").primary.toLowerCase();
+        return na.localeCompare(nb);
+      });
+      for(const o of sorted)spWrap.appendChild(makeSpRow(o,srsMap,now));
+    };
+    if(!isCollapsed)populateSpecies();
+    row.addEventListener("click",()=>{
+      const col=!collapsedNodes.has(nodeId+"_open");
+      if(col){collapsedNodes.add(nodeId+"_open");populateSpecies();spWrap.style.display="";row.querySelector(".tree-chevron").textContent="▾";}
+      else{collapsedNodes.delete(nodeId+"_open");spWrap.style.display="none";row.querySelector(".tree-chevron").textContent="▸";}
+    });
+    wrap.appendChild(row);wrap.appendChild(spWrap);
   }else{
     const nodeId=`${child.rank}:${child.name}`;
     const isCollapsed=collapsedNodes.has(nodeId)||(DEFAULT_COLLAPSED_RANKS.has(child.rank)&&!collapsedNodes.has(nodeId+"_open"));
@@ -1334,7 +1372,14 @@ function renderPhyloNode(child,depth,srsMap,now){
     const childWrap=document.createElement("div");
     childWrap.className="tree-children";
     childWrap.style.display=isCollapsed?"none":"";
-    for(const[,gc]of child.children)childWrap.appendChild(renderPhyloNode(gc,depth+1,srsMap,now));
+    for(const[,gc]of child.children){
+      if(gc.rank==="family"&&gc.name==="(Unknown)"){
+        // Orphan species with no family rank — render directly under parent
+        for(const o of gc.obs)childWrap.appendChild(makeSpRow(o,srsMap,now));
+      }else{
+        childWrap.appendChild(renderPhyloNode(gc,depth+1,srsMap,now));
+      }
+    }
     row.addEventListener("click",()=>{
       const col=collapsedNodes.has(nodeId)||(DEFAULT_COLLAPSED_RANKS.has(child.rank)&&!collapsedNodes.has(nodeId+"_open"));
       if(col){collapsedNodes.delete(nodeId);collapsedNodes.add(nodeId+"_open");childWrap.style.display="";row.querySelector(".tree-chevron").textContent="▾"}
