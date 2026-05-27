@@ -120,9 +120,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .tab-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#7c80a3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .tab-btn.active{border-color:#818cf8;background:rgba(129,140,248,.1);color:#e2e4ef}
 .hidden{display:none!important}
-#screen-quiz{position:fixed;inset:0;display:flex;flex-direction:column;padding:6px 8px 16px;overflow:hidden}
+#screen-quiz{position:fixed;inset:0;display:flex;flex-direction:column;padding:6px 8px 8px;overflow:hidden}
 #screen-quiz .top-bar{flex-shrink:0;margin-bottom:4px;gap:8px}
-#screen-quiz .q-card{flex:1;min-height:0;overflow-y:auto;padding:8px;border-radius:14px}
+#screen-quiz .q-card{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0;border-radius:14px}
+#screen-quiz .q-card-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #screen-quiz .prompt{display:block}
 #screen-quiz .carousel{margin-bottom:6px;border-radius:10px}
 #screen-quiz .map-strip{margin-bottom:6px;height:90px}
@@ -130,7 +131,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz #obs-notes{margin-bottom:6px!important;padding:7px 11px 8px!important}
 /* ── Green theme for quiz screen ── */
 #screen-quiz{background:#f4f2ed}
-#screen-quiz .q-card{background:#fff;border:none;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);padding:16px 16px 36px;margin:8px 10px 0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#screen-quiz .q-card{background:#fff;border:none;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);margin:8px 10px 0}
+#screen-quiz .q-card-scroll{padding:16px 16px 8px}
 #screen-quiz .prompt{font-family:'Lora',Georgia,serif;font-style:normal;font-weight:600;font-size:17px;color:#1c2b22;margin-bottom:14px}
 .prompt-label{color:#3d8b5e}
 #screen-quiz .progress-track{background:#d6ebe1}
@@ -436,6 +438,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <span id="round-info" style="display:flex;align-items:center;gap:6px"></span>
   </div>
   <div class="q-card" id="q-card">
+  <div class="q-card-scroll" id="q-card-scroll">
     <div id="score-flash" class="score-flash"></div>
     <p class="prompt" id="q-prompt">Identify this observation</p>
     <div class="carousel" id="carousel">
@@ -470,11 +473,12 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <div id="btn-row-submit" class="hidden"><button type="button" class="btn-submit" id="btn-submit">→</button></div>
     <button type="button" class="btn-next-floating hidden" id="btn-next" onclick="next()" title="Next (or press Enter)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     <div class="retry-notice hidden" id="retry-notice"></div>
+  </div><!-- end q-card-scroll -->
+  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#b5c9bc;font-size:10px;cursor:pointer;font-family:inherit;padding:10px 0 12px;text-align:center;width:100%;display:block;line-height:1;-webkit-tap-highlight-color:transparent;flex-shrink:0" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore</button>
   </div>
   <!-- Keyboard anchor: keeps soft keyboard alive during field transitions -->
   <input id="kb-anchor" type="text" inputmode="text" aria-hidden="true" tabindex="-1"
     style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0">
-  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:0;height:36px;line-height:36px;text-align:center;width:100%;flex-shrink:0;display:block;-webkit-tap-highlight-color:transparent" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore</button>
 </div>
 
 <div id="screen-terms" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
@@ -1912,7 +1916,7 @@ async function renderCard(){
   }
   hide("trait-panel");
   $("q-card").classList.remove("fade-out");
-  $("q-card").scrollTop=0;
+  $("q-card-scroll").scrollTop=0;
 }
 
 function showFieldStep(c,animateIn){
