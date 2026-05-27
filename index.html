@@ -474,7 +474,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <div id="etym-box" class="etym-note hidden"><div class="etym-label">📖 Etymology</div><div id="etym-text"></div></div>
     <div id="traits-box" class="etym-note hidden" style="background:rgba(34,211,238,.05);border-color:rgba(34,211,238,.15);max-height:260px;overflow-y:auto"><div class="etym-label" style="color:#22d3ee">🔬 Key Traits</div><div id="traits-text"></div></div>
     <div id="btn-row-submit" class="hidden"><button type="button" class="btn-submit" id="btn-submit">→</button></div>
-    <button type="button" class="btn-next-floating hidden" id="btn-next" onclick="next()" title="Next (or press Enter)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+    <button type="button" class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div><!-- end q-card-scroll -->
   <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#b5c9bc;font-size:10px;cursor:pointer;font-family:inherit;padding:10px 0 12px;text-align:center;width:100%;display:block;line-height:1;-webkit-tap-highlight-color:transparent;flex-shrink:0" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore</button>
@@ -660,7 +660,7 @@ function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)
 let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:""};
 const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
-let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0;
+let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
 
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function tc(s){return(s||"").replace(/\b\w/g,c=>c.toUpperCase())}
@@ -772,7 +772,7 @@ function quizSubmit(e){e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c)re
 document.addEventListener("keyup",e=>{if((e.key==="Enter"||e.keyCode===13)&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
   const c=S.deck?.[S.cardIndex];
   if(S.traitMode&&c&&!c._revealed){checkTraits();return}
-  if(c&&c._revealed)next();
+  if(c&&c._revealed&&Date.now()-_revealedAt>400)next();
 }});
 $("car-prev").addEventListener("click",e=>{e.stopPropagation();moveCar(-1)});
 $("car-next").addEventListener("click",e=>{e.stopPropagation();moveCar(1)});
@@ -1946,6 +1946,7 @@ function showFieldStep(c,animateIn){
 }
 
 function revealCard(c){
+  _revealedAt=Date.now();
   const _ef=getEnabledFields();
   const fieldDefs=[["order","inp-order","fb-order"],["family","inp-family","fb-family"],["species","inp-species","fb-species"],["common","inp-common","fb-common"]];
   fieldDefs.forEach(([f,iid,fid])=>{
@@ -2005,7 +2006,7 @@ function revealCard(c){
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
-  setTimeout(()=>$("btn-next").focus(),50);}
+}
 
 function handleMC(c,chosenIdx){
   if(c._revealed)return;c._revealed=true;
@@ -2053,7 +2054,6 @@ function handleMC(c,chosenIdx){
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
-  setTimeout(()=>$("btn-next").focus(),50);
 }
 
 function check(){
