@@ -333,31 +333,31 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .ignore-cancel:hover{border-color:#3d8b5e;color:#1c2b22}
 .ignore-btn-label{font-size:11px;font-weight:400;opacity:.7;display:block;margin-top:2px}
 /* ── Taxonomy Quiz ── */
-#screen-taxoquiz{padding-bottom:32px}
-.tq-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;flex-shrink:0}
+#screen-taxoquiz{background:#f4f2ed;min-height:100vh;padding-bottom:32px}
+.tq-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;flex-shrink:0}
 .tq-header-title{font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#1c2b22}
-.tq-back-btn{background:#e4ede8;border:none;color:#3d8b5e;padding:7px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
-.tq-progress-row{display:flex;justify-content:space-between;align-items:center;padding:0 16px 8px;font-size:13px;font-weight:600;color:#6b8f78}
-.tq-order-block{margin:0 16px 10px;background:#fff;border:1.5px solid #c8ddd2;border-radius:18px;padding:14px 16px 12px;text-align:center}
-.tq-order-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6b8f78;margin-bottom:4px}
-.tq-order-name{font-family:'Lora',Georgia,serif;font-size:24px;font-weight:700;font-style:italic;color:#1c2b22;line-height:1.15}
-.tq-prompt{text-align:center;font-size:13px;color:#6b8f78;padding:0 16px 10px}
-.tq-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 10px}
-.tq-chip{background:#fff;border:2px solid #d4e8dd;border-radius:14px;padding:10px 10px 8px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:border-color .1s,background .1s,transform .08s;text-align:center;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tq-back-btn{background:#e4ede8;border:none;color:#3d8b5e;padding:7px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.tq-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);margin:0 10px 12px;padding:16px 16px 14px}
+.tq-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:13px;font-weight:600;color:#6b8f78}
+.tq-order-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6b8f78;margin-bottom:4px;text-align:center}
+.tq-order-name{font-family:'Lora',Georgia,serif;font-size:24px;font-weight:700;font-style:italic;color:#1c2b22;line-height:1.15;text-align:center;margin-bottom:14px}
+.tq-prompt{font-size:13px;color:#6b8f78;margin-bottom:12px;text-align:center}
+.tq-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.tq-chip{background:#f4f2ed;border:2px solid #d4e8dd;border-radius:12px;padding:10px 8px 8px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:border-color .1s,background .1s,transform .08s;text-align:center;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .tq-chip:active{transform:scale(.97)}
-.tq-chip.selected{background:#eaf5ee;border-color:#3d8b5e;color:#1c3d27}
+.tq-chip.selected{background:#eaf5ee;border-color:#3d8b5e}
 .tq-chip.correct{background:#d4f0e0;border-color:#3d8b5e;color:#1c5c37}
 .tq-chip.wrong{background:#fde8e8;border-color:#e05252;color:#7a1e1e}
 .tq-chip.missed{background:#fff;border-color:#3d8b5e;border-style:dashed;color:#3d5c43}
 .tq-chip-type{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9bb8a8;margin-bottom:3px}
 .tq-chip.correct .tq-chip-type{color:#3d8b5e}
 .tq-chip.wrong .tq-chip-type,.tq-chip.missed .tq-chip-type{color:inherit;opacity:.7}
-.tq-chip-name{font-family:'Lora',Georgia,serif;font-size:13px;font-style:italic;font-weight:700;line-height:1.2}
-.tq-feedback{text-align:center;min-height:20px;font-size:14px;font-weight:600;padding:0 16px 10px}
-.tq-check-btn{display:block;width:calc(100% - 32px);margin:0 16px;padding:14px 0;background:#3d8b5e;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s;-webkit-tap-highlight-color:transparent}
+.tq-chip-name{font-family:'Lora',Georgia,serif;font-size:13px;font-style:italic;font-weight:700;line-height:1.2;color:#1c2b22}
+.tq-feedback{text-align:center;min-height:20px;font-size:14px;font-weight:600;margin-bottom:10px}
+.tq-check-btn{display:block;width:100%;padding:13px 0;background:#3d8b5e;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s;-webkit-tap-highlight-color:transparent}
 .tq-check-btn:disabled{background:#c8ddd2;color:#8aaa98;cursor:default}
 .tq-check-btn.next-mode{background:#82c97a}
-.tq-results{padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.tq-results-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);margin:0 10px;padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
 .tq-results-title{font-family:'Lora',Georgia,serif;font-size:26px;font-weight:700;color:#1c2b22}
 .tq-results-score{font-size:52px;font-weight:700;color:#3d8b5e;line-height:1}
 .tq-results-denom{font-size:14px;color:#6b8f78}
@@ -381,6 +381,12 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="8" stroke-width="2"/>
         <line x1="12" y1="12" x2="12" y2="16"/>
+      </svg>
+    </button>
+    <button id="btn-open-stats" style="background:none;border:none;cursor:pointer;padding:0;display:block">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b8f78" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
       </svg>
     </button>
   </div>
@@ -584,10 +590,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <div class="home-title" id="home-title">Nomina Naturæ</div>
       <div class="home-sub" id="home-sub"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <button id="btn-taxoquiz-open" class="home-leaf-btn" style="font-size:14px;padding:6px 14px">Quiz</button>
-      <button class="home-settings-btn" id="btn-home-back" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home</button>
-    </div>
+    <button class="home-settings-btn" id="btn-home-back" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home</button>
   </div>
   <div class="home-due-bar">
     <button class="btn-primary" id="btn-study-due-home" style="margin-top:0"></button>
@@ -609,30 +612,34 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 <!-- Taxonomy Quiz screen -->
 <div id="screen-taxoquiz" class="container hidden">
   <div class="tq-header">
-    <div class="tq-header-title">Taxonomy Quiz</div>
-    <button class="tq-back-btn" id="btn-taxoquiz-back">← Taxa</button>
+    <button class="tq-back-btn" id="btn-taxoquiz-home">← Home</button>
+    <button class="tq-back-btn" id="btn-taxoquiz-taxa">View all taxa</button>
   </div>
   <div id="tq-quiz">
-    <div class="tq-progress-row">
-      <span id="tq-progress">1 / 10</span>
-      <span id="tq-score">0 correct</span>
+    <div class="tq-card">
+      <div class="tq-progress-row">
+        <span id="tq-progress">1 / 10</span>
+        <span id="tq-score">0 correct</span>
+      </div>
+      <div id="tq-order-block">
+        <div class="tq-order-label">Order</div>
+        <div class="tq-order-name" id="tq-order-name"></div>
+      </div>
+      <div class="tq-prompt">Tap all families and genera that belong to this order</div>
+      <div class="tq-grid" id="tq-grid"></div>
+      <div class="tq-feedback" id="tq-feedback"></div>
+      <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
     </div>
-    <div class="tq-order-block" id="tq-order-block">
-      <div class="tq-order-label">Order</div>
-      <div class="tq-order-name" id="tq-order-name"></div>
-    </div>
-    <div class="tq-prompt">Tap all families and genera that belong to this order</div>
-    <div class="tq-grid" id="tq-grid"></div>
-    <div class="tq-feedback" id="tq-feedback"></div>
-    <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
   </div>
-  <div id="tq-results" class="tq-results hidden">
-    <div class="tq-results-title">Quiz complete</div>
-    <div class="tq-results-score" id="tq-res-score"></div>
-    <div class="tq-results-denom" id="tq-res-denom"></div>
-    <div class="tq-results-msg" id="tq-res-msg"></div>
-    <button class="tq-check-btn" id="tq-retry-btn" style="margin:0">Try again</button>
-    <button class="tq-back-btn" id="tq-quit-btn" style="width:calc(100% - 32px)">Back to Taxa</button>
+  <div id="tq-results" class="hidden">
+    <div class="tq-results-card">
+      <div class="tq-results-title">Quiz complete</div>
+      <div class="tq-results-score" id="tq-res-score"></div>
+      <div class="tq-results-denom" id="tq-res-denom"></div>
+      <div class="tq-results-msg" id="tq-res-msg"></div>
+      <button class="tq-check-btn" id="tq-retry-btn">Try again</button>
+      <button class="tq-back-btn" id="tq-quit-btn" style="width:100%;text-align:center;padding:10px 0">Back to Taxa</button>
+    </div>
   </div>
 </div>
 
@@ -841,8 +848,9 @@ $("btn-learn").addEventListener("click",()=>startFromHome(false));
 $("btn-terms").addEventListener("click",()=>showScreen("terms"));
 $("btn-terms-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-open-howto").addEventListener("click",()=>showScreen("howto"));
+$("btn-open-stats").addEventListener("click",()=>showStats());
 $("btn-howto-back").addEventListener("click",()=>showScreen("home-main"));
-$("btn-families-main").addEventListener("click",()=>loadHome());
+$("btn-families-main").addEventListener("click",async()=>{if(!S.allObs?.length)await loadHome();openTaxoQuiz();});
 $("btn-exit").addEventListener("click",()=>{killMap();showScreen("home-main")});
 $("btn-home-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-study-due-home").addEventListener("click",()=>startQuizFromHome());
@@ -2630,19 +2638,20 @@ function tqShowSpeciesPopup(rank,value){
 
 function openTaxoQuiz(){
   if(!S.allObs?.length){alert("Load your observations first.");return;}
-  TQ.questions=tqBuildQuestions(S.allObs);
-  if(TQ.questions.length<2){alert("Not enough taxonomic variety to generate a quiz.");return;}
+  const allQ=tqBuildQuestions(S.allObs);
+  if(allQ.length<2){alert("Not enough taxonomic variety to generate a quiz.");return;}
+  TQ.questions=allQ.slice(0,Math.min(S.qCount,allQ.length));
   TQ.currentQ=0;TQ.score=0;
   show("tq-quiz");hide("tq-results");
   showScreen("taxoquiz");
   tqShowQuestion();
 }
 
-$("btn-taxoquiz-open").addEventListener("click",openTaxoQuiz);
-$("btn-taxoquiz-back").addEventListener("click",()=>showScreen("home"));
+$("btn-taxoquiz-home").addEventListener("click",()=>showScreen("home-main"));
+$("btn-taxoquiz-taxa").addEventListener("click",()=>showScreen("home"));
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
-$("tq-quit-btn").addEventListener("click",()=>showScreen("home"));
+$("tq-quit-btn").addEventListener("click",()=>showScreen("home-main"));
 </script>
 </body>
 </html>
