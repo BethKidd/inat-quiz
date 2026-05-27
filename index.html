@@ -15,7 +15,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:#f4f2ed;display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef;opacity:0;transition:opacity 1.2s ease}
+body{min-height:100vh;background:#f4f2ed;display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef;opacity:0;transition:opacity 0.4s ease}
 a{color:#818cf8;text-decoration:none}.container{max-width:540px;width:100%}.center{text-align:center}
 .logo-icon{font-size:48px;margin-bottom:8px}
 h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
@@ -229,9 +229,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-setup .input:focus{border-color:#3d8b5e;box-shadow:0 0 0 3px rgba(61,139,94,.13);outline:none}
 #screen-setup .input::placeholder{color:#a8c4b4}
 #screen-setup .count-btn{background:#fff;border:1.5px solid #c8ddd2;color:#3d8b5e}
-#screen-setup .count-btn.active{background:#82c97a;border-color:#82c97a;color:#fff}
-#screen-setup .btn-primary{background:#3d8b5e;border-radius:12px}
-#screen-setup .btn-secondary{color:#2a6e4a;border:1.5px solid #a8d4bc;background:#dff0e8;border-radius:12px}
+#screen-setup .count-btn.active{background:#3d8b5e;border-color:#3d8b5e;color:#fff}
+#screen-setup .btn-primary{background:#82c97a;color:#fff;border:none;border-radius:12px}
+#screen-setup .btn-secondary{color:#fff;border:1.5px solid #82c97a;background:#82c97a;border-radius:12px}
 #screen-setup .footer-text{color:#6b8f78}
 #screen-setup .error{color:#dc2626}
 /* ── Phylogenetic tree ── */
@@ -625,8 +625,8 @@ function setNameOrder(order,skipSave){
   if(!skipSave)localStorage.setItem("inat_name_common_first",isCommon?"1":"0");
   const btnC=$("name-order-common"),btnL=$("name-order-latin");
   if(!btnC||!btnL)return;
-  btnC.style.background=isCommon?"#82c97a":"transparent";btnC.style.color=isCommon?"#fff":"#3d8b5e";
-  btnL.style.background=isCommon?"transparent":"#82c97a";btnL.style.color=isCommon?"#3d8b5e":"#fff";
+  btnC.style.background=isCommon?"#3d8b5e":"transparent";btnC.style.color=isCommon?"#fff":"#3d8b5e";
+  btnL.style.background=isCommon?"transparent":"#3d8b5e";btnL.style.color=isCommon?"#3d8b5e":"#fff";
 }
 function getEnabledFields(){
   const f=[];
@@ -747,8 +747,8 @@ function dedupe(obs){
   if(saved)$("inp-user").value=saved;
   updateHomeMainSub();
   showScreen("home-main");
-  // Fade in after layout is complete (two rAFs to let layoutHomeMain settle)
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity='1';}));
+  // Fade in after layout is complete — delay keeps native OS splash visible longer
+  setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity='1';})),800);
 })();
 
 /* ── Events ── */
