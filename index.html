@@ -88,6 +88,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .stat-label{font-size:11px;color:#7c80a3;margin-top:4px;font-weight:600}
 .species-list{margin-top:16px;max-height:400px;overflow-y:auto}
 .sp-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;margin-bottom:4px;font-size:13px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+.prog-row{background:#fff;border:1px solid #e4ede8;border-radius:10px;padding:10px 12px;margin-bottom:5px}
+.prog-bar-track{flex:1;background:#e4ede8;border-radius:3px;height:5px;overflow:hidden;min-width:0}
+.prog-bar-fill{height:100%;border-radius:3px}
 .sp-name{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sp-sci{font-style:italic;color:#7c80a3;font-size:12px}
 .sp-interval{font-size:11px;color:#8688a5;white-space:nowrap}
@@ -523,17 +526,13 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 </div>
 
 <div id="screen-stats" class="container hidden">
-  <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">📊 Your Progress</h2>
-  <p style="font-size:13px;color:#7c80a3;margin-bottom:16px" id="stats-user"></p>
-  <div class="tab-row">
-    <button class="tab-btn active" data-tab="overview" id="tab-overview">Overview</button>
-    <button class="tab-btn" data-tab="species" id="tab-species">Species</button>
-  </div>
-  <div id="tab-content-overview"><div class="stats-grid" id="stats-grid"></div><div style="margin-top:20px;text-align:center"><span class="due-badge" id="stats-due"></span></div></div>
-  <div id="tab-content-species" class="hidden"><div class="species-list" id="species-list"></div></div>
-  <div style="margin-top:24px">
+  <button id="btn-back-setup" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#3d8b5e;font-size:15px;font-weight:600;cursor:pointer;padding:0 0 16px;font-family:inherit;-webkit-tap-highlight-color:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
+  <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;margin-bottom:4px">Your Progress</h2>
+  <p style="font-size:13px;color:#6b8f78;margin-bottom:10px" id="stats-user"></p>
+  <div style="margin-bottom:14px"><span class="due-badge" id="stats-due"></span></div>
+  <div id="species-list"></div>
+  <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
     <button class="btn-primary" id="btn-study-due">Study Due Cards →</button>
-    <button class="btn-secondary" id="btn-back-setup" style="display:inline-flex;align-items:center;justify-content:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
     <button class="btn-danger" id="btn-reset">Reset All Progress</button>
   </div>
 </div>
@@ -757,9 +756,8 @@ $("btn-start-csv").addEventListener("click",()=>doStartCSV());
 $("btn-traits").addEventListener("click",()=>$("inp-traits").click());
 $("inp-traits").addEventListener("change",handleTraits);
 $("btn-start-traits").addEventListener("click",doStartTraits);
-$("btn-stats").addEventListener("click",()=>showStats());
 $("btn-view-stats").addEventListener("click",()=>showStats());
-$("btn-back-setup").addEventListener("click",()=>showScreen("setup"));
+$("btn-back-setup").addEventListener("click",()=>showScreen("home-main"));
 $("btn-study-due").addEventListener("click",()=>doStart(true));
 $("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
 function quizSubmit(e){e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}
@@ -787,10 +785,6 @@ $("map-toggle").addEventListener("click",e=>{
   if($("map-strip").classList.contains("expanded"))collapseMap();else expandMap();
 });
 $("btn-next").addEventListener("click",next);$("btn-next").addEventListener("touchend",e=>{e.preventDefault();next()},{passive:false});
-document.querySelectorAll(".tab-btn").forEach(btn=>{btn.addEventListener("click",()=>{
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
-  if(btn.dataset.tab==="overview"){show("tab-content-overview");hide("tab-content-species")}else{hide("tab-content-overview");show("tab-content-species")}
-})});
 
 /* ── Carousel ── */
 function moveCar(d){if(cSlides.length<=1)return;cIdx=(cIdx+d+cSlides.length)%cSlides.length;updateCar()}
@@ -2190,18 +2184,41 @@ function results(){
 }
 
 /* ── Stats ── */
-async function showStats(){const un=(S.currentUser||$("inp-user").value.trim()).toLowerCase();if(!un){showScreen("setup");return}S.currentUser=un;
-  const cards=await dbAllUser(un);$("stats-user").textContent=`${un} \u00B7 ${cards.length} species tracked`;
-  const now=Date.now(),due=cards.filter(c=>c.nextReview<=now).length,mature=cards.filter(c=>c.interval>=10080).length,learning=cards.filter(c=>c.totalReviews>0&&c.interval<10080).length;
-  $("stats-grid").innerHTML=`<div class="stat-box"><div class="stat-num">${cards.length}</div><div class="stat-label">Total</div></div><div class="stat-box"><div class="stat-num">${mature}</div><div class="stat-label">Mature (7d+)</div></div><div class="stat-box"><div class="stat-num">${learning}</div><div class="stat-label">Learning</div></div>`;
-  $("stats-due").textContent=due>0?`${due} cards due`:"All caught up!";$("stats-due").className=due>0?"due-badge":"due-badge due-none";
-  const sorted=[...cards].sort((a,b)=>b.interval-a.interval);const sl=$("species-list");sl.innerHTML="";
-  for(const c of sorted){const nm=c.common||c.species;let sc,st;
-    if(c.totalReviews===0){sc="ease-new";st="New"}else if(c.interval>=10080){sc="ease-mature";st="Mature"}else if(c.interval>=1440){sc="ease-review";st="Review"}else{sc="ease-learning";st="Learning"}
-    const isDue=c.nextReview<=now;const row=document.createElement("div");row.className="sp-row";
-    row.innerHTML=`<span class="sp-name">${esc(nm)}<br><span class="sp-sci">${esc(c.species)}</span></span><span class="sp-interval">${c.totalReviews>0?fmtIv(c.interval):"\u2014"}</span><span class="sp-ease ${sc}">${st}</span>${isDue?'<span style="color:#f87171;font-size:10px;font-weight:700">DUE</span>':""}`;
-    sl.appendChild(row)}
-  $("tab-overview").classList.add("active");$("tab-species").classList.remove("active");show("tab-content-overview");hide("tab-content-species");showScreen("stats")}
+async function showStats(){
+  const un=(S.currentUser||$("inp-user").value.trim()).toLowerCase();
+  if(!un){showScreen("setup");return}S.currentUser=un;
+  const all=await dbAllUser(un);
+  const now=Date.now();
+  const active=all.filter(c=>!c.ignored);
+  const reviewed=active.filter(c=>c.totalReviews>0).sort((a,b)=>a.nextReview-b.nextReview);
+  const fresh=active.filter(c=>c.totalReviews===0);
+  const due=reviewed.filter(c=>c.nextReview<=now).length;
+  $("stats-user").textContent=`${un} \u00B7 ${active.length} species`;
+  $("stats-due").textContent=due>0?`${due} due now`:"All caught up!";
+  $("stats-due").className=due>0?"due-badge":"due-badge due-none";
+  const MAX_IV=30*1440;
+  const sl=$("species-list");sl.innerHTML="";
+  const allRows=[...reviewed,...fresh];
+  for(const c of allRows){
+    const nm=c.common||c.species;
+    const isDue=c.nextReview<=now&&c.totalReviews>0;
+    const isNew=c.totalReviews===0;
+    const minsUntil=(c.nextReview-now)/60000;
+    const isSoon=!isDue&&!isNew&&minsUntil<1440;
+    const isMature=!isDue&&!isNew&&c.interval>=10080;
+    const dueStr=isNew?"New":isDue?"Due now":"in "+fmtIv(minsUntil);
+    const dueCol=isNew?"#9bb8a8":isDue?"#e05252":isSoon?"#c07830":"#3d8b5e";
+    const pct=isNew?0:Math.min(100,Math.round(c.interval/MAX_IV*100));
+    const barCol=isNew?"#c8ddd2":isDue?"#f87171":isSoon?"#fbbf24":isMature?"#3d8b5e":"#52a876";
+    const borderCol=isNew?"#c8ddd2":isDue?"#f87171":isSoon?"#f5c07a":isMature?"#3d8b5e":"#52a876";
+    const bgCol=isNew?"#fff":isDue?"rgba(248,113,113,.06)":isSoon?"rgba(251,191,36,.06)":isMature?"rgba(61,139,94,.07)":"rgba(82,168,118,.05)";
+    const row=document.createElement("div");row.className="prog-row";
+    row.style.cssText=`border-left:3px solid ${borderCol};background:${bgCol};border-radius:10px;padding:10px 12px;margin-bottom:5px`;
+    row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-weight:600;font-size:13px;color:#1c2b22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:8px">${esc(nm)}</span><span style="font-size:11px;color:${dueCol};font-weight:600;white-space:nowrap;flex-shrink:0">${dueStr}</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-style:italic;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;max-width:50%">${esc(c.species)}</span><div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%;background:${barCol}"></div></div></div>`;
+    sl.appendChild(row);
+  }
+  showScreen("stats");
+}
 </script>
 <script>
 /* ── Lightbox ── */
