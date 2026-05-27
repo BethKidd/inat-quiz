@@ -642,6 +642,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <div class="tq-results-denom" id="tq-res-denom"></div>
       <div class="tq-results-msg" id="tq-res-msg"></div>
       <button class="tq-check-btn" id="tq-retry-btn">Try again</button>
+      <button class="tq-check-btn" id="tq-new-quiz-btn" style="background:#3d8b5e">New quiz</button>
       <button class="tq-back-btn" id="tq-quit-btn" style="width:100%;text-align:center;padding:10px 0">← Home</button>
     </div>
   </div>
@@ -2779,6 +2780,7 @@ $("btn-taxoquiz-home").addEventListener("click",()=>showScreen("home-main"));
 $("btn-taxoquiz-taxa").addEventListener("click",()=>showScreen("home"));
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
+$("tq-new-quiz-btn").addEventListener("click",()=>{const allQ=tqBuildQuestions(S.allObs);TQ.questions=allQ.slice(0,Math.min(S.qCount,allQ.length));TQ.currentQ=0;TQ.score=0;tqShowQuestion();});
 $("tq-quit-btn").addEventListener("click",()=>showScreen("home-main"));
 </script>
 </body>
