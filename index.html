@@ -619,24 +619,27 @@ function dbPut(c){return new Promise((res,rej)=>{const r=db.transaction(STORE,"r
 function dbAllUser(u){return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index("username").getAll(u.toLowerCase());r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
 function dbClearUser(u){return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");const r=tx.objectStore(STORE).index("username").openCursor(u.toLowerCase());r.onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 
-/* ── SM-2 (Anki-style: learning steps 1min→10min, then days) ── */
-// Intervals stored in minutes. Learning: 1min, 10min. Graduated: days.
+/* ── SM-2 (session-aware: in-session retries replace learning steps) ── */
+// Intervals stored in minutes. No sub-day learning steps — session IS the learning phase.
 const DAY=1440; // minutes in a day
 function sm2(card,q){
   const now=Date.now();let{easeFactor:ef,interval:iv,repetitions:reps}=card;
   if(q<3){
-    // Fail — back to first learning step
-    reps=0;iv=1;
+    // Fail — due again in 4 hours
+    reps=0;iv=240;
   }else{
-    if(reps===0){iv=10}                          // passed step 1 → step 2 (10 min)
-    else if(reps===1){iv=DAY}                    // passed step 2 → graduate (1 day)
-    else{                                         // review phase: grow in days
-      if(q===3)iv=Math.max(DAY,Math.round(iv*1.2));    // hard
-      else if(q===5)iv=Math.round(iv*ef*1.3);           // easy
-      else iv=Math.round(iv*ef);                         // good
+    if(reps===0){
+      // First completion — go straight to day-scale intervals
+      if(q===5)iv=4*DAY;      // Easy: 4 days
+      else iv=DAY;             // Good / Hard: 1 day
+    }else{
+      // Review phase: grow by ease factor
+      if(q===3)iv=Math.max(DAY,Math.round(iv*1.2));   // hard: slow growth
+      else if(q===5)iv=Math.round(iv*ef*1.3);          // easy: fast growth
+      else iv=Math.round(iv*ef);                        // good: normal growth
     }
     reps++;
-    if(reps>2){ef=Math.max(1.3,ef+(0.1-(5-q)*(0.08+(5-q)*0.02)));}
+    if(reps>1){ef=Math.max(1.3,ef+(0.1-(5-q)*(0.08+(5-q)*0.02)));}
   }
   card.easeFactor=ef;card.interval=iv;card.repetitions=reps;
   card.lastReview=now;card.nextReview=now+iv*60000;
@@ -1988,9 +1991,9 @@ function revealCard(c){
   if(allCorrect&&!c._sessionResultPushed){
     c._sessionResultPushed=true;
     const score=cardSessionScore(c);
-    S.sessionResults.push({species:c.species,common:c.common,score});
     const q=score>=10?5:score>=5?4:score>=4?3:0;
     sm2(c.srs,q);dbPut(c.srs);
+    S.sessionResults.push({species:c.species,common:c.common,score,nextReview:c.srs.nextReview});
   }
   if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
@@ -2039,9 +2042,9 @@ function handleMC(c,chosenIdx){
   if(allCorrect&&!c._sessionResultPushed){
     c._sessionResultPushed=true;
     const score=cardSessionScore(c);
-    S.sessionResults.push({species:c.species,common:c.common,score});
     const q=score>=10?5:score>=5?4:score>=4?3:0;
     sm2(c.srs,q);dbPut(c.srs);
+    S.sessionResults.push({species:c.species,common:c.common,score,nextReview:c.srs.nextReview});
   }
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
@@ -2178,7 +2181,9 @@ function results(){
     const scoreCol=s>=9?"#2a5c3f":s>=5?"#3d8b5e":s>=1?"#d97706":s===0?"#888":"#dc2626";
     const rowBg=s>=3?"rgba(61,139,94,.06)":s>=1?"rgba(217,119,6,.05)":"rgba(220,38,38,.05)";
     row.style.background=rowBg;
-    row.innerHTML=`<span class="rb-name">${esc(r.common||r.species)}<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(r.species)}</span></span><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>`;
+    const minsUntil=r.nextReview?(r.nextReview-Date.now())/60000:null;
+    const dueStr=minsUntil!==null?(minsUntil<=0?"due now":"due in "+fmtIv(minsUntil)):"";
+    row.innerHTML=`<span class="rb-name">${esc(r.common||r.species)}<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(r.species)}</span>${dueStr?`<span style="display:block;font-size:10px;color:#9bb8a8;margin-top:2px">${dueStr}</span>`:""}</span><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>`;
     bd.appendChild(row);
   }
   showScreen("results");
