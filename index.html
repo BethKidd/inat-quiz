@@ -1810,6 +1810,7 @@ async function renderCard(){
   if(c._firstPassDone){
     c._correctThisAttempt=0;
     c._activeFields=0;
+    c._retryWrongSnapshot=c._retryWrong||0;
   }
   const _ef=getEnabledFields();
   c._fieldOrder=[];
@@ -1943,8 +1944,9 @@ function revealCard(c){
     flashScore(right>=total?10:right>=2?5:right>=1?2:0);
     if(q===5){show("correct-overlay");setTimeout(()=>hide("correct-overlay"),1400);}
   }else{
-    // Retry reveal — flash the current score reflecting any penalties so far
-    flashScore(cardSessionScore(c));
+    // Retry reveal — flash the penalty incurred during this retry attempt (only if non-zero)
+    const retryDelta=((c._retryWrong||0)-(c._retryWrongSnapshot||0));
+    if(retryDelta>0)flashScore(-retryDelta);
   }
   // Push to leaderboard when card is fully correct (may be after retries)
   if(allCorrect&&!c._sessionResultPushed){
