@@ -2608,6 +2608,14 @@ const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set()};
 function tqShuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function tqRnd(min,max){return min+Math.floor(Math.random()*(max-min+1))}
 
+// Returns true if nameA is the type taxon of nameB (or vice versa) — i.e. they share a stem
+// e.g. Rosales/Rosaceae/Rosa, Asparagales/Asparagaceae/Asparagus
+function tqSharesStem(a,b){
+  const stem=s=>s.replace(/(ales|aceae|idae|oideae)$/i,"").toLowerCase();
+  const sa=stem(a),sb=stem(b);
+  const minLen=Math.min(sa.length,sb.length);
+  return minLen>=4&&sa.slice(0,minLen)===sb.slice(0,minLen);
+}
 function tqBuildQuestions(obs){
   const orderFams=new Map(),orderGens=new Map();
   for(const o of obs){
@@ -2626,15 +2634,19 @@ function tqBuildQuestions(obs){
   // Order questions (main type)
   const orderQs=tqShuffle(valid.map(([order,famSet])=>{
     const genSet=orderGens.get(order)||new Set();
-    const correctFams=tqShuffle([...famSet]).slice(0,tqRnd(1,Math.min(famSet.size,3)));
-    const correctGens=tqShuffle([...genSet]).slice(0,tqRnd(1,Math.min(genSet.size,2)));
+    // Exclude type families/genera (names derived from the order name)
+    const okFams=[...famSet].filter(f=>!tqSharesStem(f,order));
+    const okGens=[...genSet].filter(g=>!tqSharesStem(g,order));
+    const correctFams=tqShuffle(okFams).slice(0,tqRnd(1,Math.min(okFams.length,3)));
+    const correctGens=tqShuffle(okGens).slice(0,tqRnd(1,Math.min(okGens.length,2)));
     const correctItems=[...correctFams.map(n=>({name:n,type:"family"})),...correctGens.map(n=>({name:n,type:"genus"}))];
+    if(!correctItems.length)return null;
     const correctNames=new Set(correctItems.map(x=>x.name));
-    const wrongFams=tqShuffle(allFams.filter(f=>!famSet.has(f))).map(n=>({name:n,type:"family"}));
-    const wrongGens=tqShuffle(allGens.filter(g=>!genSet.has(g))).map(n=>({name:n,type:"genus"}));
+    const wrongFams=tqShuffle(allFams.filter(f=>!famSet.has(f)&&!tqSharesStem(f,order))).map(n=>({name:n,type:"family"}));
+    const wrongGens=tqShuffle(allGens.filter(g=>!genSet.has(g)&&!tqSharesStem(g,order))).map(n=>({name:n,type:"genus"}));
     const wrongItems=tqShuffle([...wrongFams,...wrongGens]).slice(0,Math.max(0,8-correctItems.length));
     return{questionType:"order",order,correct:correctNames,options:tqShuffle([...correctItems,...wrongItems])};
-  }));
+  })).filter(Boolean);
 
   // Clade questions
   const cladeSets=new Map();
@@ -2658,13 +2670,16 @@ function tqBuildQuestions(obs){
   }
   const allObsGens=[...new Set([...famGens.values()].flatMap(s=>[...s]))];
   const familyQs=tqShuffle([...famGens.entries()].filter(([,s])=>s.size>=2).map(([family,genSet])=>{
-    const correctGens=tqShuffle([...genSet]).slice(0,tqRnd(2,Math.min(genSet.size,4)));
+    // Exclude type genus (name derived from family name)
+    const okGens=[...genSet].filter(g=>!tqSharesStem(g,family));
+    const correctGens=tqShuffle(okGens).slice(0,tqRnd(2,Math.min(okGens.length,4)));
+    if(correctGens.length<2)return null;
     const correctNames=new Set(correctGens);
-    const wrongGens=tqShuffle(allObsGens.filter(g=>!genSet.has(g))).map(n=>({name:n,type:"genus"}));
+    const wrongGens=tqShuffle(allObsGens.filter(g=>!genSet.has(g)&&!tqSharesStem(g,family))).map(n=>({name:n,type:"genus"}));
     const correctItems=correctGens.map(n=>({name:n,type:"genus"}));
     const wrongItems=wrongGens.slice(0,Math.max(0,8-correctItems.length));
     return{questionType:"family",family,correct:correctNames,options:tqShuffle([...correctItems,...wrongItems])};
-  }));
+  })).filter(Boolean);
 
   // Interleave: 3 order → 1 clade → 3 order → 1 family → repeat
   const merged=[];
