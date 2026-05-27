@@ -474,7 +474,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <!-- Keyboard anchor: keeps soft keyboard alive during field transitions -->
   <input id="kb-anchor" type="text" inputmode="text" aria-hidden="true" tabindex="-1"
     style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0">
-  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:6px 0 2px;text-align:center;width:100%;flex-shrink:0" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">ignore</button>
+  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#6b8f78;font-size:11px;cursor:pointer;font-family:inherit;padding:0;height:36px;line-height:36px;text-align:center;width:100%;flex-shrink:0;display:block;-webkit-tap-highlight-color:transparent" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore</button>
 </div>
 
 <div id="screen-terms" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
@@ -1891,7 +1891,7 @@ async function renderCard(){
       car.style.height="";
     }
   });
-  hide("etym-box");$("etym-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("wiki-info-btn");_wikiText=null;hide("btn-next");hide("retry-notice");hide("btn-ignore-link");
+  hide("etym-box");$("etym-text").textContent="";hide("traits-box");$("traits-text").textContent="";hide("wiki-info-btn");_wikiText=null;hide("btn-next");hide("retry-notice");show("btn-ignore-link");
   // Notes stay visible throughout
   if(c._mcMode&&c._mcOptions){
     $("q-prompt").textContent="Which species is this?";
