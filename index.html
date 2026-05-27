@@ -611,12 +611,20 @@ let db=null;
 function openDB(){return new Promise((res,rej)=>{
   const r=indexedDB.open(DB_NAME,DB_VER);
   r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE)){const s=d.createObjectStore(STORE,{keyPath:"taxonKey"});s.createIndex("username","username");s.createIndex("nextReview","nextReview")}};
-  r.onsuccess=e=>{db=e.target.result;res(db)};r.onerror=e=>rej(e.target.error);
+  r.onsuccess=e=>{
+    db=e.target.result;
+    // If another tab opens a newer version, close gracefully so it can upgrade
+    db.onversionchange=()=>{db.close();db=null};
+    res(db)
+  };
+  r.onerror=e=>rej(e.target.error);
 })}
-function dbGet(k){return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}
-function dbPut(c){return new Promise((res,rej)=>{const r=db.transaction(STORE,"readwrite").objectStore(STORE).put(c);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
-function dbAllUser(u){return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index("username").getAll(u.toLowerCase());r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
-function dbClearUser(u){return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");const r=tx.objectStore(STORE).index("username").openCursor(u.toLowerCase());r.onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+// Ensure we have a live connection, reopening if needed
+async function ensureDB(){if(!db||db.version===undefined){db=null;await openDB()}}
+async function dbGet(k){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}
+async function dbPut(c){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE,"readwrite").objectStore(STORE).put(c);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+async function dbAllUser(u){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index("username").getAll(u.toLowerCase());r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+async function dbClearUser(u){await ensureDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");const r=tx.objectStore(STORE).index("username").openCursor(u.toLowerCase());r.onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 
 /* ── SM-2 (session-aware: in-session retries replace learning steps) ── */
 // Intervals stored in minutes. No sub-day learning steps — session IS the learning phase.
