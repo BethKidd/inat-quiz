@@ -657,6 +657,7 @@ async function dbClearUser(u){await ensureDB();return new Promise((res,rej)=>{co
 /* ── SM-2 (session-aware: in-session retries replace learning steps) ── */
 // Intervals stored in minutes. No sub-day learning steps — session IS the learning phase.
 const DAY=1440; // minutes in a day
+const MATURE_IV=14*DAY; // interval threshold for "long-term memory" (14 days)
 function sm2(card,q){
   const now=Date.now();let{easeFactor:ef,interval:iv,repetitions:reps}=card;
   if(q<3){
@@ -1067,7 +1068,7 @@ async function _fetchHomeStats(un){
     const now=Date.now();
     const active=cards.filter(c=>!c.ignored);
     const studied=active.filter(c=>c.totalReviews>0).length;
-    const inMemory=active.filter(c=>c.interval>=10080).length;   // ≥1 week = mature/long-term
+    const inMemory=active.filter(c=>c.interval>=MATURE_IV).length;   // ≥1 week = mature/long-term
     const due=active.filter(c=>c.nextReview<=now&&c.totalReviews>0).length;
     // Show DB-based counts immediately while iNat loads
     $("home-stat-memory").textContent=`${inMemory} species in memory`;
@@ -1368,7 +1369,7 @@ function showFamily(fam,obs,srsMap){
     const sci=o.taxon.name;
     let state,sc;
     if(!srs||srs.totalReviews===0){state="New";sc="ease-new"}
-    else if(srs.interval>=10080){state="Mature";sc="ease-mature"}
+    else if(srs.interval>=MATURE_IV){state="Mature";sc="ease-mature"}
     else if(srs.interval>=DAY){state="Review";sc="ease-review"}
     else{state="Learning";sc="ease-learning"}
     let nextStr="";
@@ -2237,8 +2238,8 @@ async function showStats(){
   const sl=$("species-list");sl.innerHTML="";
   // Split into display groups
   const grpDue=reviewed.filter(c=>c.nextReview<=now);
-  const grpLearning=reviewed.filter(c=>c.nextReview>now&&c.interval<10080);
-  const grpMature=reviewed.filter(c=>c.nextReview>now&&c.interval>=10080);
+  const grpLearning=reviewed.filter(c=>c.nextReview>now&&c.interval<MATURE_IV);
+  const grpMature=reviewed.filter(c=>c.nextReview>now&&c.interval>=MATURE_IV);
   function makeHeading(label,count,col,bg){
     const h=document.createElement("div");
     h.style.cssText=`display:flex;align-items:center;gap:8px;margin:14px 0 6px 2px`;
