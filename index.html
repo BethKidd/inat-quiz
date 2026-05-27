@@ -1942,6 +1942,9 @@ function revealCard(c){
     sm2(c.srs,q);dbPut(c.srs);
     flashScore(right>=total?10:right>=2?5:right>=1?2:0);
     if(q===5){show("correct-overlay");setTimeout(()=>hide("correct-overlay"),1400);}
+  }else{
+    // Retry reveal — flash the current score reflecting any penalties so far
+    flashScore(cardSessionScore(c));
   }
   // Push to leaderboard when card is fully correct (may be after retries)
   if(allCorrect&&!c._sessionResultPushed){
