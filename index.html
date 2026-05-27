@@ -254,6 +254,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .tree-rank-class .tree-branch-name{font-size:14px;font-weight:600;color:#1c2b22;font-style:italic}
 /* order */
 .tree-rank-order .tree-rank-tag{color:#6b9e82}
+.tree-clade-row{display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;touch-action:manipulation;padding:9px 14px}
+.tree-clade-row:active{background:#e8f4ec}
+.tree-clade-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#a8c9b4;flex-shrink:0;min-width:46px}
+.tree-clade-name{font-family:'Lora',Georgia,serif;font-size:14px;font-style:italic;color:#3d8b5e;font-weight:700}
 .tree-rank-order .tree-branch-name{font-size:13px;font-weight:500;color:#3d5c43;font-style:italic;letter-spacing:.01em}
 .tree-name-group{display:flex;flex-direction:column;flex:1;min-width:0}
 .tree-order-cn{font-size:11px;color:#7a9e8a;font-style:normal;font-weight:400;margin-top:1px}
@@ -622,10 +626,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
         <span id="tq-score">0 correct</span>
       </div>
       <div id="tq-order-block">
-        <div class="tq-order-label">Order</div>
+        <div class="tq-order-label" id="tq-order-label">Order</div>
         <div class="tq-order-name" id="tq-order-name"></div>
       </div>
-      <div class="tq-prompt">Tap all families and genera that belong to this order</div>
+      <div class="tq-prompt" id="tq-prompt">Tap all families and genera that belong to this order</div>
       <div class="tq-grid" id="tq-grid"></div>
       <div class="tq-feedback" id="tq-feedback"></div>
       <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
@@ -638,7 +642,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <div class="tq-results-denom" id="tq-res-denom"></div>
       <div class="tq-results-msg" id="tq-res-msg"></div>
       <button class="tq-check-btn" id="tq-retry-btn">Try again</button>
-      <button class="tq-back-btn" id="tq-quit-btn" style="width:100%;text-align:center;padding:10px 0">Back to Taxa</button>
+      <button class="tq-back-btn" id="tq-quit-btn" style="width:100%;text-align:center;padding:10px 0">← Home</button>
     </div>
   </div>
 </div>
@@ -1358,6 +1362,68 @@ async function fetchTaxonomy(uniq){
   for(const o of uniq){o._family=fm[o.taxon.id]||null;o._treeRanks=tm[o.taxon.id]||{};o._familyCN=tm[o.taxon.id]?.familyCN||null;}
 }
 
+// APG IV clade lookup: order name → informal clade
+const APG_CLADE={
+  // Fabids (Eurosids I)
+  "Zygophyllales":"Fabids","Celastrales":"Fabids","Oxalidales":"Fabids",
+  "Malpighiales":"Fabids","Fabales":"Fabids","Rosales":"Fabids",
+  "Fagales":"Fabids","Cucurbitales":"Fabids",
+  // Malvids (Eurosids II)
+  "Geraniales":"Malvids","Myrtales":"Malvids","Crossosomatales":"Malvids",
+  "Picramniales":"Malvids","Huerteales":"Malvids","Brassicales":"Malvids",
+  "Malvales":"Malvids","Sapindales":"Malvids",
+  // Lamiids (Euasterids I)
+  "Garryales":"Lamiids","Gentianales":"Lamiids","Solanales":"Lamiids",
+  "Lamiales":"Lamiids","Boraginales":"Lamiids",
+  // Campanulids (Euasterids II)
+  "Aquifoliales":"Campanulids","Escalloniales":"Campanulids","Asterales":"Campanulids",
+  "Bruniales":"Campanulids","Paracryphiales":"Campanulids","Dipsacales":"Campanulids","Apiales":"Campanulids",
+  // Core eudicots — standalone named groups
+  "Saxifragales":"Saxifragales","Vitales":"Vitales","Caryophyllales":"Caryophyllales",
+  "Santalales":"Santalales","Gunnerales":"Gunnerales","Dilleniales":"Dilleniales",
+  "Berberidopsidales":"Berberidopsidales",
+  // Basal eudicots
+  "Ranunculales":"Basal eudicots","Proteales":"Basal eudicots",
+  "Trochodendrales":"Basal eudicots","Buxales":"Basal eudicots",
+  // Monocots — Commelinids
+  "Arecales":"Commelinids","Poales":"Commelinids",
+  "Commelinales":"Commelinids","Zingiberales":"Commelinids",
+  // Monocots — other named orders (left ungrouped in tree, appear individually)
+  "Alismatales":"Alismatales","Petrosaviales":"Petrosaviales",
+  "Dioscoreales":"Dioscoreales","Pandanales":"Pandanales",
+  "Liliales":"Liliales","Asparagales":"Asparagales",
+  // Magnoliids
+  "Canellales":"Magnoliids","Piperales":"Magnoliids",
+  "Magnoliales":"Magnoliids","Laurales":"Magnoliids",
+  // ANA grade
+  "Amborellales":"ANA grade","Nymphaeales":"ANA grade","Austrobaileyales":"ANA grade",
+};
+// Preferred display order for clades within a class
+const APG_CLADE_ORDER=["ANA grade","Magnoliids","Basal eudicots","Caryophyllales","Santalales",
+  "Saxifragales","Vitales","Gunnerales","Dilleniales","Berberidopsidales",
+  "Fabids","Malvids","Lamiids","Campanulids",
+  "Commelinids","Alismatales","Liliales","Asparagales","Dioscoreales","Pandanales","Petrosaviales"];
+
+function renderCladeGroup(cladeName,orderNodes,depth,srsMap,now){
+  const nodeId=`clade:${cladeName}`;
+  const isCollapsed=collapsedNodes.has(nodeId)||(DEFAULT_COLLAPSED_RANKS.has("clade")&&!collapsedNodes.has(nodeId+"_open"));
+  const indent=depth<=2?14+depth*10:14+2*10+(depth-2)*26;
+  const row=document.createElement("div");
+  row.className="tree-clade-row";
+  row.style.paddingLeft=`${indent}px`;
+  row.innerHTML=`<span class="tree-chevron">${isCollapsed?"▸":"▾"}</span><span class="tree-clade-tag">Clade</span><span class="tree-clade-name">${esc(cladeName)}</span>`;
+  const childWrap=document.createElement("div");
+  childWrap.className="tree-children";
+  childWrap.style.display=isCollapsed?"none":"";
+  for(const gc of orderNodes)childWrap.appendChild(renderPhyloNode(gc,depth+1,srsMap,now));
+  row.addEventListener("click",()=>{
+    const col=collapsedNodes.has(nodeId)||(!collapsedNodes.has(nodeId+"_open")&&DEFAULT_COLLAPSED_RANKS.has("clade"));
+    if(col){collapsedNodes.delete(nodeId);collapsedNodes.add(nodeId+"_open");childWrap.style.display="";row.querySelector(".tree-chevron").textContent="▾";}
+    else{collapsedNodes.add(nodeId);collapsedNodes.delete(nodeId+"_open");childWrap.style.display="none";row.querySelector(".tree-chevron").textContent="▸";}
+  });
+  const wrap=document.createElement("div");wrap.appendChild(row);wrap.appendChild(childWrap);
+  return wrap;
+}
 function buildPhyloTree(obs){
   const root={children:new Map()};
   for(const o of obs){
@@ -1457,12 +1523,44 @@ function renderPhyloNode(child,depth,srsMap,now){
     const childWrap=document.createElement("div");
     childWrap.className="tree-children";
     childWrap.style.display=isCollapsed?"none":"";
-    for(const[,gc]of child.children){
-      if(gc.rank==="family"&&gc.name==="(Unknown)"){
-        // Orphan species with no family rank — render directly under parent
-        for(const o of gc.obs)childWrap.appendChild(makeSpRow(o,srsMap,now));
-      }else{
-        childWrap.appendChild(renderPhyloNode(gc,depth+1,srsMap,now));
+    if(child.rank==="class"){
+      // Group order children by APG clade
+      const cladeMap=new Map();
+      const ungrouped=[];
+      for(const[,gc]of child.children){
+        const clade=APG_CLADE[gc.name];
+        if(clade&&gc.rank==="order"){
+          if(!cladeMap.has(clade))cladeMap.set(clade,[]);
+          cladeMap.get(clade).push(gc);
+        }else{ungrouped.push(gc);}
+      }
+      // Render in APG phylogenetic order, then any remaining
+      const seen=new Set();
+      for(const cladeName of APG_CLADE_ORDER){
+        if(cladeMap.has(cladeName)){
+          seen.add(cladeName);
+          const nodes=cladeMap.get(cladeName);
+          if(nodes.length===1){childWrap.appendChild(renderPhyloNode(nodes[0],depth+1,srsMap,now));}
+          else{childWrap.appendChild(renderCladeGroup(cladeName,nodes,depth+1,srsMap,now));}
+        }
+      }
+      for(const[cladeName,nodes]of cladeMap){
+        if(!seen.has(cladeName)){
+          if(nodes.length===1){childWrap.appendChild(renderPhyloNode(nodes[0],depth+1,srsMap,now));}
+          else{childWrap.appendChild(renderCladeGroup(cladeName,nodes,depth+1,srsMap,now));}
+        }
+      }
+      for(const gc of ungrouped){
+        if(gc.rank==="family"&&gc.name==="(Unknown)"){for(const o of gc.obs)childWrap.appendChild(makeSpRow(o,srsMap,now));}
+        else{childWrap.appendChild(renderPhyloNode(gc,depth+1,srsMap,now));}
+      }
+    }else{
+      for(const[,gc]of child.children){
+        if(gc.rank==="family"&&gc.name==="(Unknown)"){
+          for(const o of gc.obs)childWrap.appendChild(makeSpRow(o,srsMap,now));
+        }else{
+          childWrap.appendChild(renderPhyloNode(gc,depth+1,srsMap,now));
+        }
       }
     }
     row.addEventListener("click",()=>{
@@ -2523,7 +2621,9 @@ function tqBuildQuestions(obs){
   const allGens=[...new Set([...orderGens.values()].flatMap(s=>[...s]))];
   const valid=[...orderFams.entries()].filter(([,s])=>s.size>=2);
   if(valid.length<2||allFams.length<4)return[];
-  return tqShuffle(valid.map(([order,famSet])=>{
+
+  // Order questions (main type)
+  const orderQs=tqShuffle(valid.map(([order,famSet])=>{
     const genSet=orderGens.get(order)||new Set();
     const correctFams=tqShuffle([...famSet]).slice(0,tqRnd(1,Math.min(famSet.size,3)));
     const correctGens=tqShuffle([...genSet]).slice(0,tqRnd(1,Math.min(genSet.size,2)));
@@ -2532,8 +2632,30 @@ function tqBuildQuestions(obs){
     const wrongFams=tqShuffle(allFams.filter(f=>!famSet.has(f))).map(n=>({name:n,type:"family"}));
     const wrongGens=tqShuffle(allGens.filter(g=>!genSet.has(g))).map(n=>({name:n,type:"genus"}));
     const wrongItems=tqShuffle([...wrongFams,...wrongGens]).slice(0,Math.max(0,8-correctItems.length));
-    return{order,correct:correctNames,options:tqShuffle([...correctItems,...wrongItems])};
+    return{questionType:"order",order,correct:correctNames,options:tqShuffle([...correctItems,...wrongItems])};
   }));
+
+  // Clade questions (less frequent — 1 clade question per ~3 order questions)
+  const cladeSets=new Map();
+  for(const[ord]of orderFams){const c=APG_CLADE[ord];if(c){if(!cladeSets.has(c))cladeSets.set(c,new Set());cladeSets.get(c).add(ord);}}
+  const allObsOrders=[...orderFams.keys()];
+  const cladeQs=tqShuffle([...cladeSets.entries()].filter(([,s])=>s.size>=2).map(([clade,ordSet])=>{
+    const correctOrds=tqShuffle([...ordSet]).slice(0,tqRnd(2,Math.min(ordSet.size,4)));
+    const correctNames=new Set(correctOrds);
+    const wrongOrds=tqShuffle(allObsOrders.filter(o=>!ordSet.has(o))).map(n=>({name:n,type:"order"}));
+    const correctItems=correctOrds.map(n=>({name:n,type:"order"}));
+    const wrongItems=wrongOrds.slice(0,Math.max(0,8-correctItems.length));
+    return{questionType:"clade",clade,correct:correctNames,options:tqShuffle([...correctItems,...wrongItems])};
+  }));
+
+  // Interleave: roughly 1 clade per 3 order questions
+  const merged=[];
+  let ci=0;
+  for(let i=0;i<orderQs.length;i++){
+    merged.push(orderQs[i]);
+    if((i+1)%3===0&&ci<cladeQs.length)merged.push(cladeQs[ci++]);
+  }
+  return merged;
 }
 
 function tqShowQuestion(){
@@ -2542,7 +2664,10 @@ function tqShowQuestion(){
   const q=TQ.questions[TQ.currentQ];
   $("tq-progress").textContent=`${TQ.currentQ+1} / ${TQ.questions.length}`;
   $("tq-score").textContent=`${TQ.score} correct`;
-  $("tq-order-name").textContent=q.order;
+  const isClade=q.questionType==="clade";
+  $("tq-order-label").textContent=isClade?"Clade":"Order";
+  $("tq-order-name").textContent=isClade?q.clade:q.order;
+  $("tq-prompt").textContent=isClade?"Tap all orders that belong to this clade":"Tap all families and genera that belong to this order";
   $("tq-feedback").textContent="";$("tq-feedback").style.color="";
   const btn=$("tq-check-btn");btn.textContent="Check";btn.className="tq-check-btn";btn.disabled=true;
   const ob=$("tq-order-block");ob.style.cursor="";ob.onclick=null;
@@ -2585,7 +2710,8 @@ function tqHandleCheck(){
     chip.style.cursor="pointer";
     chip.addEventListener("click",()=>tqShowSpeciesPopup(type,name));
   });
-  const ob=$("tq-order-block");ob.style.cursor="pointer";ob.onclick=()=>tqShowSpeciesPopup("order",q.order);
+  const ob=$("tq-order-block");ob.style.cursor="pointer";
+  ob.onclick=()=>q.questionType==="clade"?tqShowSpeciesPopup("clade",q.clade):tqShowSpeciesPopup("order",q.order);
   const fb=$("tq-feedback");
   if(isFullyCorrect){fb.textContent="✓ Correct!";fb.style.color="#3d8b5e";}
   else if(wrong.length>0&&missed.length>0){fb.textContent=`${missed.length} missed, ${wrong.length} incorrect`;fb.style.color="#e05252";}
@@ -2608,6 +2734,7 @@ function tqShowResults(){
 function tqShowSpeciesPopup(rank,value){
   if(!S.allObs?.length||!value)return;
   const filtered=S.allObs.filter(o=>
+    rank==="clade"?APG_CLADE[o._treeRanks?.order]===value:
     rank==="order"?o._treeRanks?.order===value:
     rank==="genus"?o.taxon.name.split(" ")[0]===value:
     o._treeRanks?.family===value
