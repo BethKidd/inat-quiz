@@ -2668,12 +2668,12 @@ function tqBuildQuestions(obs){
     return{questionType:"family",family,correct:correctNames,options:tqShuffle([...correctItems,...wrongItems])};
   })).filter(Boolean);
 
-  // Interleave: 3 order → 1 family → repeat
+  // Even mix: interleave order and family questions 1:1
   const merged=[];
-  let fi=0;
-  for(let i=0;i<orderQs.length;i++){
-    merged.push(orderQs[i]);
-    if((i+1)%3===0&&fi<familyQs.length)merged.push(familyQs[fi++]);
+  const maxLen=Math.max(orderQs.length,familyQs.length);
+  for(let i=0;i<maxLen;i++){
+    if(i<orderQs.length)merged.push(orderQs[i]);
+    if(i<familyQs.length)merged.push(familyQs[i]);
   }
   return merged;
 }
