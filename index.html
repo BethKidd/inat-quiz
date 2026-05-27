@@ -632,6 +632,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <div class="tq-prompt" id="tq-prompt">Tap all families and genera that belong to this order</div>
       <div class="tq-grid" id="tq-grid"></div>
       <div class="tq-feedback" id="tq-feedback"></div>
+      <div id="tq-retry-notice" class="hidden" style="text-align:center;font-size:13px;color:#c07830;font-weight:600;margin-bottom:8px"></div>
       <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
     </div>
   </div>
@@ -2604,7 +2605,7 @@ async function installApp(){
 window.addEventListener('appinstalled',()=>{hide('install-banner');_installPrompt=null;});
 
 /* ── Taxonomy Quiz ── */
-const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set()};
+const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set(),retryQueue:[]};
 function tqShuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function tqRnd(min,max){return min+Math.floor(Math.random()*(max-min+1))}
 
@@ -2689,6 +2690,7 @@ function tqShowQuestion(){
   $("tq-order-name").textContent=qt==="family"?q.family:q.order;
   $("tq-prompt").textContent=qt==="family"?"Tap all genera that belong to this family":"Tap all families and genera that belong to this order";
   $("tq-feedback").textContent="";$("tq-feedback").style.color="";
+  hide("tq-retry-notice");
   const btn=$("tq-check-btn");btn.textContent="Check";btn.className="tq-check-btn";btn.disabled=true;
   const ob=$("tq-order-block");ob.style.cursor="";ob.onclick=null;
   const grid=$("tq-grid");grid.innerHTML="";
@@ -2710,8 +2712,11 @@ function tqHandleCheck(){
   const btn=$("tq-check-btn");
   if(TQ.checked){
     TQ.currentQ++;
-    if(TQ.currentQ>=TQ.questions.length)tqShowResults();
-    else tqShowQuestion();
+    if(TQ.currentQ>=TQ.questions.length){
+      if(TQ.retryQueue.length){TQ.questions=[...TQ.questions,...TQ.retryQueue];TQ.retryQueue=[];}
+      else{tqShowResults();return;}
+    }
+    tqShowQuestion();
     return;
   }
   TQ.checked=true;
@@ -2734,9 +2739,13 @@ function tqHandleCheck(){
   ob.onclick=()=>q.questionType==="family"?tqShowSpeciesPopup("family",q.family):tqShowSpeciesPopup("order",q.order);
   const fb=$("tq-feedback");
   if(isFullyCorrect){fb.textContent="✓ Correct!";fb.style.color="#3d8b5e";}
-  else if(wrong.length>0&&missed.length>0){fb.textContent=`${missed.length} missed, ${wrong.length} incorrect`;fb.style.color="#e05252";}
-  else if(wrong.length>0){fb.textContent=`${wrong.length} incorrect choice${wrong.length>1?"s":""}`;fb.style.color="#e05252";}
-  else{fb.textContent=`${missed.length} missed`;fb.style.color="#c07830";}
+  else{
+    if(wrong.length>0&&missed.length>0){fb.textContent=`${missed.length} missed, ${wrong.length} incorrect`;fb.style.color="#e05252";}
+    else if(wrong.length>0){fb.textContent=`${wrong.length} incorrect choice${wrong.length>1?"s":""}`;fb.style.color="#e05252";}
+    else{fb.textContent=`${missed.length} missed`;fb.style.color="#c07830";}
+    TQ.retryQueue.push(q);
+    $("tq-retry-notice").textContent="You'll see this again at the end.";show("tq-retry-notice");
+  }
   $("tq-score").textContent=`${TQ.score} correct`;
   const isLast=TQ.currentQ>=TQ.questions.length-1;
   btn.textContent=isLast?"See results →":"Next →";btn.className="tq-check-btn next-mode";btn.disabled=false;
@@ -2789,7 +2798,7 @@ function openTaxoQuiz(){
   const allQ=tqBuildQuestions(S.allObs);
   if(allQ.length<2){alert("Not enough taxonomic variety to generate a quiz.");return;}
   TQ.questions=allQ.slice(0,Math.min(S.qCount,allQ.length));
-  TQ.currentQ=0;TQ.score=0;
+  TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
   show("tq-quiz");hide("tq-results");
   showScreen("taxoquiz");
   tqShowQuestion();
@@ -2798,8 +2807,8 @@ function openTaxoQuiz(){
 $("btn-taxoquiz-home").addEventListener("click",()=>showScreen("home-main"));
 $("btn-taxoquiz-taxa").addEventListener("click",()=>showScreen("home"));
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
-$("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
-$("tq-new-quiz-btn").addEventListener("click",()=>{const allQ=tqBuildQuestions(S.allObs);TQ.questions=allQ.slice(0,Math.min(S.qCount,allQ.length));TQ.currentQ=0;TQ.score=0;tqShowQuestion();});
+$("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
+$("tq-new-quiz-btn").addEventListener("click",()=>{const allQ=tqBuildQuestions(S.allObs);TQ.questions=allQ.slice(0,Math.min(S.qCount,allQ.length));TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];tqShowQuestion();});
 $("tq-quit-btn").addEventListener("click",()=>showScreen("home-main"));
 </script>
 </body>
