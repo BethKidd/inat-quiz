@@ -574,6 +574,18 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   </div>
 </div>
 
+<div id="username-popup" class="ignore-popup hidden" onclick="if(event.target===this)hide('username-popup')">
+  <div class="ignore-popup-card" style="max-width:320px">
+    <div class="ignore-popup-title">Your iNaturalist username</div>
+    <div class="ignore-popup-sub" style="margin-bottom:14px">Enter your iNaturalist username to load your observations.</div>
+    <input id="username-popup-inp" type="text" class="input" placeholder="e.g. jane_naturalist" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" style="background:#f4f2ed;border:1.5px solid #c8ddd2;color:#1c2b22;border-radius:10px;font-size:16px;padding:11px 14px;width:100%;margin-bottom:12px">
+    <div class="ignore-popup-btns" style="gap:8px">
+      <button class="ignore-confirm" type="button" onclick="submitUsernamePopup()" style="min-height:44px">Start</button>
+      <button class="ignore-cancel" type="button" onclick="hide('username-popup')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="lightbox" class="lightbox hidden"><img id="lb-img" src="" alt=""><div id="lb-map-wrap"></div><button id="lb-close">✕</button></div>
 <script>
 const API="https://api.inaturalist.org/v1";
@@ -684,13 +696,9 @@ function dedupe(obs){
   $("tog-family").checked=localStorage.getItem("inat_f_family")!=="0";
   $("tog-species").checked=localStorage.getItem("inat_f_species")!=="0";
   $("tog-common").checked=localStorage.getItem("inat_f_common")!=="0";
-  if(saved){
-    $("inp-user").value=saved;
-    updateHomeMainSub();
-    showScreen("home-main");
-  }else{
-    showScreen("setup");
-  }
+  if(saved)$("inp-user").value=saved;
+  updateHomeMainSub();
+  showScreen("home-main");
 })();
 
 /* ── Events ── */
@@ -1117,6 +1125,24 @@ function drawHomeTree(){
   ].join(' ');
   svg.innerHTML=`<path d="${d}" stroke="#4a7c5f" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
+let _usernamePopupCallback=null;
+function showUsernamePopup(cb){
+  _usernamePopupCallback=cb;
+  $("username-popup-inp").value=localStorage.getItem("inat_quiz_user")||"";
+  show("username-popup");
+  setTimeout(()=>$("username-popup-inp").focus(),80);
+}
+function submitUsernamePopup(){
+  const v=$("username-popup-inp").value.trim();
+  if(!v)return;
+  localStorage.setItem("inat_quiz_user",v);
+  $("inp-user").value=v;
+  updateHomeMainSub();
+  hide("username-popup");
+  if(_usernamePopupCallback){const cb=_usernamePopupCallback;_usernamePopupCallback=null;cb();}
+}
+$("username-popup-inp").addEventListener("keydown",e=>{if(e.key==="Enter")submitUsernamePopup();});
+
 function saveSettingsAndReturn(){
   const un=$("inp-user").value.trim();
   if(un)localStorage.setItem("inat_quiz_user",un);
@@ -1130,7 +1156,7 @@ function saveSettingsAndReturn(){
 }
 async function startFromHome(practiseMode){
   const un=localStorage.getItem("inat_quiz_user");
-  if(!un){$("home-main-err").textContent="Add your iNaturalist username in Settings first.";show("home-main-err");return}
+  if(!un){showUsernamePopup(()=>startFromHome(practiseMode));return}
   hide("home-main-err");
   S.csvMode=false;S.traitMode=false;S.deckLabel="";
   if(S.allObs.length&&S.currentUser===un.toLowerCase()){
@@ -1144,7 +1170,7 @@ function showErr(m){$("home-main-err").textContent=m;show("home-main-err");showS
 
 /* ── Home screen ── */
 async function loadHome(){
-  const un=localStorage.getItem("inat_quiz_user");if(!un)return;
+  const un=localStorage.getItem("inat_quiz_user");if(!un){showUsernamePopup(()=>loadHome());return}
   // If observations are already cached for this user, skip the API round-trip
   if(S.allObs.length&&S.currentUser===un.toLowerCase()){await showHome();return}
   showScreen("loading");$("loading-text").textContent="Loading your observations…";
