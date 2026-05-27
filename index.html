@@ -633,15 +633,14 @@ function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Ma
 function tc(s){return(s||"").replace(/\b\w/g,c=>c.toUpperCase())}
 function flashScore(s){
   const el=$("score-flash");
+  el.classList.remove("pop");
   el.style.animation="none";
+  el.style.opacity="";
   el.textContent=s>0?`+${s}`:String(s);
   el.style.color=s>=9?"#3d8b5e":s>=5?"#52a876":s>=1?"#d97706":"#dc2626";
-  requestAnimationFrame(()=>{
-    el.style.animation="";
-    el.style.opacity="";
-    el.classList.remove("pop");
-    requestAnimationFrame(()=>el.classList.add("pop"));
-  });
+  el.getBoundingClientRect(); // force sync reflow so animation restarts cleanly
+  el.style.animation="";
+  el.classList.add("pop");
 }
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
@@ -1803,13 +1802,12 @@ async function buildDeck(obs,dueOnly){
 function cardSessionScore(c){
   const right=c._firstPassCorrect||0,total=c._firstPassTotal||1;
   let base=right>=total?10:right>=2?5:right>=1?2:0;
-  return base-(c._retryCount||0);
+  return base-(c._retryWrong||0);
 }
 async function renderCard(){
   const c=S.deck[S.cardIndex];c._revealed=false;
   // If this card has been seen before, it's a retry — count the penalty
   if(c._firstPassDone){
-    c._retryCount=(c._retryCount||0)+1;
     c._correctThisAttempt=0;
     c._activeFields=0;
   }
@@ -1992,6 +1990,7 @@ function handleMC(c,chosenIdx){
     c._firstPassTotal=1;
     const q=correct?5:0;c._firstQuality=q;
     sm2(c.srs,q);dbPut(c.srs);
+    flashScore(correct?10:0);
   }
   const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
   if(allCorrect&&!c._sessionResultPushed){
@@ -2022,6 +2021,7 @@ function check(){
   if(isCorrect)c[step+"Done"]=true;
   c._activeFields=(c._activeFields||0)+1;
   if(isCorrect)c._correctThisAttempt=(c._correctThisAttempt||0)+1;
+  if(c._firstPassDone&&!isCorrect)c._retryWrong=(c._retryWrong||0)+1;
   const isLast=c._fieldStep>=c._fieldOrder.length-1;
   if(isLast){
     c._revealed=true;
