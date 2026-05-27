@@ -1970,30 +1970,27 @@ function revealCard(c){
   const allCorrect=(!_ef2.includes("order")||c.orderDone)&&(!_ef2.includes("family")||c.familyDone)&&(!_ef2.includes("species")||c.speciesDone)&&(!_ef2.includes("common")||c.commonDone);
   showWiki(c.species);
   showTraits(c.species,c.family,!allCorrect);
-  // Rate SRS and record first-pass data on first reveal only
+  // Record first-pass data (SRS rated later when card is fully complete)
   if(!c._firstPassDone){
     c._firstPassDone=true;
     c._firstPassCorrect=c._correctThisAttempt;
     c._firstPassTotal=c._activeFields;
     const total=c._activeFields;const right=c._correctThisAttempt;
-    let q;
-    if(right===total)q=5;
-    else if(right>=total-1)q=4;
-    else if(right>=1)q=3;
-    else q=0;
-    c._firstQuality=q;
-    sm2(c.srs,q);dbPut(c.srs);
+    c._firstQuality=right===total?5:right>=total-1?4:right>=1?3:0;
     flashScore(right>=total?10:right>=2?5:right>=1?2:0);
-    if(q===5){show("correct-overlay");setTimeout(()=>hide("correct-overlay"),1400);}
+    if(right===total){show("correct-overlay");setTimeout(()=>hide("correct-overlay"),1400);}
   }else{
     // Retry reveal — flash the penalty incurred during this retry attempt (only if non-zero)
     const retryDelta=((c._retryWrong||0)-(c._retryWrongSnapshot||0));
     if(retryDelta>0)flashScore(-retryDelta);
   }
-  // Push to leaderboard when card is fully correct (may be after retries)
+  // Rate SRS and push to leaderboard once card is fully correct (after all retries)
   if(allCorrect&&!c._sessionResultPushed){
     c._sessionResultPushed=true;
-    S.sessionResults.push({species:c.species,common:c.common,score:cardSessionScore(c)});
+    const score=cardSessionScore(c);
+    S.sessionResults.push({species:c.species,common:c.common,score});
+    const q=score>=10?5:score>=5?4:score>=4?3:0;
+    sm2(c.srs,q);dbPut(c.srs);
   }
   if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
@@ -2030,19 +2027,21 @@ function handleMC(c,chosenIdx){
   showEtym(c.species,c.common);
   showWiki(c.species);
   showTraits(c.species,c.family,!correct);
-  // SRS + first-pass data (MC counts as 1 field)
+  // Record first-pass data (MC counts as 1 field; SRS rated when fully complete)
   if(!c._firstPassDone){
     c._firstPassDone=true;
     c._firstPassCorrect=correct?1:0;
     c._firstPassTotal=1;
-    const q=correct?5:0;c._firstQuality=q;
-    sm2(c.srs,q);dbPut(c.srs);
+    c._firstQuality=correct?5:0;
     flashScore(correct?10:0);
   }
   const allCorrect=c.familyDone&&c.commonDone&&c.speciesDone;
   if(allCorrect&&!c._sessionResultPushed){
     c._sessionResultPushed=true;
-    S.sessionResults.push({species:c.species,common:c.common,score:cardSessionScore(c)});
+    const score=cardSessionScore(c);
+    S.sessionResults.push({species:c.species,common:c.common,score});
+    const q=score>=10?5:score>=5?4:score>=4?3:0;
+    sm2(c.srs,q);dbPut(c.srs);
   }
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
