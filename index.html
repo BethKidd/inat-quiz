@@ -533,7 +533,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <button id="btn-back-setup" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#3d8b5e;font-size:15px;font-weight:600;cursor:pointer;padding:0 0 16px;font-family:inherit;-webkit-tap-highlight-color:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
   <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;margin-bottom:4px">Your Progress</h2>
   <p style="font-size:13px;color:#6b8f78;margin-bottom:10px" id="stats-user"></p>
-  <div style="margin-bottom:14px"><span class="due-badge" id="stats-due"></span></div>
+  <div style="margin-bottom:14px"></div>
   <div id="species-list"></div>
   <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
     <button class="btn-primary" id="btn-study-due">Study Due Cards →</button>
@@ -2232,31 +2232,38 @@ async function showStats(){
   const active=all.filter(c=>!c.ignored);
   const reviewed=active.filter(c=>c.totalReviews>0).sort((a,b)=>a.nextReview-b.nextReview);
   const fresh=active.filter(c=>c.totalReviews===0);
-  const due=reviewed.filter(c=>c.nextReview<=now).length;
   $("stats-user").textContent=`${un} \u00B7 ${active.length} species`;
-  $("stats-due").textContent=due>0?`${due} due now`:"All caught up!";
-  $("stats-due").className=due>0?"due-badge":"due-badge due-none";
   const MAX_IV=30*1440;
   const sl=$("species-list");sl.innerHTML="";
-  const allRows=[...reviewed,...fresh];
-  for(const c of allRows){
+  // Split into display groups
+  const grpDue=reviewed.filter(c=>c.nextReview<=now);
+  const grpLearning=reviewed.filter(c=>c.nextReview>now&&c.interval<10080);
+  const grpMature=reviewed.filter(c=>c.nextReview>now&&c.interval>=10080);
+  function makeHeading(label,count,col,bg){
+    const h=document.createElement("div");
+    h.style.cssText=`display:flex;align-items:center;gap:8px;margin:14px 0 6px 2px`;
+    h.innerHTML=`<span style="font-size:11px;font-weight:700;color:#6b8f78;text-transform:uppercase;letter-spacing:0.05em">${label}</span><span style="background:${bg};color:${col};font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px">${count}</span>`;
+    return h;
+  }
+  // grp: "due"|"learning"|"mature"|"new" — drives consistent colour per section
+  function makeRow(c,grp){
     const nd=nameDisplay(c.species,c.common);
-    const isDue=c.nextReview<=now&&c.totalReviews>0;
-    const isNew=c.totalReviews===0;
     const minsUntil=(c.nextReview-now)/60000;
-    const isSoon=!isDue&&!isNew&&minsUntil<1440;
-    const isMature=!isDue&&!isNew&&c.interval>=10080;
-    const dueStr=isNew?"New":isDue?"Due now":"in "+fmtIv(minsUntil);
-    const dueCol=isNew?"#9bb8a8":isDue?"#e05252":isSoon?"#c07830":"#3d8b5e";
-    const pct=isNew?0:Math.min(100,Math.round(c.interval/MAX_IV*100));
-    const barCol=isNew?"#c8ddd2":isDue?"#f87171":isSoon?"#fbbf24":isMature?"#3d8b5e":"#52a876";
-    const borderCol=isNew?"#c8ddd2":isDue?"#f87171":isSoon?"#f5c07a":isMature?"#3d8b5e":"#52a876";
-    const bgCol=isNew?"#fff":isDue?"rgba(248,113,113,.06)":isSoon?"rgba(251,191,36,.06)":isMature?"rgba(61,139,94,.07)":"rgba(82,168,118,.05)";
+    const dueStr=grp==="new"?"New":grp==="due"?"Due now":"in "+fmtIv(minsUntil);
+    const dueCol=grp==="new"?"#9bb8a8":grp==="due"?"#e05252":grp==="learning"?"#c07830":"#3d8b5e";
+    const pct=grp==="new"?0:Math.min(100,Math.round(c.interval/MAX_IV*100));
+    const barCol=grp==="new"?"#c8ddd2":grp==="due"?"#f87171":grp==="learning"?"#fbbf24":"#3d8b5e";
+    const borderCol=grp==="new"?"#c8ddd2":grp==="due"?"#f87171":grp==="learning"?"#f5c07a":"#3d8b5e";
+    const bgCol=grp==="new"?"#fff":grp==="due"?"rgba(248,113,113,.06)":grp==="learning"?"rgba(251,191,36,.06)":"rgba(61,139,94,.07)";
     const row=document.createElement("div");row.className="prog-row";
     row.style.cssText=`border-left:3px solid ${borderCol};background:${bgCol};border-radius:10px;padding:10px 12px;margin-bottom:5px`;
     row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-weight:600;font-size:13px;color:#1c2b22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:8px">${esc(nd.primary)}</span><span style="font-size:11px;color:${dueCol};font-weight:600;white-space:nowrap;flex-shrink:0">${dueStr}</span></div><div style="display:flex;align-items:center;gap:8px">${nd.secondary?`<span style="font-size:11px;font-style:italic;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;max-width:50%">${esc(nd.secondary)}</span>`:"<span></span>"}<div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%;background:${barCol}"></div></div></div>`;
-    sl.appendChild(row);
+    return row;
   }
+  if(grpDue.length){sl.appendChild(makeHeading("Due now",grpDue.length,"#e05252","rgba(248,113,113,.15)"));grpDue.forEach(c=>sl.appendChild(makeRow(c,"due")))}
+  if(grpLearning.length){sl.appendChild(makeHeading("Learning",grpLearning.length,"#c07830","rgba(251,191,36,.15)"));grpLearning.forEach(c=>sl.appendChild(makeRow(c,"learning")))}
+  if(grpMature.length){sl.appendChild(makeHeading("Long-term memory",grpMature.length,"#2a5c3f","rgba(42,92,63,.12)"));grpMature.forEach(c=>sl.appendChild(makeRow(c,"mature")))}
+  if(fresh.length){sl.appendChild(makeHeading("New",fresh.length,"#6b8f78","rgba(107,143,120,.12)"));fresh.forEach(c=>sl.appendChild(makeRow(c,"new")))}
   showScreen("stats");
 }
 </script>
