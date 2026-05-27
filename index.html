@@ -2227,10 +2227,14 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW error:',e));
   });
-  window.addEventListener('resize',()=>{
-    if(!document.getElementById('screen-home-main').classList.contains('hidden'))layoutHomeMain();
-  });
 }
+let _resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{
+    if(!document.getElementById('screen-home-main').classList.contains('hidden'))layoutHomeMain();
+  },60);
+});
 
 let _installPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{
