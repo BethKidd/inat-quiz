@@ -15,7 +15,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:#f4f2ed;display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef}
+body{min-height:100vh;background:#f4f2ed;display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef;opacity:0;transition:opacity 0.15s}
 a{color:#818cf8;text-decoration:none}.container{max-width:540px;width:100%}.center{text-align:center}
 .logo-icon{font-size:48px;margin-bottom:8px}
 h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
@@ -333,7 +333,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 <body>
 
 <!-- Main home screen -->
-<div id="screen-home-main" style="position:fixed;inset:0;background:#f4f2ed;overflow:hidden">
+<div id="screen-home-main" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;overflow:hidden">
   <!-- Top-right: settings + info -->
   <div style="position:absolute;top:18px;right:16px;text-align:right;display:flex;flex-direction:column;align-items:center;gap:10px">
     <button id="btn-open-settings" style="background:none;border:none;cursor:pointer;padding:0;display:block">
@@ -699,6 +699,8 @@ function dedupe(obs){
   if(saved)$("inp-user").value=saved;
   updateHomeMainSub();
   showScreen("home-main");
+  // Fade in after layout is complete (two rAFs to let layoutHomeMain settle)
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity='1';}));
 })();
 
 /* ── Events ── */
