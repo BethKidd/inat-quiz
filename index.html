@@ -411,6 +411,11 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <label class="tog-row"><input type="checkbox" id="tog-species" class="tog-cb"><span>Latin name</span></label>
       <label class="tog-row"><input type="checkbox" id="tog-common" class="tog-cb"><span>Common name</span></label>
     </div>
+    <label class="label" style="margin-top:20px">Name order in results &amp; progress</label>
+    <div style="display:flex;background:#f0f5f2;border:1.5px solid #c8ddd2;border-radius:10px;padding:3px;gap:3px;margin-top:6px">
+      <button type="button" id="name-order-common" onclick="setNameOrder('common')" style="flex:1;padding:7px 0;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent">Common first</button>
+      <button type="button" id="name-order-latin" onclick="setNameOrder('latin')" style="flex:1;padding:7px 0;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent">Latin first</button>
+    </div>
     <input type="password" id="inp-apikey" class="input" style="display:none">
     <input type="file" id="inp-csv" accept=".csv,.txt,.tsv" style="display:none">
     <input type="file" id="inp-traits" accept=".csv" style="display:none">
@@ -606,6 +611,19 @@ const SP_RANKS=new Set(["species","subspecies","variety","form","hybrid","infras
 const TREE_RANKS=["kingdom","phylum","class","order","family"];
 const collapsedNodes=new Set(); // present = user collapsed; nodeId+"_open" = user explicitly opened (overrides default-collapsed)
 const DEFAULT_COLLAPSED_RANKS=new Set(["class"]);
+function commonFirst(){return localStorage.getItem("inat_name_common_first")!=="0"}
+function nameDisplay(species,common){
+  if(commonFirst()&&common)return{primary:common,secondary:species};
+  return{primary:species,secondary:common||""};
+}
+function setNameOrder(order,skipSave){
+  const isCommon=order==="common";
+  if(!skipSave)localStorage.setItem("inat_name_common_first",isCommon?"1":"0");
+  const btnC=$("name-order-common"),btnL=$("name-order-latin");
+  if(!btnC||!btnL)return;
+  btnC.style.background=isCommon?"#3d8b5e":"transparent";btnC.style.color=isCommon?"#fff":"#3d8b5e";
+  btnL.style.background=isCommon?"transparent":"#3d8b5e";btnL.style.color=isCommon?"#3d8b5e":"#fff";
+}
 function getEnabledFields(){
   const f=[];
   if(localStorage.getItem("inat_f_order")==="1")f.push("order");
@@ -720,6 +738,7 @@ function dedupe(obs){
   $("tog-family").checked=localStorage.getItem("inat_f_family")!=="0";
   $("tog-species").checked=localStorage.getItem("inat_f_species")!=="0";
   $("tog-common").checked=localStorage.getItem("inat_f_common")!=="0";
+  setNameOrder(localStorage.getItem("inat_name_common_first")==="0"?"latin":"common",true);
   if(saved)$("inp-user").value=saved;
   updateHomeMainSub();
   showScreen("home-main");
@@ -1166,6 +1185,7 @@ function saveSettingsAndReturn(){
   localStorage.setItem("inat_f_family",$("tog-family").checked?"1":"0");
   localStorage.setItem("inat_f_species",$("tog-species").checked?"1":"0");
   localStorage.setItem("inat_f_common",$("tog-common").checked?"1":"0");
+  // name order saved live via setNameOrder; nothing extra needed here
   updateHomeMainSub();
   showScreen("home-main");
 }
@@ -2189,7 +2209,8 @@ function results(){
     row.style.background=rowBg;
     const minsUntil=r.nextReview?(r.nextReview-Date.now())/60000:null;
     const dueStr=minsUntil!==null?(minsUntil<=0?"due now":"in "+fmtIv(minsUntil)):"";
-    row.innerHTML=`<span class="rb-name">${esc(r.common||r.species)}<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(r.species)}</span></span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0"><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>${dueStr?`<span style="font-size:10px;color:#9bb8a8;white-space:nowrap">${dueStr}</span>`:""}</span>`;
+    const nd=nameDisplay(r.species,r.common);
+    row.innerHTML=`<span class="rb-name">${esc(nd.primary)}${nd.secondary?`<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(nd.secondary)}</span>`:""}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0"><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>${dueStr?`<span style="font-size:10px;color:#9bb8a8;white-space:nowrap">${dueStr}</span>`:""}</span>`;
     bd.appendChild(row);
   }
   showScreen("results");
@@ -2212,7 +2233,7 @@ async function showStats(){
   const sl=$("species-list");sl.innerHTML="";
   const allRows=[...reviewed,...fresh];
   for(const c of allRows){
-    const nm=c.common||c.species;
+    const nd=nameDisplay(c.species,c.common);
     const isDue=c.nextReview<=now&&c.totalReviews>0;
     const isNew=c.totalReviews===0;
     const minsUntil=(c.nextReview-now)/60000;
@@ -2226,7 +2247,7 @@ async function showStats(){
     const bgCol=isNew?"#fff":isDue?"rgba(248,113,113,.06)":isSoon?"rgba(251,191,36,.06)":isMature?"rgba(61,139,94,.07)":"rgba(82,168,118,.05)";
     const row=document.createElement("div");row.className="prog-row";
     row.style.cssText=`border-left:3px solid ${borderCol};background:${bgCol};border-radius:10px;padding:10px 12px;margin-bottom:5px`;
-    row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-weight:600;font-size:13px;color:#1c2b22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:8px">${esc(nm)}</span><span style="font-size:11px;color:${dueCol};font-weight:600;white-space:nowrap;flex-shrink:0">${dueStr}</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-style:italic;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;max-width:50%">${esc(c.species)}</span><div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%;background:${barCol}"></div></div></div>`;
+    row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-weight:600;font-size:13px;color:#1c2b22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:8px">${esc(nd.primary)}</span><span style="font-size:11px;color:${dueCol};font-weight:600;white-space:nowrap;flex-shrink:0">${dueStr}</span></div><div style="display:flex;align-items:center;gap:8px">${nd.secondary?`<span style="font-size:11px;font-style:italic;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;max-width:50%">${esc(nd.secondary)}</span>`:"<span></span>"}<div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%;background:${barCol}"></div></div></div>`;
     sl.appendChild(row);
   }
   showScreen("stats");
