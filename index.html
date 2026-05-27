@@ -269,9 +269,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .home-title{font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;line-height:1.1}
 .home-sub{font-size:12px;color:#6b8f78;margin-top:3px}
 .home-settings-btn{background:#fff;border:1px solid #c8ddd2;border-radius:10px;color:#3d8b5e;font-size:12px;cursor:pointer;padding:6px 10px;font-family:inherit;white-space:nowrap;flex-shrink:0}
-.home-nav-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#3d8b5e;border:none;border-radius:8px;padding:11px 32px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:background 0.1s;letter-spacing:0.01em}
+.home-nav-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#3d8b5e;border:none;border-radius:8px;padding:11px 32px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:background 0.1s;letter-spacing:0.01em;-webkit-tap-highlight-color:transparent;outline:none}
 .home-nav-btn:active{background:#2a6342}
-.home-leaf-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#82c97a;border:none;border-radius:8px;padding:7px 20px;min-width:90px;text-align:center;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.10);transition:background 0.1s;letter-spacing:0.01em}
+.home-leaf-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#82c97a;border:none;border-radius:8px;padding:7px 20px;min-width:90px;text-align:center;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.10);transition:background 0.1s;letter-spacing:0.01em;-webkit-tap-highlight-color:transparent;outline:none}
 .home-leaf-btn:active{background:#4fa070}
 .home-leaf-btn:active{color:#ff6a00}
 .home-due-bar{padding:10px 14px 0}
@@ -580,8 +580,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <div class="ignore-popup-sub" style="margin-bottom:14px">Enter your iNaturalist username to load your observations.</div>
     <input id="username-popup-inp" type="text" class="input" placeholder="e.g. jane_naturalist" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" style="background:#f4f2ed;border:1.5px solid #c8ddd2;color:#1c2b22;border-radius:10px;font-size:16px;padding:11px 14px;width:100%;margin-bottom:12px">
     <div class="ignore-popup-btns" style="gap:8px">
-      <button class="ignore-confirm" type="button" onclick="submitUsernamePopup()" style="min-height:44px">Start</button>
-      <button class="ignore-cancel" type="button" onclick="hide('username-popup')">Cancel</button>
+      <button type="button" onclick="submitUsernamePopup()" style="background:#3d8b5e;color:#fff;border:none;border-radius:10px;padding:13px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;-webkit-tap-highlight-color:transparent">Start</button>
+      <button type="button" onclick="hide('username-popup')" style="background:none;border:none;color:#6b8f78;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;padding:8px;width:100%;-webkit-tap-highlight-color:transparent">Cancel</button>
     </div>
   </div>
 </div>
@@ -1125,7 +1125,7 @@ function drawHomeTree(){
   ].join(' ');
   svg.innerHTML=`<path d="${d}" stroke="#4a7c5f" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
-let _usernamePopupCallback=null;
+var _usernamePopupCallback=null;
 function showUsernamePopup(cb){
   _usernamePopupCallback=cb;
   $("username-popup-inp").value=localStorage.getItem("inat_quiz_user")||"";
@@ -1141,7 +1141,7 @@ function submitUsernamePopup(){
   hide("username-popup");
   if(_usernamePopupCallback){const cb=_usernamePopupCallback;_usernamePopupCallback=null;cb();}
 }
-$("username-popup-inp").addEventListener("keydown",e=>{if(e.key==="Enter")submitUsernamePopup();});
+const _unpInp=$("username-popup-inp");if(_unpInp)_unpInp.addEventListener("keydown",e=>{if(e.key==="Enter")submitUsernamePopup();});
 
 function saveSettingsAndReturn(){
   const un=$("inp-user").value.trim();
