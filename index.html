@@ -394,7 +394,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
         </svg>
       </button>
     </div>
-    <div id="home-load-spinner" style="display:none;width:22px;height:22px;border:2px solid rgba(107,143,120,0.2);border-top-color:#6b8f78;border-radius:50%;animation:spin .7s linear infinite"></div>
+    <svg id="home-load-spinner" style="display:none;animation:spin .7s linear infinite" width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="rgba(107,143,120,0.2)" stroke-width="1.5"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="#6b8f78" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
   </div>
   <!-- Memory count — vertical, hugging right of trunk -->
   <div id="home-stat-memory" style="position:absolute;top:24px;font-family:'DM Sans',sans-serif;font-size:11px;color:#4a7c5f;pointer-events:none;writing-mode:vertical-lr;letter-spacing:0.04em"></div>
