@@ -980,6 +980,7 @@ function dedupe(obs){
   if(saved)$("inp-user").value=saved;
   updateHomeMainSub();
   showScreen("home-main");
+  if(!saved)setTimeout(()=>showUsernamePopup(()=>{}),600);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity='1';}));
 })();
 
@@ -1294,6 +1295,7 @@ function updateHomeMainSub(){
   if(!S.allObs.length)_loadObsSilent(un);
 }
 async function _loadObsSilent(un){
+  if(!un)return;
   if(S.allObs.length&&S.currentUser===un.toLowerCase())return;
   const sp=document.getElementById('home-load-spinner');if(sp)sp.style.display='block';
   try{
@@ -1318,6 +1320,7 @@ async function _loadObsSilent(un){
   finally{if(sp)sp.style.display='none';}
 }
 async function _fetchHomeStats(un){
+  if(!un)return;
   const now=Date.now();
   try{
     // SRS counts from local DB
