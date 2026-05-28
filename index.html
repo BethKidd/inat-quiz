@@ -394,6 +394,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
         </svg>
       </button>
     </div>
+    <div id="home-load-spinner" style="display:none;width:22px;height:22px;border:2px solid rgba(107,143,120,0.2);border-top-color:#6b8f78;border-radius:50%;animation:spin .7s linear infinite"></div>
   </div>
   <!-- Memory count — vertical, hugging right of trunk -->
   <div id="home-stat-memory" style="position:absolute;top:24px;font-family:'DM Sans',sans-serif;font-size:11px;color:#4a7c5f;pointer-events:none;writing-mode:vertical-lr;letter-spacing:0.04em"></div>
@@ -1182,6 +1183,7 @@ function updateHomeMainSub(){
 }
 async function _loadObsSilent(un){
   if(S.allObs.length&&S.currentUser===un.toLowerCase())return;
+  const sp=document.getElementById('home-load-spinner');if(sp)sp.style.display='block';
   try{
     let canonLogin=un;
     try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(ur.ok){const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());if(m)canonLogin=m.login;}}catch{}
@@ -1199,6 +1201,7 @@ async function _loadObsSilent(un){
     if(!document.getElementById('screen-home-main').classList.contains('hidden'))updateHomeMainSub();
     if(!document.getElementById('screen-stats').classList.contains('hidden'))showStats();
   }catch(e){/* silent fail — user can still load obs manually */}
+  finally{if(sp)sp.style.display='none';}
 }
 async function _fetchHomeStats(un){
   const now=Date.now();
