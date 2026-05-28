@@ -751,11 +751,22 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <div style="width:30px;height:30px;border-radius:50%;background:#fff3cd;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 20h20L12 2z" stroke="#c07830" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14" stroke="#c07830" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="#c07830"/></svg>
       </div>
-      <div style="font-size:15px;font-weight:700;color:#1c2b22">Please note</div>
+      <div style="font-size:15px;font-weight:700;color:#1c2b22">Save your progress</div>
     </div>
-    <p style="font-size:13px;color:#4a6650;line-height:1.55;margin-bottom:8px">Your quiz progress is saved locally in this browser. To sync across devices, sign in under <em>Cloud sync</em> in Settings.</p>
-    <p style="font-size:13px;color:#c0392b;font-weight:600;line-height:1.55;margin-bottom:14px;padding:8px 10px;background:#fdf0ee;border-radius:8px;border-left:3px solid #c0392b">Without cloud sync, clearing your browser data will erase your progress permanently.</p>
-    <button onclick="dismissDataNotice()" style="width:100%;background:#3d8b5e;color:#fff;border:none;border-radius:10px;padding:11px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">Got it</button>
+    <p style="font-size:13px;color:#4a6650;line-height:1.55;margin-bottom:10px">Enter your email to save your progress and sync across devices.</p>
+    <p style="font-size:12px;color:#8aab96;font-style:italic;line-height:1.5;margin-bottom:10px">Without this step your progress will be stored locally and lost permanently if you clear your browsing data.</p>
+    <input type="email" id="data-notice-email" class="input" placeholder="your@email.com" style="background:#f9fbfa;border:1.5px solid #c8ddd2;color:#1c2b22;border-radius:10px;font-size:15px;padding:10px 12px;width:100%;margin-bottom:8px;box-sizing:border-box">
+    <button id="data-notice-sync-btn" onclick="(async function(){
+      const email=document.getElementById('data-notice-email').value.trim();
+      if(!email)return;
+      const btn=document.getElementById('data-notice-sync-btn');
+      btn.disabled=true;btn.textContent='Sending…';
+      const{error}=await _SB.auth.signInWithOtp({email,options:{emailRedirectTo:'https://nominanaturae.com'}});
+      if(error){btn.disabled=false;btn.textContent='Send email link';document.getElementById('data-notice-status').textContent='Error: '+error.message;}
+      else{document.getElementById('data-notice-status').textContent='Check your email for a login link!';btn.textContent='Sent ✓';}
+    })()" style="width:100%;background:#3d8b5e;color:#fff;border:none;border-radius:10px;padding:11px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;margin-bottom:6px">Send email link</button>
+    <p id="data-notice-status" style="font-size:12px;color:#6b8f78;min-height:16px;margin-bottom:8px;text-align:center"></p>
+    <button onclick="dismissDataNotice()" style="width:100%;background:none;border:none;color:#8aab96;font-size:13px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;padding:4px 0">No thanks — I'll do this later in Settings</button>
   </div>
 </div>
 
