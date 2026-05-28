@@ -2416,7 +2416,13 @@ function _syncQuizVP(){
     _carLocked=true;
     requestAnimationFrame(()=>{
       const c=$('carousel');if(!c)return;
-      const h=c.getBoundingClientRect().height;
+      const qcs=$('q-card-scroll');if(!qcs)return;
+      const qcsH=qcs.getBoundingClientRect().height;
+      const qcsStyle=window.getComputedStyle(qcs);
+      const qcsPad=parseFloat(qcsStyle.paddingTop)+parseFloat(qcsStyle.paddingBottom);
+      let otherH=0;
+      for(const child of qcs.children){if(child!==c)otherH+=child.getBoundingClientRect().height;}
+      const h=qcsH-otherH-qcsPad;
       if(h>60){c.style.flex='none';c.style.height=h+'px';}
     });
   }
