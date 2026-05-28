@@ -2416,19 +2416,7 @@ function _syncQuizVP(){
     _carLocked=true;
     requestAnimationFrame(()=>{
       const c=$('carousel');if(!c)return;
-      // Measure everything except the carousel and subtract from viewport height
-      const topBar=document.querySelector('#screen-quiz .top-bar');
-      const form=$('quiz-form');
-      const notes=$('obs-notes');
-      const ignoreBtn=$('btn-ignore-link');
-      const topBarH=topBar?topBar.getBoundingClientRect().height:0;
-      const formH=form?form.getBoundingClientRect().height:0;
-      const notesH=(notes&&!notes.classList.contains('hidden'))?notes.getBoundingClientRect().height:0;
-      const ignoreBtnH=(ignoreBtn&&!ignoreBtn.classList.contains('hidden'))?ignoreBtn.getBoundingClientRect().height:0;
-      const qcs=$('q-card-scroll');
-      const qcsStyle=qcs?window.getComputedStyle(qcs):null;
-      const qcsPad=qcsStyle?parseFloat(qcsStyle.paddingTop)+parseFloat(qcsStyle.paddingBottom):0;
-      const h=vv.height-topBarH-formH-notesH-ignoreBtnH-qcsPad;
+      const h=c.getBoundingClientRect().height;
       if(h>60){c.style.flex='none';c.style.height=h+'px';}
     });
   }
