@@ -439,8 +439,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   </button>
   <div class="card">
     <label class="label">iNaturalist Username</label>
-    <input type="text" id="inp-user" class="input" placeholder="e.g. kueda; another_user">
-    <p style="font-size:11px;color:#6b8f78;margin:5px 0 0;line-height:1.4">Separate up to 6 usernames with semicolons to combine observations.</p>
+    <input type="text" id="inp-user" class="input" placeholder="e.g. kueda">
     <label class="label" style="margin-top:14px">Deck Size</label>
     <div class="count-row" id="count-row">
       <button class="count-btn active" data-n="5">5</button>
@@ -755,9 +754,6 @@ async function ensureDB(){if(!db||db.version===undefined){db=null;await openDB()
 async function dbGet(k){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}
 async function dbPut(c){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE,"readwrite").objectStore(STORE).put(c);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
 async function dbAllUser(u){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index("username").getAll(u.toLowerCase());r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
-function parseUsernames(str){return str.split(';').map(s=>s.trim().toLowerCase()).filter(Boolean).slice(0,6);}
-async function dbAllUsers(users){if(!users||!users.length)return[];const arr=await Promise.all(users.map(u=>dbAllUser(u)));return arr.flat();}
-function obsUser(o){return o._sourceUser||S.currentUser;}
 async function dbClearUser(u){await ensureDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");const r=tx.objectStore(STORE).index("username").openCursor(u.toLowerCase());r.onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 
 /* ── SM-2 (session-aware: in-session retries replace learning steps) ── */
@@ -792,7 +788,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",allUsers:[],csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:""};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:""};
 const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
@@ -903,7 +899,7 @@ $("btn-start-traits").addEventListener("click",doStartTraits);
 $("btn-view-stats").addEventListener("click",()=>showStats());
 $("btn-back-setup").addEventListener("click",()=>showScreen("home-main"));
 $("btn-study-due").addEventListener("click",()=>doStart(true));
-$("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){const users=S.allUsers.length?S.allUsers:[S.currentUser||$("inp-user").value.trim()];await Promise.all(users.map(u=>dbClearUser(u)));showStats()}});
+$("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
 $("btn-feedback-send").addEventListener("click",async()=>{
   const msg=$("feedback-msg").value.trim();
   const st=$("feedback-status");
@@ -1141,33 +1137,36 @@ function showTraits(species,family,gotWrong){
 }
 
 /* ── Fetch & Start ── */
-async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-msg");showScreen("loading");$("loading-text").textContent="Checking username…";
-  const rawUn=$("inp-user").value.trim();localStorage.setItem("inat_quiz_user",rawUn);
-  const usernames=parseUsernames(rawUn);
-  if(!usernames.length){showErr("Please enter a username.");return}
+async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-msg");showScreen("loading");$("loading-text").textContent="Checking username\u2026";
+  const un=$("inp-user").value.trim();localStorage.setItem("inat_quiz_user",un);
   const ak=$("inp-apikey")?.value?.trim();if(ak)localStorage.setItem("inat_quiz_apikey",ak);
-  try{
-    let allResults=[];const canonLogins=[];
-    for(const un of usernames){
-      const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(!ur.ok)throw Error("Could not reach iNaturalist API");
-      const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
-      if(!m){showErr(`Username "${un}" not found.`);return}
-      const login=m.login;canonLogins.push(login.toLowerCase());
-      $("loading-text").textContent=`Loading observations for ${login}…`;
-      const cacheBust=Date.now();
-      for(let page=1;page<=5;page++){
-        const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${page}&order=desc&order_by=created_at&locale=en&_=${cacheBust}`);
-        if(!r.ok)throw Error(`API error ${r.status}`);const d=await r.json();
-        const results=d.results||[];results.forEach(o=>o._sourceUser=login.toLowerCase());allResults.push(...results);
-        if(results.length<200)break;
-      }
+  try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(!ur.ok)throw Error("Could not reach iNaturalist API");
+    const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
+    if(!m){showErr(`Username "${un}" not found.`);return}
+    const login=m.login;S.currentUser=login.toLowerCase();
+    $("loading-text").textContent=`Loading observations for ${login}\u2026`;
+    let allResults=[];
+    const cacheBust=Date.now();
+    for(let page=1;page<=5;page++){
+      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${page}&order=desc&order_by=created_at&locale=en&_=${cacheBust}`);
+      if(!r.ok)throw Error(`API error ${r.status}`);const d=await r.json();
+      const results=d.results||[];allResults.push(...results);
+      if(page===1)console.log(`iNat: ${d.total_results} total observations for ${login}, page 1: ${results.length}`);
+      if(results.length<200)break;
     }
-    S.currentUser=canonLogins[0];S.allUsers=canonLogins;
-    console.log(`Fetched ${allResults.length} observations total for ${canonLogins.join(', ')}`);
+    console.log(`Fetched ${allResults.length} observations total`);
+    // Log the 5 most recent so you can check
+    allResults.slice(0,5).forEach((o,i)=>{
+      const hasPhotos=!!(o.photos?.length);
+      const hasTaxon=!!(o.taxon?.name);
+      const rank=o.taxon?.rank||"none";
+      const spRank=SP_RANKS.has(rank.toLowerCase());
+      console.log(`  #${i+1}: ${o.taxon?.name||o.species_guess||"no ID"} | rank:${rank} spRank:${spRank} | photos:${hasPhotos} | created:${o.created_at}`);
+    });
     const good=allResults.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
     console.log(`After filtering: ${good.length} species-level obs with photos`);
     const uniq=dedupe(good);if(uniq.length<4){showErr(`Only ${uniq.length} species-level observations found. Need at least 4.`);return}
-    $("loading-text").textContent="Fetching taxonomy…";
+    $("loading-text").textContent="Fetching taxonomy\u2026";
     await fetchTaxonomy(uniq);
     S.allObs=uniq;await buildDeck(uniq,dueOnly);
   }catch(e){showErr(`Error: ${e.message}`)}}
@@ -1179,9 +1178,8 @@ function updateHomeMainSub(){
 }
 async function _fetchHomeStats(un){
   try{
-    // SRS counts from local DB — support multiple semicolon-separated usernames
-    const users=parseUsernames(un);
-    const cards=await dbAllUsers(users.length?users:[un]);
+    // SRS counts from local DB
+    const cards=await dbAllUser(un);
     const now=Date.now();
     const active=cards.filter(c=>!c.ignored);
     const studied=active.filter(c=>c.totalReviews>0).length;
@@ -1196,11 +1194,10 @@ async function _fetchHomeStats(un){
     const studyDays=new Set(cards.filter(c=>c.lastReview).map(c=>dayKey(new Date(c.lastReview))));
     let streak=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
     $("home-streak-label").textContent=`${streak} day${streak!==1?'s':''}`;
-    // Fetch total unique species from iNaturalist for accurate "new" count (use first username)
-    const firstUser=users[0]||un;
-    const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(firstUser)}&per_page=10`);
+    // Fetch total unique species from iNaturalist for accurate "new" count
+    const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=10`);
     const ud=await ur.json();
-    const login=ud.results?.find(u=>u.login.toLowerCase()===firstUser.toLowerCase())?.login||firstUser;
+    const login=ud.results?.find(u=>u.login.toLowerCase()===un.toLowerCase())?.login||un;
     const sr=await fetch(`${API}/observations/species_counts?user_id=${encodeURIComponent(login)}&per_page=1`);
     const sd=await sr.json();
     const inatTotal=sd.total_results||0;
@@ -1208,8 +1205,7 @@ async function _fetchHomeStats(un){
     $("home-stat-learn").innerHTML=`<div>${newCount} new</div>`;
   }catch(e){
     // iNat unreachable — fall back to DB-only new count
-    const users=parseUsernames(un);
-    const cards=await dbAllUsers(users.length?users:[un]).catch(()=>[]);
+    const cards=await dbAllUser(un).catch(()=>[]);
     const active=cards.filter(c=>!c.ignored);
     const isNew=active.filter(c=>c.totalReviews===0).length;
     $("home-stat-learn").innerHTML=`<div>${isNew} new</div>`;
@@ -1326,8 +1322,7 @@ async function startFromHome(practiseMode){
   if(!un){showUsernamePopup(()=>startFromHome(practiseMode));return}
   hide("home-main-err");
   S.csvMode=false;S.traitMode=false;S.deckLabel="";
-  const usernames=parseUsernames(un);
-  if(S.allObs.length&&S.allUsers.length&&S.allUsers.join(';')===usernames.join(';')){
+  if(S.allObs.length&&S.currentUser===un.toLowerCase()){
     // Obs already loaded — go straight to deck
     await buildDeck(S.allObs,practiseMode);
   }else{
@@ -1338,27 +1333,21 @@ function showErr(m){$("home-main-err").textContent=m;show("home-main-err");showS
 
 /* ── Home screen ── */
 async function loadHome(){
-  const rawUn=localStorage.getItem("inat_quiz_user");if(!rawUn){showUsernamePopup(()=>loadHome());return}
-  const usernames=parseUsernames(rawUn);
-  if(!usernames.length){showUsernamePopup(()=>loadHome());return}
-  // If observations are already cached for these users, skip the API round-trip
-  if(S.allObs.length&&S.allUsers.length&&S.allUsers.join(';')===usernames.join(';')){await showHome();return}
-  showScreen("loading");$("loading-text").textContent="Loading observations…";
+  const un=localStorage.getItem("inat_quiz_user");if(!un){showUsernamePopup(()=>loadHome());return}
+  // If observations are already cached for this user, skip the API round-trip
+  if(S.allObs.length&&S.currentUser===un.toLowerCase()){await showHome();return}
+  showScreen("loading");$("loading-text").textContent="Loading your observations…";
   try{
-    let all=[];const canonLogins=[];
-    for(const un of usernames){
-      let canonLogin=un;
-      try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(ur.ok){const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());if(m)canonLogin=m.login;}}catch{}
-      canonLogins.push(canonLogin.toLowerCase());
-      $("loading-text").textContent=`Loading observations for ${canonLogin}…`;
-      const cb=Date.now();
-      for(let p=1;p<=5;p++){
-        const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(canonLogin)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
-        if(!r.ok)break;const d=await r.json();
-        const res=d.results||[];res.forEach(o=>o._sourceUser=canonLogin.toLowerCase());all.push(...res);if(res.length<200)break;
-      }
+    // Use autocomplete to get canonical login casing, fall back to stored username
+    let canonLogin=un;
+    try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(ur.ok){const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());if(m)canonLogin=m.login;}}catch{}
+    S.currentUser=canonLogin.toLowerCase();
+    $("loading-text").textContent=`Loading observations…`;
+    let all=[];const cb=Date.now();
+    for(let p=1;p<=5;p++){
+      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(canonLogin)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
+      if(!r.ok)break;const d=await r.json();all.push(...(d.results||[]));if((d.results||[]).length<200)break;
     }
-    S.currentUser=canonLogins[0];S.allUsers=canonLogins;
     const good=all.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
     const uniq=dedupe(good);
     $("loading-text").textContent="Fetching taxonomy…";
@@ -1468,7 +1457,7 @@ function collectDescendantObs(node){
   walk(node);return result;
 }
 function makeSpRow(o,srsMap,now){
-  const k=obsUser(o)+":"+taxonKey(o);const srs=srsMap.get(k);
+  const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
   const isDue=!srs||srs.nextReview<=now;
   const{primary:nm,secondary:sec}=nameDisplay(o.taxon.name,tc(o.taxon.preferred_common_name)||"");
   let state,sc;
@@ -1493,7 +1482,7 @@ function renderPhyloNode(child,depth,srsMap,now){
     const row=document.createElement("div");
     row.className="tree-family-row";
     row.style.paddingLeft=`${famIndent}px`;
-    let nDue=0;for(const o of child.obs){const k=obsUser(o)+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)nDue++;}
+    let nDue=0;for(const o of child.obs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)nDue++;}
     row.innerHTML=`<span class="tree-chevron" style="margin-right:2px">${isCollapsed?"▸":"▾"}</span><span class="tree-fam-name">${esc(child.name)}</span><span class="tree-fam-meta">${child.obs.length}${nDue>0?` &middot; <span class="tree-due">${nDue} due</span>`:""}</span>`;
     if(nDue>0){const sb=document.createElement("button");sb.className="tree-study-btn";sb.textContent="Study";sb.addEventListener("click",e=>{e.stopPropagation();S.deckLabel=child.name;buildDeck(child.obs,false);});row.appendChild(sb);}
     const spWrap=document.createElement("div");
@@ -1599,13 +1588,13 @@ function renderPhyloNode(child,depth,srsMap,now){
 
 async function showHome(){
   const now=Date.now();
-  const cards=await dbAllUsers(S.allUsers.length?S.allUsers:[S.currentUser]);
+  const cards=await dbAllUser(S.currentUser);
   const srsMap=new Map();for(const c of cards)srsMap.set(c.taxonKey,c);
   // Count due across all obs
   let dueCount=0;
-  for(const o of S.allObs){const k=obsUser(o)+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)dueCount++;}
+  for(const o of S.allObs){const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);if(!srs||srs.nextReview<=now)dueCount++;}
   $("home-title").textContent="Taxa";
-  $("home-sub").textContent=`${S.allUsers.join(', ')||S.currentUser} · ${S.allObs.length} species · ${dueCount} due today`;
+  $("home-sub").textContent=`${S.currentUser} · ${S.allObs.length} species · ${dueCount} due today`;
   const studyBtn=$("btn-study-due-home");
   if(dueCount>0){studyBtn.textContent=`Review all due (${dueCount}) →`;studyBtn.style.opacity="1";studyBtn.disabled=false}
   else{studyBtn.textContent="All caught up! ✔";studyBtn.style.opacity=".5";studyBtn.disabled=true}
@@ -1621,19 +1610,19 @@ function showFamily(fam,obs,srsMap){
   $("family-title").textContent=fam;
   const now=Date.now();
   const sorted=[...obs].sort((a,b)=>{
-    const ka=obsUser(a)+":"+taxonKey(a),kb=obsUser(b)+":"+taxonKey(b);
+    const ka=S.currentUser+":"+taxonKey(a),kb=S.currentUser+":"+taxonKey(b);
     const sa=srsMap.get(ka),sb=srsMap.get(kb);
     const aDue=!sa||sa.nextReview<=now,bDue=!sb||sb.nextReview<=now;
     if(aDue!==bDue)return aDue?-1:1;
     return(sb?.interval||0)-(sa?.interval||0);
   });
-  const nDue=sorted.filter(o=>{const k=obsUser(o)+":"+taxonKey(o);const srs=srsMap.get(k);return !srs||srs.nextReview<=now}).length;
+  const nDue=sorted.filter(o=>{const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);return !srs||srs.nextReview<=now}).length;
   $("family-sub").textContent=`${obs.length} species`;
   const sb=$("btn-study-family");
   if(nDue>0){sb.textContent=`Study ${nDue} due →`;show("btn-study-family")}else{hide("btn-study-family")}
   const con=$("species-in-family");con.innerHTML="";
   for(const o of sorted){
-    const k=obsUser(o)+":"+taxonKey(o);const srs=srsMap.get(k);
+    const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
     const isDue=!srs||srs.nextReview<=now;
     const nm=o.taxon.preferred_common_name||o.taxon.name;
     const sci=o.taxon.name;
@@ -1737,11 +1726,11 @@ function doStartCSV(){
 
 async function csvNextDeck(){
   const now=Date.now(),count=Math.min(S.qCount,S.allObs.length);
-  const existing=await dbAllUsers(S.allUsers.length?S.allUsers:[S.currentUser]);const srsMap=new Map();
+  const existing=await dbAllUser(S.currentUser);const srsMap=new Map();
   for(const c of existing)srsMap.set(c.taxonKey,c);
   const due=[],notDue=[],fresh=[];
   for(const o of S.allObs){
-    const k=obsUser(o)+":"+taxonKey(o);const srs=srsMap.get(k);
+    const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
     if(!srs)fresh.push(o);else if(srs.nextReview<=now)due.push(o);else notDue.push(o);
   }
   const available=[...shuffle(fresh),...shuffle(due)];
@@ -1751,8 +1740,8 @@ async function csvNextDeck(){
   const freshSet=new Set(fresh.map(o=>taxonKey(o)));
   S.deck=[];S.sessionResults=[];
   for(const o of pool){
-    const k=obsUser(o)+":"+taxonKey(o);
-    let srs=srsMap.get(k)||{taxonKey:k,username:obsUser(o),species:o.taxon.name||"",common:tc(o.taxon.preferred_common_name)||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+    const k=S.currentUser+":"+taxonKey(o);
+    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:tc(o.taxon.preferred_common_name)||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
     const isFresh=freshSet.has(taxonKey(o));
     const card={obs:o,srs,family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",
       familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false,
@@ -1928,7 +1917,7 @@ async function handleTraits(){
 async function buildTraitsDeck(){
   if(traitsDB.size===0)return false;
   // Filter out ignored species before building deck
-  const existing=await dbAllUsers(S.allUsers.length?S.allUsers:[S.currentUser]);
+  const existing=await dbAllUser(S.currentUser);
   const ignoredSet=new Set(existing.filter(c=>c.ignored).map(c=>c.species?.toLowerCase()));
   // Use allObs if available, otherwise build from traitsDB keys
   let candidates=S.allObs.filter(o=>traitsDB.has(o.taxon.name.toLowerCase())&&!ignoredSet.has(o.taxon.name.toLowerCase()));
@@ -2118,11 +2107,11 @@ function checkTraits(){
 async function buildDeck(obs,dueOnly){
   const now=Date.now(),count=Math.min(S.qCount,obs.length);
   console.log(`buildDeck: qCount=${S.qCount}, obs.length=${obs.length}, count=${count}, dueOnly=${dueOnly}`);
-  const existing=await dbAllUsers(S.allUsers.length?S.allUsers:[S.currentUser]);const srsMap=new Map();
+  const existing=await dbAllUser(S.currentUser);const srsMap=new Map();
   for(const c of existing)srsMap.set(c.taxonKey,c);
   const due=[],notDue=[],fresh=[];
   for(const o of obs){
-    const k=obsUser(o)+":"+taxonKey(o);const srs=srsMap.get(k);
+    const k=S.currentUser+":"+taxonKey(o);const srs=srsMap.get(k);
     if(srs?.ignored)continue; // skip ignored species
     if(!srs)fresh.push(o);else if(srs.nextReview<=now)due.push(o);else notDue.push(o);
   }
@@ -2142,8 +2131,8 @@ async function buildDeck(obs,dueOnly){
   console.log(`Selected: ${pool.map(o=>o.taxon?.name).join(", ")}`);
   if(pool.length===0){showErr(dueOnly?"No cards are due right now!":"No cards available.");return}
   S.deck=[];S.sessionResults=[];
-  for(const o of pool){const k=obsUser(o)+":"+taxonKey(o);
-    let srs=srsMap.get(k)||{taxonKey:k,username:obsUser(o),species:o.taxon.name||"",common:tc(o.taxon.preferred_common_name)||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+  for(const o of pool){const k=S.currentUser+":"+taxonKey(o);
+    let srs=srsMap.get(k)||{taxonKey:k,username:S.currentUser,species:o.taxon.name||"",common:tc(o.taxon.preferred_common_name)||"",family:o._family||"",easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
     const card={obs:o,srs,order:o._treeRanks?.order||"",family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",orderDone:false,familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false};
     if(!card.order)card.orderDone=true;if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
     S.deck.push(card)}
@@ -2501,13 +2490,12 @@ function results(){
 async function showStats(){
   const un=(S.currentUser||$("inp-user").value.trim()).toLowerCase();
   if(!un){showScreen("setup");return}S.currentUser=un;
-  const users=S.allUsers.length?S.allUsers:[un];
-  const all=await dbAllUsers(users);
+  const all=await dbAllUser(un);
   const now=Date.now();
   const active=all.filter(c=>!c.ignored);
   const reviewed=active.filter(c=>c.totalReviews>0).sort((a,b)=>a.nextReview-b.nextReview);
   const fresh=active.filter(c=>c.totalReviews===0);
-  $("stats-user").textContent=`${users.join(', ')} \u00B7 ${active.length} species`;
+  $("stats-user").textContent=`${un} \u00B7 ${active.length} species`;
   const MAX_IV=30*1440;
   const sl=$("species-list");sl.innerHTML="";
   // Split into display groups
