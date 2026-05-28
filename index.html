@@ -279,7 +279,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .home-settings-btn{background:#fff;border:1px solid #c8ddd2;border-radius:10px;color:#3d8b5e;font-size:12px;cursor:pointer;padding:6px 10px;font-family:inherit;white-space:nowrap;flex-shrink:0}
 .home-nav-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#3d8b5e;border:none;border-radius:8px;padding:11px 32px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:background 0.1s;letter-spacing:0.01em;-webkit-tap-highlight-color:transparent;outline:none}
 .home-nav-btn:active{background:#2a6342}
-.home-leaf-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#82c97a;border:none;border-radius:8px;padding:7px 20px;min-width:90px;text-align:center;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.10);transition:background 0.1s;letter-spacing:0.01em;-webkit-tap-highlight-color:transparent;outline:none}
+.home-leaf-btn{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:#fff;background:#82c97a;border:none;border-radius:8px;padding:7px 8px;width:115px;text-align:center;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.10);transition:background 0.1s;letter-spacing:0.01em;-webkit-tap-highlight-color:transparent;outline:none}
 .home-leaf-btn:active{background:#4fa070}
 .home-leaf-btn:active{color:#ff6a00}
 .family-list{padding:0 14px;margin-top:10px}
@@ -411,10 +411,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <button id="btn-learn" class="home-nav-btn">Names</button>
   </div>
   <div id="home-taxa-wrap" style="position:absolute">
-    <button id="btn-families-main" class="home-leaf-btn">Taxa</button>
+    <button id="btn-families-main" class="home-leaf-btn">Taxonomy</button>
   </div>
   <div id="home-terms-wrap" style="position:absolute">
-    <button id="btn-terms" class="home-leaf-btn">Traits</button>
+    <button id="btn-terms" class="home-leaf-btn">Characters</button>
   </div>
   <p id="home-main-err" class="error hidden" style="position:absolute;bottom:24px;left:0;right:0;text-align:center;padding:0 24px"></p>
   <div id="install-banner" class="hidden" style="position:absolute;bottom:20px;left:16px;right:16px;background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.12);padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between">
@@ -2242,7 +2242,7 @@ function renderTraitCard(){
   const c=S.deck[S.cardIndex];c._revealed=false;
   $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Traits</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Characters</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
   const o=c.obs;
   $("q-prompt").textContent="What do you know about this species?";
   $("trait-species").textContent=c.species;
@@ -2326,7 +2326,7 @@ function checkTraits(){
   hide("btn-row-submit");show("btn-next");show("btn-ignore-link");
   S.completedCards++;
   $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Traits</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Characters</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
   const isLast=S.cardIndex+1>=S.deck.length&&S.retryQueue.length===0;
   $("btn-next").innerHTML=isLast?SVG_CHECK:SVG_ARROW;
 }
