@@ -335,7 +335,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .ignore-cancel:hover{border-color:#3d8b5e;color:#1c2b22}
 .ignore-btn-label{font-size:11px;font-weight:400;opacity:.7;display:block;margin-top:2px}
 /* ── Taxonomy Quiz ── */
-#screen-taxoquiz{background:#f4f2ed;min-height:100vh;padding-bottom:32px}
+#screen-taxoquiz{background:#f4f2ed;min-height:100vh;padding-bottom:48px}
 .tq-back-btn{background:#ebe8e0;border:none;color:#4a6650;padding:7px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
 .tq-top-bar{display:flex;align-items:center;gap:8px;padding:6px 8px 4px;font-size:13px;font-weight:600;color:#556b5e;flex-shrink:0}
 .tq-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);margin:8px 10px 8px;padding:24px 16px 20px}
@@ -442,12 +442,23 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <button class="count-btn" data-n="15">15</button>
       <button class="count-btn" data-n="20">20</button>
     </div>
-    <label class="label" style="margin-top:14px">Fields to Test</label>
-    <div style="display:flex;flex-direction:column;gap:2px;margin-top:6px">
-      <label class="tog-row"><input type="checkbox" id="tog-order" class="tog-cb"><span>Order</span></label>
-      <label class="tog-row"><input type="checkbox" id="tog-family" class="tog-cb"><span>Family</span></label>
-      <label class="tog-row"><input type="checkbox" id="tog-species" class="tog-cb"><span>Latin name</span></label>
-      <label class="tog-row"><input type="checkbox" id="tog-common" class="tog-cb"><span>Common name</span></label>
+    <div style="display:flex;gap:0;margin-top:14px;align-items:flex-start">
+      <div style="flex:1;min-width:0">
+        <label class="label">Kingdoms</label>
+        <div id="kingdom-filter-row" style="display:flex;flex-direction:column;gap:2px;margin-top:6px">
+          <span style="font-size:12px;color:#9bb8a8;font-style:italic">Load obs first</span>
+        </div>
+      </div>
+      <div style="width:1px;background:#e4ede8;align-self:stretch;margin:0 12px"></div>
+      <div style="flex:1;min-width:0">
+        <label class="label">Fields to Test</label>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:6px">
+          <label class="tog-row"><input type="checkbox" id="tog-order" class="tog-cb"><span>Order</span></label>
+          <label class="tog-row"><input type="checkbox" id="tog-family" class="tog-cb"><span>Family</span></label>
+          <label class="tog-row"><input type="checkbox" id="tog-species" class="tog-cb"><span>Latin name</span></label>
+          <label class="tog-row"><input type="checkbox" id="tog-common" class="tog-cb"><span>Common name</span></label>
+        </div>
+      </div>
     </div>
     <label class="label" style="margin-top:14px">Name order in results</label>
     <div style="display:flex;background:#f0f5f2;border:1.5px solid #c8ddd2;border-radius:10px;padding:3px;gap:3px;margin-top:6px">
@@ -640,7 +651,6 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
     </div>
   </div>
-  <button id="btn-taxoquiz-taxa" style="position:fixed;bottom:20px;right:16px;background:none;border:none;color:#2a5c3f;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;z-index:10">View all taxa →</button>
   <div id="tq-results" class="hidden" style="padding:0 10px">
     <div class="results-card">
       <div class="res-score-ring" id="tq-res-ring"></div>
@@ -652,6 +662,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
         <button class="btn-secondary" id="tq-quit-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home</button>
       </div>
     </div>
+  </div>
+  <div style="position:fixed;bottom:0;left:0;right:0;max-width:540px;margin:0 auto;background:#2a5c3f;display:flex;align-items:center;justify-content:flex-end;padding:7px 16px;z-index:10">
+    <button id="btn-taxoquiz-taxa" style="background:none;border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">View all taxa →</button>
   </div>
 </div>
 
@@ -783,7 +796,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:"",_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0};
 const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
@@ -813,6 +826,7 @@ function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").r
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
 function isMatch(u,c){const a=normalize(u),b=normalize(c);if(!a||!b)return false;if(a===b)return true;return b.length>4&&lev(a,b)<=2}
 function taxonKey(o){return(o.taxon?.name||"").toLowerCase()}
+function filteredObs(obs){if(!S.kingdomFilter.size)return obs;return obs.filter(o=>{const k=(o._treeRanks?.kingdom||"").toLowerCase();return S.kingdomFilter.has(k);});}
 function getIgnoredObsIds(){try{return new Set(JSON.parse(localStorage.getItem("inat_ignored_obs")||"[]"))}catch{return new Set()}}
 function addIgnoredObsId(id){const s=getIgnoredObsIds();s.add(String(id));localStorage.setItem("inat_ignored_obs",JSON.stringify([...s]))}
 function dedupe(obs){
@@ -836,6 +850,7 @@ function dedupe(obs){
   $("tog-family").checked=localStorage.getItem("inat_f_family")!=="0";
   $("tog-species").checked=localStorage.getItem("inat_f_species")!=="0";
   $("tog-common").checked=localStorage.getItem("inat_f_common")!=="0";
+  try{const kf=JSON.parse(localStorage.getItem("inat_kingdom_filter")||"[]");S.kingdomFilter=new Set(kf);}catch{}
   setNameOrder(localStorage.getItem("inat_name_common_first")==="0"?"latin":"common",true);
   if(saved)$("inp-user").value=saved;
   updateHomeMainSub();
@@ -849,7 +864,7 @@ $("inp-user").addEventListener("keydown",e=>{if(e.key==="Enter")saveSettingsAndR
 document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListener("click",()=>{document.querySelectorAll("#count-row .count-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.qCount=+b.dataset.n})});
 $("btn-start").addEventListener("click",saveSettingsAndReturn);
 $("btn-settings-back").addEventListener("click",()=>showScreen("home-main"));
-$("btn-open-settings").addEventListener("click",()=>showScreen("setup"));
+$("btn-open-settings").addEventListener("click",()=>{showScreen("setup");populateKingdomCheckboxes();});
 $("btn-learn").addEventListener("click",()=>startFromHome(false));
 $("btn-terms").addEventListener("click",()=>showScreen("terms"));
 $("btn-terms-back").addEventListener("click",()=>showScreen("home-main"));
@@ -858,7 +873,7 @@ $("btn-open-stats").addEventListener("click",()=>showStats());
 $("btn-howto-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-families-main").addEventListener("click",async()=>{if(!S.allObs?.length)await loadHome();openTaxoQuiz();});
 $("btn-exit").addEventListener("click",()=>{killMap();S._mixedMode=false;showScreen("home-main")});
-$("btn-home-back").addEventListener("click",()=>showScreen("home-main"));
+$("btn-home-back").addEventListener("click",()=>{if(S._fromTaxoQuiz){S._fromTaxoQuiz=false;showScreen("taxoquiz");}else{showScreen("home-main");}});
 $("btn-family-back").addEventListener("click",()=>showHome());
 $("btn-study-family").addEventListener("click",()=>startQuizFromFamily());
 $("btn-submit").addEventListener("click",()=>{if(S.traitMode)checkTraits();else check()});
@@ -1336,6 +1351,19 @@ function submitUsernamePopup(){
 }
 const _unpInp=$("username-popup-inp");if(_unpInp)_unpInp.addEventListener("keydown",e=>{if(e.key==="Enter")submitUsernamePopup();});
 
+function populateKingdomCheckboxes(){
+  const row=$("kingdom-filter-row");
+  if(!row)return;
+  const kingdoms=[...new Set((S.allObs||[]).map(o=>(o._treeRanks?.kingdom||"")).filter(Boolean))].sort();
+  if(!kingdoms.length){row.innerHTML='<span style="font-size:12px;color:#9bb8a8;font-style:italic">Load observations first to see kingdoms</span>';return;}
+  const saved=S.kingdomFilter;
+  row.innerHTML=kingdoms.map(k=>{
+    const id="tog-kingdom-"+k.toLowerCase().replace(/\s+/g,"-");
+    const checked=!saved.size||saved.has(k.toLowerCase());
+    return `<label class="tog-row"><input type="checkbox" id="${id}" class="tog-cb kingdom-cb" data-kingdom="${k.toLowerCase()}" ${checked?"checked":""}><span>${k}</span></label>`;
+  }).join("");
+}
+
 function saveSettingsAndReturn(){
   const un=$("inp-user").value.trim();
   if(un)localStorage.setItem("inat_quiz_user",un);
@@ -1344,6 +1372,14 @@ function saveSettingsAndReturn(){
   localStorage.setItem("inat_f_family",$("tog-family").checked?"1":"0");
   localStorage.setItem("inat_f_species",$("tog-species").checked?"1":"0");
   localStorage.setItem("inat_f_common",$("tog-common").checked?"1":"0");
+  // Kingdom filter
+  const cbs=document.querySelectorAll(".kingdom-cb");
+  if(cbs.length){
+    const all=[...cbs],checked=all.filter(c=>c.checked).map(c=>c.dataset.kingdom);
+    // If all checked, store empty (= no filter); otherwise store the selected set
+    S.kingdomFilter=all.length===checked.length?new Set():new Set(checked);
+    localStorage.setItem("inat_kingdom_filter",JSON.stringify([...S.kingdomFilter]));
+  }
   // name order saved live via setNameOrder; nothing extra needed here
   updateHomeMainSub();
   showScreen("home-main");
@@ -1682,6 +1718,10 @@ async function showHome(){
   const srsMap=new Map();for(const c of cards)srsMap.set(c.taxonKey,c);
   $("home-title").textContent="Taxa";
   $("home-sub").textContent=`${S.currentUser} · ${S.allObs.length} species`;
+  const backBtn=$("btn-home-back");
+  backBtn.innerHTML=S._fromTaxoQuiz
+    ?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back to quiz`
+    :`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home`;
   const list=$("family-list");list.innerHTML="";
   const tree=buildPhyloTree(S.allObs);
   for(const[,child]of tree.children)list.appendChild(renderPhyloNode(child,0,srsMap,now));
@@ -2189,6 +2229,7 @@ function checkTraits(){
 }
 
 async function buildDeck(obs,dueOnly){
+  obs=filteredObs(obs);
   const now=Date.now(),count=Math.min(S.qCount,obs.length);
   console.log(`buildDeck: qCount=${S.qCount}, obs.length=${obs.length}, count=${count}, dueOnly=${dueOnly}`);
   const existing=await dbAllUser(S.currentUser);const srsMap=new Map();
@@ -2761,6 +2802,7 @@ function tqSharesStem(a,b){
   return minLen>=4&&sa.slice(0,minLen)===sb.slice(0,minLen);
 }
 function tqBuildQuestions(obs){
+  obs=filteredObs(obs);
   const orderFams=new Map(),orderGens=new Map();
   for(const o of obs){
     const fam=o._treeRanks?.family,ord=o._treeRanks?.order;
@@ -3007,7 +3049,7 @@ async function openTaxoQuiz(){
 }
 
 $("btn-taxoquiz-home").addEventListener("click",()=>showScreen("home-main"));
-$("btn-taxoquiz-taxa").addEventListener("click",()=>{if(S.allObs?.length)showHome();else showScreen("home");});
+$("btn-taxoquiz-taxa").addEventListener("click",()=>{S._fromTaxoQuiz=true;if(S.allObs?.length)showHome();else showScreen("home");});
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-new-quiz-btn").addEventListener("click",()=>openTaxoQuiz());
 $("tq-quit-btn").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedMode=false;showScreen("home-main");});
