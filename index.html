@@ -125,9 +125,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz{position:fixed;inset:0;display:flex;flex-direction:column;padding:6px 8px 8px;overflow:hidden}
 #screen-quiz .top-bar{flex-shrink:0;margin-bottom:4px;gap:8px}
 #screen-quiz .q-card{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0;border-radius:14px}
-#screen-quiz .q-card-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-#screen-quiz .prompt{display:block}
-#screen-quiz .carousel{margin-bottom:6px;border-radius:10px}
+#screen-quiz .q-card-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column}
+#screen-quiz .prompt{display:block;flex-shrink:0}
+#screen-quiz .carousel{margin-bottom:6px;border-radius:10px;flex-shrink:1;min-height:80px;width:100%;align-self:stretch}
 #screen-quiz .map-strip{margin-bottom:6px;height:90px}
 #screen-quiz .map-strip.expanded{height:280px}
 #screen-quiz #obs-notes{margin-bottom:6px!important;padding:7px 11px 8px!important}
