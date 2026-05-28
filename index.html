@@ -2375,6 +2375,7 @@ function cardSessionScore(c){
   return base-(c._retryWrong||0);
 }
 async function renderCard(){
+  _carLocked=false;const _car=$('carousel');if(_car){_car.style.flex='';_car.style.height='';}
   const c=S.deck[S.cardIndex];c._revealed=false;
   // If this card has been seen before, it's a retry — count the penalty
   if(c._firstPassDone){
@@ -2868,11 +2869,20 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW error:',e));
   });
 }
+let _carLocked=false;
 function _syncQuizVP(){
   const vv=window.visualViewport;if(!vv)return;
   const el=$('screen-quiz');if(!el)return;
   el.style.top=vv.offsetTop+'px';
   el.style.height=vv.height+'px';
+  if(!_carLocked&&vv.height<window.innerHeight-80){
+    _carLocked=true;
+    requestAnimationFrame(()=>{
+      const c=$('carousel');if(!c)return;
+      const h=c.getBoundingClientRect().height;
+      if(h>60){c.style.flex='none';c.style.height=h+'px';}
+    });
+  }
 }
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize',_syncQuizVP);
