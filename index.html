@@ -210,6 +210,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-setup .btn-secondary{color:#fff;border:1.5px solid #82c97a;background:#82c97a;border-radius:12px}
 #screen-setup .footer-text{color:#6b8f78}
 #screen-setup .error{color:#dc2626}
+/* ── Toast ── */
+#toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:#1c2b22;color:#f4f2ed;font-size:13px;font-weight:500;padding:10px 18px;border-radius:20px;white-space:nowrap;z-index:10000;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* ── Phylogenetic tree ── */
 .tree-branch-row{display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:1px solid #edf3ee;touch-action:manipulation;padding:10px 14px}
 .tree-branch-row:active{background:#e8f4ec}
@@ -851,7 +854,8 @@ let _sbUser=null;
 _SB.auth.getSession().then(({data:{session}})=>{_sbUser=session?.user||null;_updateSyncUI();});
 _SB.auth.onAuthStateChange(async(event,session)=>{
   const wasNull=!_sbUser;_sbUser=session?.user||null;_updateSyncUI();
-  if(event==='SIGNED_IN'&&wasNull)_syncOnLogin();
+  if(event==='SIGNED_IN'&&wasNull){_syncOnLogin();showToast('✓ Signed in as '+_sbUser.email);}
+  if(event==='SIGNED_OUT')showToast('Signed out');
 });
 function _updateSyncUI(){
   const li=$('sync-logged-in'),lo=$('sync-logged-out');if(!li||!lo)return;
@@ -2719,6 +2723,14 @@ $("btn-taxoquiz-taxa").addEventListener("click",()=>{S._fromTaxoQuiz=true;if(S.a
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-new-quiz-btn").addEventListener("click",()=>openTaxoQuiz());
 $("tq-quit-btn").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedMode=false;showScreen("home-main");});
+
+let _toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
 </script>
+<div id="toast"></div>
 </body>
 </html>
