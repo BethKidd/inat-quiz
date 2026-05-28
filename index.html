@@ -2414,17 +2414,11 @@ function _syncQuizVP(){
   el.style.height=vv.height+'px';
   if(!_carLocked&&vv.height<window.innerHeight-80){
     _carLocked=true;
-    const tryLock=()=>{
+    requestAnimationFrame(()=>{
       const c=$('carousel');if(!c)return;
       const h=c.getBoundingClientRect().height;
       if(h>60){c.style.flex='none';c.style.height=h+'px';}
-      else{
-        // Image not loaded yet — wait for it then retry
-        const img=c.querySelector('img');
-        if(img&&!img.complete){img.addEventListener('load',()=>requestAnimationFrame(tryLock),{once:true});}
-      }
-    };
-    requestAnimationFrame(tryLock);
+    });
   }
 }
 if(window.visualViewport){
