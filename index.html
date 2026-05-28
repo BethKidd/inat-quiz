@@ -778,13 +778,19 @@ function getEnabledFields(){
   if(localStorage.getItem("inat_f_common")!=="0")f.push("common");
   return f;
 }
-const DB_NAME="inat_quiz_srs";const DB_VER=1;const STORE="cards";
+const DB_NAME="inat_quiz_srs";const DB_VER=2;const STORE="cards";
+const STORE_TAXA="taxa_cache";const STORE_OBS="obs_cache";
 
 /* ── IndexedDB ── */
 let db=null;
 function openDB(){return new Promise((res,rej)=>{
   const r=indexedDB.open(DB_NAME,DB_VER);
-  r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE)){const s=d.createObjectStore(STORE,{keyPath:"taxonKey"});s.createIndex("username","username");s.createIndex("nextReview","nextReview")}};
+  r.onupgradeneeded=e=>{
+  const d=e.target.result;
+  if(!d.objectStoreNames.contains(STORE)){const s=d.createObjectStore(STORE,{keyPath:"taxonKey"});s.createIndex("username","username");s.createIndex("nextReview","nextReview")}
+  if(!d.objectStoreNames.contains(STORE_TAXA)){d.createObjectStore(STORE_TAXA,{keyPath:"taxonId"});}
+  if(!d.objectStoreNames.contains(STORE_OBS)){d.createObjectStore(STORE_OBS,{keyPath:"key"});}
+};
   r.onsuccess=e=>{
     db=e.target.result;
     // If another tab opens a newer version, close gracefully so it can upgrade
@@ -799,6 +805,28 @@ async function dbGet(k){await ensureDB();return new Promise((res,rej)=>{const r=
 async function dbPut(c){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE,"readwrite").objectStore(STORE).put(c);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
 async function dbAllUser(u){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index("username").getAll(u.toLowerCase());r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
 async function dbClearUser(u){await ensureDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");const r=tx.objectStore(STORE).index("username").openCursor(u.toLowerCase());r.onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function dbGetCache(store,key){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(store).objectStore(store).get(key);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}
+async function dbPutCache(store,record){await ensureDB();return new Promise((res,rej)=>{const r=db.transaction(store,"readwrite").objectStore(store).put(record);r.onsuccess=()=>res();r.onerror=()=>res()})}
+
+/* ── Canonical login cache ── */
+async function resolveCanonLogin(un){
+  const ck='inat_canon_'+un.toLowerCase();
+  const hit=localStorage.getItem(ck);if(hit)return hit;
+  const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);
+  if(!ur.ok)throw Error("Could not reach iNaturalist API");
+  const ud=await ur.json();
+  const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
+  if(!m)throw Error(`Username "${un}" not found.`);
+  localStorage.setItem(ck,m.login);return m.login;
+}
+function clearCanonCache(un){try{localStorage.removeItem('inat_canon_'+un.toLowerCase())}catch{}}
+
+let _homeStatsInatCache=null; // {ts,un,inatTotal}
+const HOME_STATS_TTL=5*60*1000;
+
+const TREE_RANK_TTL=60*24*60*60*1000;
+function _getCachedRanks(id){try{const r=localStorage.getItem('inat_tr_'+id);if(!r)return null;const{ranks,ts}=JSON.parse(r);if(Date.now()-ts>TREE_RANK_TTL)return null;return ranks;}catch{return null}}
+function _setCachedRanks(id,ranks){try{localStorage.setItem('inat_tr_'+id,JSON.stringify({ranks,ts:Date.now()}))}catch{}}
 
 /* ── SM-2 (session-aware: in-session retries replace learning steps) ── */
 // Intervals stored in minutes. No sub-day learning steps — session IS the learning phase.
@@ -1083,6 +1111,9 @@ function renderCar(slides){
 
 async function fetchExtra(tid,uid){
   if(photoCache.has(tid))return photoCache.get(tid);
+  const TAXA_CACHE_TTL=14*24*60*60*1000;
+  const idbHit=await dbGetCache(STORE_TAXA,tid);
+  if(idbHit&&idbHit.ps&&Date.now()-idbHit.cachedAt<TAXA_CACHE_TTL){if(idbHit.altNames)commonNamesCache.set(tid,idbHit.altNames);photoCache.set(tid,idbHit.ps);return idbHit.ps;}
   try{
     const r=await fetch(`${API}/taxa/${tid}?locale=en&all_names=true`);
     if(!r.ok)return[];const d=await r.json();
@@ -1104,7 +1135,9 @@ async function fetchExtra(tid,uid){
       .map(n=>n.name)
       .filter(n=>n.toLowerCase()!==preferred);
     commonNamesCache.set(tid,[...new Set(altNames)]);
-    photoCache.set(tid,ps);return ps;
+    photoCache.set(tid,ps);
+    await dbPutCache(STORE_TAXA,{taxonId:tid,ps,altNames:[...new Set(altNames)],cachedAt:Date.now()});
+    return ps;
   }catch{return[]}
 }
 
@@ -1148,31 +1181,34 @@ function showWiki(species){
 /* ── Fetch & Start ── */
 async function doStart(dueOnly){hide("error-msg");showScreen("loading");$("loading-text").textContent="Checking username\u2026";
   const un=$("inp-user").value.trim();localStorage.setItem("inat_quiz_user",un);
-  try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(!ur.ok)throw Error("Could not reach iNaturalist API");
-    const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
-    if(!m){showErr(`Username "${un}" not found.`);return}
-    const login=m.login;S.currentUser=login.toLowerCase();
-    $("loading-text").textContent=`Loading observations for ${login}\u2026`;
-    let allResults=[];
-    const cacheBust=Date.now();
-    for(let page=1;page<=5;page++){
-      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${page}&order=desc&order_by=created_at&locale=en&_=${cacheBust}`);
-      if(!r.ok)throw Error(`API error ${r.status}`);const d=await r.json();
-      const results=d.results||[];allResults.push(...results);
-      if(page===1)console.log(`iNat: ${d.total_results} total observations for ${login}, page 1: ${results.length}`);
-      if(results.length<200)break;
+  try{const login=await resolveCanonLogin(un).catch(e=>{showErr(e.message);return null});
+    if(!login)return;
+    S.currentUser=login.toLowerCase();
+    const obsCacheKey='obs:'+login.toLowerCase();
+    const obsCached=await dbGetCache(STORE_OBS,obsCacheKey);
+    let allResults;
+    if(obsCached){
+      const age=Date.now()-obsCached.cachedAt;
+      if(age<OBS_MIN_SYNC_AGE){
+        // Very recent cache (page nav) \u2014 skip API entirely
+        allResults=obsCached.obs;
+        $("loading-text").textContent="Loading\u2026";
+      }else{
+        // Incremental sync: only fetch obs changed since last cache
+        $("loading-text").textContent="Checking for updates\u2026";
+        try{
+          const updates=await _fetchObsUpdatedSince(login,obsCached.cachedAt);
+          allResults=updates.length?_mergeObs(obsCached.obs,updates):obsCached.obs;
+          await dbPutCache(STORE_OBS,{key:obsCacheKey,obs:allResults,cachedAt:Date.now()});
+          if(updates.length)$("loading-text").textContent=`${updates.length} update${updates.length!==1?"s":""} found\u2026`;
+        }catch{allResults=obsCached.obs;}
+      }
+    }else{
+      $("loading-text").textContent=`Loading observations for ${login}\u2026`;
+      allResults=await _fetchAllObs(login);
+      await dbPutCache(STORE_OBS,{key:obsCacheKey,obs:allResults,cachedAt:Date.now()});
     }
-    console.log(`Fetched ${allResults.length} observations total`);
-    // Log the 5 most recent so you can check
-    allResults.slice(0,5).forEach((o,i)=>{
-      const hasPhotos=!!(o.photos?.length);
-      const hasTaxon=!!(o.taxon?.name);
-      const rank=o.taxon?.rank||"none";
-      const spRank=SP_RANKS.has(rank.toLowerCase());
-      console.log(`  #${i+1}: ${o.taxon?.name||o.species_guess||"no ID"} | rank:${rank} spRank:${spRank} | photos:${hasPhotos} | created:${o.created_at}`);
-    });
     const good=allResults.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
-    console.log(`After filtering: ${good.length} species-level obs with photos`);
     const uniq=dedupe(good);if(uniq.length<4){showErr(`Only ${uniq.length} species-level observations found. Need at least 4.`);return}
     $("loading-text").textContent="Fetching taxonomy\u2026";
     await fetchTaxonomy(uniq);
@@ -1189,14 +1225,16 @@ async function _loadObsSilent(un){
   if(S.allObs.length&&S.currentUser===un.toLowerCase())return;
   const sp=document.getElementById('home-load-spinner');if(sp)sp.style.display='block';
   try{
-    let canonLogin=un;
-    try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(ur.ok){const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());if(m)canonLogin=m.login;}}catch{}
+    const canonLogin=await resolveCanonLogin(un).catch(()=>un);
     S.currentUser=canonLogin.toLowerCase();
-    let all=[];const cb=Date.now();
-    for(let p=1;p<=5;p++){
-      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(canonLogin)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
-      if(!r.ok)break;const d=await r.json();all.push(...(d.results||[]));if((d.results||[]).length<200)break;
-    }
+    const obsCacheKey2='obs:'+canonLogin.toLowerCase();
+    const obsCached2=await dbGetCache(STORE_OBS,obsCacheKey2);
+    let all;
+    if(obsCached2){
+      const age2=Date.now()-obsCached2.cachedAt;
+      if(age2<OBS_MIN_SYNC_AGE){all=obsCached2.obs;}
+      else{try{const upd=await _fetchObsUpdatedSince(canonLogin,obsCached2.cachedAt);all=upd.length?_mergeObs(obsCached2.obs,upd):obsCached2.obs;await dbPutCache(STORE_OBS,{key:obsCacheKey2,obs:all,cachedAt:Date.now()});}catch{all=obsCached2.obs;}}
+    }else{all=await _fetchAllObs(canonLogin);await dbPutCache(STORE_OBS,{key:obsCacheKey2,obs:all,cachedAt:Date.now()});}
     const good=all.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
     const uniq=dedupe(good);
     await fetchTaxonomy(uniq);
@@ -1233,12 +1271,11 @@ async function _fetchHomeStats(un){
     let streak=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
     $("home-streak-label").textContent=`${streak} day${streak!==1?'s':''}`;
     // Fetch total unique species from iNaturalist for accurate "new" count
-    const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=10`);
-    const ud=await ur.json();
-    const login=ud.results?.find(u=>u.login.toLowerCase()===un.toLowerCase())?.login||un;
-    const sr=await fetch(`${API}/observations/species_counts?user_id=${encodeURIComponent(login)}&per_page=1`);
-    const sd=await sr.json();
-    const inatTotal=sd.total_results||0;
+    const login=await resolveCanonLogin(un).catch(()=>un);
+    let inatTotal=0;
+    const stHit=_homeStatsInatCache&&_homeStatsInatCache.un===un.toLowerCase()&&Date.now()-_homeStatsInatCache.ts<HOME_STATS_TTL;
+    if(stHit){inatTotal=_homeStatsInatCache.inatTotal;}
+    else{try{const sr=await fetch(`${API}/observations/species_counts?user_id=${encodeURIComponent(login)}&per_page=1`);const sd=await sr.json();inatTotal=sd.total_results||0;_homeStatsInatCache={ts:Date.now(),un:un.toLowerCase(),inatTotal};}catch{}}
     const newCount=Math.max(0,inatTotal-studied);
     $("home-stat-learn").innerHTML=`<div>${newCount} new</div><div>${namesDue} due</div>`;
   }catch(e){
@@ -1452,16 +1489,16 @@ async function loadHome(){
   if(S.allObs.length&&S.currentUser===un.toLowerCase()){await showHome();return}
   showScreen("loading");$("loading-text").textContent="Loading your observations…";
   try{
-    // Use autocomplete to get canonical login casing, fall back to stored username
-    let canonLogin=un;
-    try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(ur.ok){const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());if(m)canonLogin=m.login;}}catch{}
+    const canonLogin=await resolveCanonLogin(un).catch(()=>un);
     S.currentUser=canonLogin.toLowerCase();
-    $("loading-text").textContent=`Loading observations…`;
-    let all=[];const cb=Date.now();
-    for(let p=1;p<=5;p++){
-      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(canonLogin)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
-      if(!r.ok)break;const d=await r.json();all.push(...(d.results||[]));if((d.results||[]).length<200)break;
-    }
+    const obsCacheKeyH='obs:'+canonLogin.toLowerCase();
+    const obsCachedH=await dbGetCache(STORE_OBS,obsCacheKeyH);
+    let all;
+    if(obsCachedH){
+      const ageH=Date.now()-obsCachedH.cachedAt;
+      if(ageH<OBS_MIN_SYNC_AGE){all=obsCachedH.obs;}
+      else{try{const updH=await _fetchObsUpdatedSince(canonLogin,obsCachedH.cachedAt);all=updH.length?_mergeObs(obsCachedH.obs,updH):obsCachedH.obs;await dbPutCache(STORE_OBS,{key:obsCacheKeyH,obs:all,cachedAt:Date.now()});}catch{all=obsCachedH.obs;}}
+    }else{$("loading-text").textContent=`Loading observations…`;all=await _fetchAllObs(canonLogin);await dbPutCache(STORE_OBS,{key:obsCacheKeyH,obs:all,cachedAt:Date.now()});}
     const good=all.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
     const uniq=dedupe(good);
     $("loading-text").textContent="Fetching taxonomy…";
@@ -1474,19 +1511,45 @@ async function loadHome(){
 async function fetchTaxonomy(uniq){
   const tids=[...new Set(uniq.map(o=>o.taxon.id))];
   const fm={},tm={};
-  for(let i=0;i<tids.length;i+=30){
-    const b=tids.slice(i,i+30);
+  const uncached=[];
+  for(const id of tids){const c=_getCachedRanks(id);if(c){fm[id]=c.family||null;tm[id]=c;}else uncached.push(id);}
+  for(let i=0;i<uncached.length;i+=30){
+    const b=uncached.slice(i,i+30);
     try{
       const tr=await fetch(`${API}/taxa/${b.join(",")}`);
       if(tr.ok){const td=await tr.json();for(const t of(td.results||[])){
         const anc={};
         for(const r of TREE_RANKS){const a=(t.ancestors||[]).find(x=>x.rank===r);if(a){anc[r]=a.name;if(r==="family")anc.familyCN=a.preferred_common_name||null;}}
         if(TREE_RANKS.includes(t.rank))anc[t.rank]=t.name;
-        fm[t.id]=anc.family||null;tm[t.id]=anc;
+        fm[t.id]=anc.family||null;tm[t.id]=anc;_setCachedRanks(t.id,anc);
       }}
     }catch{}
   }
   for(const o of uniq){o._family=fm[o.taxon.id]||null;o._treeRanks=tm[o.taxon.id]||{};o._familyCN=tm[o.taxon.id]?.familyCN||null;}
+}
+
+const OBS_MIN_SYNC_AGE=60*1000; // skip sync if cache is <60s old (page navigations)
+async function _fetchAllObs(login){
+  let all=[];const cb=Date.now();
+  for(let p=1;p<=5;p++){
+    const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
+    if(!r.ok)break;const d=await r.json();all.push(...(d.results||[]));if((d.results||[]).length<200)break;
+  }
+  return all;
+}
+async function _fetchObsUpdatedSince(login,sinceTs){
+  const since=new Date(sinceTs).toISOString();
+  let updated=[];
+  for(let p=1;p<=5;p++){
+    const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${p}&order=desc&order_by=updated_at&locale=en&updated_since=${encodeURIComponent(since)}`);
+    if(!r.ok)break;const d=await r.json();updated.push(...(d.results||[]));if((d.results||[]).length<200)break;
+  }
+  return updated;
+}
+function _mergeObs(cached,updates){
+  const map=new Map(cached.map(o=>[o.id,o]));
+  for(const o of updates)map.set(o.id,o);
+  return[...map.values()];
 }
 
 // APG IV clade lookup: order name → informal clade
