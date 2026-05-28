@@ -898,7 +898,7 @@ function flashScore(s){
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
 function hide(id){$(id).classList.add("hidden")}
-function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms","screen-howto","screen-taxoquiz"].forEach(s=>s==="screen-"+n?show(s):hide(s));if(n==="home-main"){updateHomeMainSub();requestAnimationFrame(layoutHomeMain);}}
+function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms","screen-howto","screen-taxoquiz"].forEach(s=>s==="screen-"+n?show(s):hide(s));window.scrollTo(0,0);if(n==="home-main"){updateHomeMainSub();requestAnimationFrame(layoutHomeMain);}}
 function esc(s){if(!s)return"";const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").replace(/[-–—]/g," ").replace(/[^a-z0-9' ]/g,"").replace(/\s+/g," ")}
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
