@@ -762,7 +762,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       const btn=document.getElementById('data-notice-sync-btn');
       btn.disabled=true;btn.textContent='Sending…';
       const{error}=await _SB.auth.signInWithOtp({email,options:{emailRedirectTo:'https://nominanaturae.com'}});
-      if(error){btn.disabled=false;btn.textContent='Send email link';document.getElementById('data-notice-status').textContent='Error: '+error.message;}
+      if(error){btn.disabled=false;btn.textContent='Send login link';const msg=error.message?.toLowerCase().includes('rate')?'Too many attempts — please try again later.':'Something went wrong. Please try again.';document.getElementById('data-notice-status').textContent=msg;}
       else{document.getElementById('data-notice-status').textContent='Check your email for a login link!';btn.textContent='Sent ✓';}
     })()" style="width:100%;background:#3d8b5e;color:#fff;border:none;border-radius:10px;padding:11px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;margin-bottom:6px">Send email link</button>
     <p id="data-notice-status" style="font-size:12px;color:#6b8f78;min-height:16px;margin-bottom:8px;text-align:center"></p>
@@ -862,7 +862,7 @@ function _setCachedRanks(id,ranks){try{localStorage.setItem('inat_tr_'+id,JSON.s
 /* ── Supabase sync ── */
 const _SB=window.supabase.createClient('https://efxcfytuqczmncydbkyv.supabase.co','sb_publishable_stK6pJJ1F4wQzw_p6i7K8A_MMCweJUz');
 let _sbUser=null;
-_SB.auth.getSession().then(({data:{session}})=>{_sbUser=session?.user||null;_updateSyncUI();if(_sbUser)_syncOnLogin();});
+_SB.auth.getSession().then(({data:{session}})=>{_sbUser=session?.user||null;_updateSyncUI();if(_sbUser)_syncOnLogin(true);});
 _SB.auth.onAuthStateChange(async(event,session)=>{
   const wasNull=!_sbUser;_sbUser=session?.user||null;_updateSyncUI();
   if(event==='SIGNED_IN'&&wasNull){_syncOnLogin();if(location.hash.includes('access_token'))showToast('✓ Signed in as '+_sbUser.email);}
@@ -878,16 +878,16 @@ async function _cloudPut(record){
   if(!_sbUser)return;
   try{await _SB.from('srs_records').upsert({user_id:_sbUser.id,taxon_key:record.taxonKey,data:record,updated_at:new Date(record.lastReview||Date.now()).toISOString()},{onConflict:'user_id,taxon_key'});}catch{}
 }
-async function _syncOnLogin(){
-  const st=$('sync-status');if(st)st.textContent='Syncing…';
+async function _syncOnLogin(silent=false){
+  const st=$('sync-status');if(st&&!silent)st.textContent='Syncing…';
   try{
     const{data:cloud,error}=await _SB.from('srs_records').select('data');
     if(error)throw error;
     for(const r of cloud||[]){const local=await dbGet(r.data.taxonKey);if(!local||(r.data.lastReview||0)>(local.lastReview||0))await dbPut(r.data);}
     const un=localStorage.getItem('inat_quiz_user')||'';
     if(un){const recs=await dbAllUser(un);if(recs.length)await _SB.from('srs_records').upsert(recs.map(r=>({user_id:_sbUser.id,taxon_key:r.taxonKey,data:r,updated_at:new Date(r.lastReview||Date.now()).toISOString()})),{onConflict:'user_id,taxon_key'});}
-    if(st)st.textContent=`Last synced ${new Date().toLocaleTimeString()}`;
-  }catch(e){if(st)st.textContent='Sync failed — will retry next session';}
+    if(st&&!silent)st.textContent=`Last synced ${new Date().toLocaleTimeString()}`;
+  }catch(e){if(st&&!silent)st.textContent='Sync failed — will retry next session';}
 }
 
 /* ── SM-2 (session-aware: in-session retries replace learning steps) ── */
@@ -1064,7 +1064,7 @@ $("btn-send-magic-link").addEventListener("click",async()=>{
   const btn=$("btn-send-magic-link");btn.disabled=true;btn.textContent="Sending…";
   const{error}=await _SB.auth.signInWithOtp({email,options:{emailRedirectTo:"https://nominanaturae.com"}});
   const st=$("sync-email-status");
-  if(error){if(st)st.textContent=`Error: ${error.message}`;btn.disabled=false;btn.textContent="Send login link";}
+  if(error){const msg=error.message?.toLowerCase().includes('rate')?'Too many attempts — please try again later.':'Something went wrong. Please try again.';if(st)st.textContent=msg;btn.disabled=false;btn.textContent="Send login link";}
   else{if(st)st.textContent="Check your email for a login link!";btn.textContent="Sent ✓";}
 });
 $("btn-sync-logout").addEventListener("click",async()=>{
@@ -1289,8 +1289,7 @@ async function doStart(dueOnly){hide("error-msg");showScreen("loading");$("loadi
   }catch(e){showErr(`Error: ${e.message}`)}}
 function updateHomeMainSub(){
   const un=localStorage.getItem("inat_quiz_user")||"";
-  $("home-stat-memory").textContent="";$("home-stat-learn").innerHTML="";$("home-stat-taxa").textContent="";$("home-stat-terms").textContent="";
-  if(!un||!db)return;
+  if(!un||!db){$("home-stat-memory").textContent="";$("home-stat-learn").innerHTML="";$("home-stat-taxa").textContent="";$("home-stat-terms").textContent="";return;}
   _fetchHomeStats(un);
   if(!S.allObs.length)_loadObsSilent(un);
 }
