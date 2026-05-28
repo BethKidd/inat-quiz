@@ -565,7 +565,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;line-height:1.2;margin:0">How it works</h2>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;flex-direction:column;gap:18px">
 
       <div style="background:#fff;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:12px 14px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
@@ -583,7 +583,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
           <div style="width:32px;height:32px;border-radius:9px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </div>
-          <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Settings</h3>
+          <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Personalisation</h3>
         </div>
         <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0">Go to settings to personalise what you'll be tested on (e.g. only plants, or only latin names).</p>
       </div>
@@ -935,6 +935,35 @@ function dedupe(obs){
   updateHomeMainSub();
   showScreen("home-main");
   requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity='1';}));
+})();
+
+/* ── Family autocomplete ── */
+(function(){
+  const inp=document.getElementById('inp-family');
+  if(!inp)return;
+  inp.addEventListener('keydown',e=>{
+    if((e.key==='ArrowRight'||e.key==='Tab')&&inp.selectionStart<inp.selectionEnd){
+      e.preventDefault();
+      inp.setSelectionRange(inp.value.length,inp.value.length);
+    }
+    if((e.key==='Backspace'||e.key==='Delete')&&inp.selectionStart<inp.selectionEnd){
+      e.preventDefault();
+      const typed=inp.value.substring(0,inp.selectionStart);
+      inp.value=typed;
+      inp.setSelectionRange(typed.length,typed.length);
+    }
+  });
+  inp.addEventListener('input',()=>{
+    const typed=inp.value;
+    if(typed.length<5)return;
+    const families=[...new Set((S.allObs||[]).map(o=>o._treeRanks?.family).filter(Boolean))].sort();
+    const lower=typed.toLowerCase();
+    const match=families.find(f=>f.toLowerCase().startsWith(lower));
+    if(match&&match.length>typed.length){
+      inp.value=match;
+      inp.setSelectionRange(typed.length,match.length);
+    }
+  });
 })();
 
 /* ── Events ── */
