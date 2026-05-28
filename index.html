@@ -2765,6 +2765,8 @@ function tqHandleCheck(){
   const wrong=[...TQ.selected].filter(f=>!q.correct.has(f));
   const isFullyCorrect=missed.length===0&&wrong.length===0;
   if(isFullyCorrect)TQ.score++;
+  // Save SRS progress for this taxon question
+  if(q.srs){sm2(q.srs,isFullyCorrect?4:0);dbPut(q.srs);}
   $("tq-grid").querySelectorAll(".tq-chip").forEach(chip=>{
     const name=chip.dataset.name;
     chip.classList.remove("selected");
@@ -2853,11 +2855,29 @@ function tqShowSpeciesPopup(rank,value){
   show("tq-sp-popup");
 }
 
-function openTaxoQuiz(){
+async function openTaxoQuiz(){
   if(!S.allObs?.length){alert("Load your observations first.");return;}
   const allQ=tqBuildQuestions(S.allObs);
   if(allQ.length<2){alert("Not enough taxonomic variety to generate a quiz.");return;}
-  TQ.questions=allQ.slice(0,Math.min(10,allQ.length));
+  // Load existing SRS records for taxon questions
+  const allCards=await dbAllUser(S.currentUser);
+  const tqSrsMap=new Map();
+  for(const c of allCards){if(c.taxonKey.startsWith('tq:'))tqSrsMap.set(c.taxonKey,c);}
+  // Attach SRS record to each question
+  const now=Date.now();
+  for(const q of allQ){
+    const key=`tq:${q.questionType}:${q.questionType==='order'?q.order:q.family}`;
+    q.tqKey=key;
+    q.srs=tqSrsMap.get(key)||{taxonKey:key,username:S.currentUser,species:q.questionType==='order'?q.order:q.family,common:q.questionType,family:'',easeFactor:2.5,interval:0,repetitions:0,lastReview:0,nextReview:0,totalReviews:0,correctReviews:0};
+  }
+  // Interleave due and fresh 1:1, append not-yet-due at the end
+  const due=tqShuffle(allQ.filter(q=>q.srs.totalReviews>0&&q.srs.nextReview<=now));
+  const fresh=tqShuffle(allQ.filter(q=>q.srs.totalReviews===0));
+  const notDue=tqShuffle(allQ.filter(q=>q.srs.totalReviews>0&&q.srs.nextReview>now));
+  const interleaved=[];
+  for(let i=0;i<Math.max(due.length,fresh.length);i++){if(i<due.length)interleaved.push(due[i]);if(i<fresh.length)interleaved.push(fresh[i]);}
+  const sorted=[...interleaved,...notDue];
+  TQ.questions=sorted.slice(0,Math.min(10,sorted.length));
   TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
   show("tq-quiz");hide("tq-results");
   showScreen("taxoquiz");
@@ -2868,7 +2888,7 @@ $("btn-taxoquiz-home").addEventListener("click",()=>showScreen("home-main"));
 $("btn-taxoquiz-taxa").addEventListener("click",()=>{if(S.allObs?.length)showHome();else showScreen("home");});
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
-$("tq-new-quiz-btn").addEventListener("click",()=>{const allQ=tqBuildQuestions(S.allObs);TQ.questions=allQ.slice(0,Math.min(10,allQ.length));TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];tqShowQuestion();});
+$("tq-new-quiz-btn").addEventListener("click",()=>openTaxoQuiz());
 $("tq-quit-btn").addEventListener("click",()=>showScreen("home-main"));
 </script>
 </body>
