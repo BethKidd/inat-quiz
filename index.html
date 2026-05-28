@@ -847,8 +847,7 @@ function dedupe(obs){
   if(saved)$("inp-user").value=saved;
   updateHomeMainSub();
   showScreen("home-main");
-  // Fade in after layout is complete — delay keeps native OS splash visible longer
-  setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity='1';})),1400);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity='1';}));
 })();
 
 /* ── Events ── */
