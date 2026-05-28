@@ -137,10 +137,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz .q-card-scroll{padding:16px 16px 8px}
 #screen-quiz .prompt{font-family:'Lora',Georgia,serif;font-style:normal;font-weight:600;font-size:17px;color:#1c2b22;margin-bottom:14px}
 .prompt-label{color:#3d8b5e}
-#screen-quiz .progress-track{background:#d6ebe1}
-#screen-quiz .progress-fill{background:linear-gradient(90deg,#3d8b5e,#52a876)}
-#screen-quiz .round-badge{background:#e4f0ea;color:#2a5e40;border:none}
-#screen-quiz .remaining-badge{background:#e4f0ea;color:#2a5e40;border:none}
+#screen-quiz .progress-track,#screen-taxoquiz .progress-track{background:#d6ebe1}
+#screen-quiz .progress-fill,#screen-taxoquiz .progress-fill{background:linear-gradient(90deg,#3d8b5e,#52a876)}
+#screen-quiz .round-badge,#screen-taxoquiz .round-badge{background:#e4f0ea;color:#2a5e40;border:none}
+#screen-quiz .remaining-badge,#screen-taxoquiz .remaining-badge{background:#e4f0ea;color:#2a5e40;border:none}
 #screen-quiz .badge-yours{background:rgba(61,139,94,.82);color:#fff}
 #screen-quiz .field-label{color:#2a5e40}
 #screen-quiz .field-label .hint{color:#6b9e82}
@@ -630,8 +630,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <div id="tq-quiz">
     <div class="tq-card">
       <div class="tq-progress-row">
-        <span id="tq-progress">1 / 10</span>
-        <span id="tq-score">0 correct</span>
+        <span id="tq-progress">1 / 5</span>
+        <div class="progress-track" style="flex:1;margin:0 10px"><div class="progress-fill" id="tq-progress-fill"></div></div>
+        <span id="tq-round-info" style="display:flex;align-items:center;gap:6px"></span>
       </div>
       <div id="tq-order-block">
         <div class="tq-order-label" id="tq-order-label">Order</div>
@@ -877,7 +878,7 @@ $("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixe
 $("btn-continue-taxa").addEventListener("click",()=>{
   const qs=S._pendingTaxaDue;S._pendingTaxaDue=[];
   if(!qs.length){showScreen("home-main");return}
-  TQ.questions=tqShuffle(qs);TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];
+  TQ.questions=tqShuffle(qs);TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];TQ.round=1;TQ.completedCards=0;
   show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
 });
 $("wiki-info-btn").addEventListener("click",()=>{
@@ -1411,7 +1412,7 @@ function advanceMixed(){
   S._mixedCompleted=S._mixedIdx;
   const label=`${S._mixedCompleted} / ${S._mixedTotal}`;
   if(item.type==='taxa'){
-    TQ.questions=[item.q];TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];
+    TQ.questions=[item.q];TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];TQ.round=1;TQ.completedCards=0;TQ.totalCards=1;
     show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
     $("tq-progress").textContent=label;
   }else{
@@ -2592,6 +2593,8 @@ async function showStats(){
   const tqCount=active.filter(c=>c.taxonKey.startsWith('tq:')).length;
   const reviewed=active.filter(c=>c.totalReviews>0).sort((a,b)=>a.nextReview-b.nextReview);
   const fresh=active.filter(c=>c.totalReviews===0);
+  const totalDue=active.filter(c=>c.totalReviews>0&&c.nextReview<=now).length;
+  $("btn-study-all-due").textContent=totalDue>0?`Study all due (${totalDue}) →`:`Study all due →`;
   $("stats-user").textContent=`${un} · ${spCount} species · ${tqCount} taxa`;
   // Trigger silent obs load if needed (photos won't appear until obs arrive)
   if(!S.allObs.length&&un)_loadObsSilent(un);
@@ -2749,7 +2752,7 @@ async function installApp(){
 window.addEventListener('appinstalled',()=>{hide('install-banner');_installPrompt=null;});
 
 /* ── Taxonomy Quiz ── */
-const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set(),retryQueue:[],results:[]};
+const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set(),retryQueue:[],results:[],totalCards:0,round:1,completedCards:0};
 function tqShuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function tqRnd(min,max){return min+Math.floor(Math.random()*(max-min+1))}
 
@@ -2827,8 +2830,9 @@ function tqShowQuestion(){
   hide("tq-results");show("tq-quiz");
   TQ.checked=false;TQ.selected=new Set();
   const q=TQ.questions[TQ.currentQ];
-  $("tq-progress").textContent=`${TQ.currentQ+1} / ${TQ.questions.length}`;
-  $("tq-score").textContent=`${TQ.score} correct`;
+  if(!S._mixedMode){$("tq-progress").textContent=`${Math.min(TQ.completedCards+1,TQ.totalCards)} / ${TQ.totalCards}`;}
+  $("tq-progress-fill").style.width=`${(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
+  $("tq-round-info").innerHTML=S._mixedMode?"":`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const qt=q.questionType;
   $("tq-order-label").textContent=qt==="family"?"Family":"Order";
   $("tq-order-name").textContent=qt==="family"?q.family:q.order;
@@ -2857,7 +2861,7 @@ function tqHandleCheck(){
   if(TQ.checked){
     TQ.currentQ++;
     if(TQ.currentQ>=TQ.questions.length){
-      if(TQ.retryQueue.length){TQ.questions=[...TQ.questions,...TQ.retryQueue];TQ.retryQueue=[];}
+      if(TQ.retryQueue.length){TQ.questions=[...TQ.questions,...TQ.retryQueue];TQ.retryQueue=[];TQ.round++;}
       else{if(S._mixedMode){advanceMixed();return;}tqShowResults();return;}
     }
     tqShowQuestion();
@@ -2871,7 +2875,12 @@ function tqHandleCheck(){
   if(isFullyCorrect)TQ.score++;
   // Save SRS progress for this taxon question
   if(q.srs){sm2(q.srs,isFullyCorrect?4:0);dbPut(q.srs);}
-  TQ.results.push({label:q.questionType==='order'?q.order:q.family,questionType:q.questionType,isCorrect:isFullyCorrect,nextReview:q.srs?.nextReview||0});
+  // Only record first attempt — retried questions keep their original (wrong) result
+  if(!q._firstAttemptDone){
+    q._firstAttemptDone=true;
+    TQ.completedCards++;
+    TQ.results.push({label:q.questionType==='order'?q.order:q.family,questionType:q.questionType,isCorrect:isFullyCorrect,nextReview:q.srs?.nextReview||0});
+  }
   $("tq-grid").querySelectorAll(".tq-chip").forEach(chip=>{
     const name=chip.dataset.name;
     chip.classList.remove("selected");
@@ -2893,7 +2902,8 @@ function tqHandleCheck(){
     TQ.retryQueue.push(q);
     $("tq-retry-notice").textContent="You'll see this again at the end.";show("tq-retry-notice");
   }
-  $("tq-score").textContent=`${TQ.score} correct`;
+  $("tq-progress-fill").style.width=`${(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
+  if(!S._mixedMode)$("tq-round-info").innerHTML=`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const isLast=TQ.currentQ>=TQ.questions.length-1;
   btn.textContent=isLast?"See results →":"Next →";btn.className="tq-check-btn next-mode";btn.disabled=false;
 }
@@ -2994,7 +3004,7 @@ async function openTaxoQuiz(){
   for(let i=0;i<Math.max(due.length,fresh.length);i++){if(i<due.length)interleaved.push(due[i]);if(i<fresh.length)interleaved.push(fresh[i]);}
   const sorted=[...interleaved,...notDue];
   TQ.questions=sorted.slice(0,Math.min(S.qCount,sorted.length));
-  TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];
+  TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];TQ.round=1;TQ.completedCards=0;TQ.totalCards=TQ.questions.length;
   show("tq-quiz");hide("tq-results");
   showScreen("taxoquiz");
   tqShowQuestion();
