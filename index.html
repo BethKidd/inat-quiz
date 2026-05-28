@@ -2868,6 +2868,7 @@ if('serviceWorker' in navigator){
 let _resizeTimer=null;
 window.addEventListener('resize',()=>{
   clearTimeout(_resizeTimer);
+  if(!document.getElementById('screen-home-main').classList.contains('hidden'))requestAnimationFrame(drawHomeTree);
   _resizeTimer=setTimeout(()=>{
     if(!document.getElementById('screen-home-main').classList.contains('hidden'))layoutHomeMain();
   },60);
