@@ -579,8 +579,15 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 <div id="screen-stats" class="container hidden">
   <button id="btn-back-setup" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#3d8b5e;font-size:15px;font-weight:600;cursor:pointer;padding:0 0 16px;font-family:inherit;-webkit-tap-highlight-color:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
   <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;margin-bottom:4px">Your Progress</h2>
-  <p style="font-size:13px;color:#6b8f78;margin-bottom:10px" id="stats-user"></p>
-  <div style="margin-bottom:14px"></div>
+  <p style="font-size:13px;color:#6b8f78;margin-bottom:12px" id="stats-user"></p>
+  <div style="background:#fff;border-radius:14px;border:1.5px solid #d8ece2;padding:14px 16px;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+      <span style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22">Study streak</span>
+      <span id="streak-count" style="font-size:17px;font-weight:800;color:#3d8b5e"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px" id="streak-dow"></div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px" id="streak-grid"></div>
+  </div>
   <div id="species-list"></div>
   <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
     <button class="btn-primary" id="btn-study-due">Study Due Cards →</button>
@@ -652,15 +659,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
 <!-- Taxonomy quiz species popup -->
 <div id="tq-sp-popup" class="hidden" style="position:fixed;inset:0;z-index:9000;background:rgba(28,43,34,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px 16px" onclick="if(event.target===this)hide('tq-sp-popup')">
-  <div style="background:#f0f7f3;border-radius:18px;max-height:78vh;width:100%;max-width:480px;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(28,43,34,.2)">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;flex-shrink:0;border-bottom:1px solid #d4e8dd">
-      <div style="flex:1;min-width:0;margin-right:10px;overflow:hidden">
-        <div id="tq-sp-title" style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-        <div id="tq-sp-meta" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b8f78;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-      </div>
-      <button onclick="hide('tq-sp-popup')" style="background:#e4ede8;border:none;color:#3d8b5e;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
-    </div>
-    <div id="tq-sp-body" style="overflow-y:auto;padding:8px 0 16px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"></div>
+  <div style="background:#f0f7f3;border-radius:18px;max-height:78vh;width:100%;max-width:480px;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(28,43,34,.2);position:relative">
+    <button onclick="hide('tq-sp-popup')" style="position:absolute;top:10px;right:10px;background:#e4ede8;border:none;color:#3d8b5e;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;z-index:1">×</button>
+    <div id="tq-sp-title" style="display:none"></div><div id="tq-sp-meta" style="display:none"></div>
+    <div id="tq-sp-body" style="overflow-y:auto;padding:14px 0 16px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain"></div>
   </div>
 </div>
 
@@ -2518,6 +2520,32 @@ async function showStats(){
   if(grpLearning.length){sl.appendChild(makeHeading("Due soon",grpLearning.length,"#c07830","rgba(251,191,36,.15)"));grpLearning.forEach(c=>sl.appendChild(makeRow(c,"learning")))}
   if(grpMature.length){sl.appendChild(makeHeading("Memorised",grpMature.length,"#2a5c3f","rgba(42,92,63,.12)"));grpMature.forEach(c=>sl.appendChild(makeRow(c,"mature")))}
   if(fresh.length){sl.appendChild(makeHeading("New",fresh.length,"#6b8f78","rgba(107,143,120,.12)"));fresh.forEach(c=>sl.appendChild(makeRow(c,"new")))}
+  // ── Streak widget ──
+  const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const studyDays=new Set();
+  for(const c of all){if(c.lastReview)studyDays.add(dayKey(new Date(c.lastReview)));}
+  const todayKey=dayKey(new Date());
+  let streak=0;
+  for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
+  $("streak-count").textContent=streak>0?`${streak} day${streak!==1?'s':''}  🌿`:'–';
+  // Build 4-week grid aligned to Monday
+  const todayD=new Date();
+  const dow=(todayD.getDay()+6)%7; // 0=Mon…6=Sun
+  const gridStart=new Date(todayD);
+  gridStart.setDate(todayD.getDate()-dow-21);
+  const cloverSVG=`<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="4,13 9,18 20,6" fill="none" stroke="#3d8b5e" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const dowLabels=['M','T','W','T','F','S','S'];
+  const dowEl=$("streak-dow");dowEl.innerHTML='';
+  dowLabels.forEach(l=>{const c=document.createElement('div');c.style.cssText='text-align:center;font-size:9px;font-weight:700;color:#9bb8a8;text-transform:uppercase;letter-spacing:0.03em;padding-bottom:2px';c.textContent=l;dowEl.appendChild(c);});
+  const grid=$("streak-grid");grid.innerHTML='';
+  for(let i=0;i<28;i++){
+    const d=new Date(gridStart);d.setDate(gridStart.getDate()+i);
+    const k=dayKey(d);const isToday=k===todayKey;const studied=studyDays.has(k);
+    const cell=document.createElement('div');
+    cell.style.cssText=`display:flex;align-items:center;justify-content:center;height:26px;border-radius:6px;${isToday?'outline:1.5px solid #3d8b5e;outline-offset:-1px;':''}`;
+    cell.innerHTML=studied?cloverSVG:`<div style="width:7px;height:7px;border-radius:50%;background:${isToday?'#b8d8c5':'#e4ede8'}"></div>`;
+    grid.appendChild(cell);
+  }
   showScreen("stats");
 }
 </script>
@@ -2775,24 +2803,44 @@ function tqShowSpeciesPopup(rank,value){
   if(!filtered.length)return;
   const sorted=[...filtered].sort((a,b)=>(a.taxon.name||"").localeCompare(b.taxon.name||""));
   $("tq-sp-title").textContent=value;
-  let meta=rank.charAt(0).toUpperCase()+rank.slice(1);
-  if(rank==="genus"&&filtered.length){const fam=filtered[0]._treeRanks?.family;if(fam)meta+=` · ${fam}`;}
-  $("tq-sp-meta").textContent=meta;
+  $("tq-sp-meta").textContent=rank.charAt(0).toUpperCase()+rank.slice(1);
   const body=$("tq-sp-body");body.innerHTML="";
+  // Group: order → family → species
+  const orderMap=new Map();
   for(const o of sorted){
-    const thumb=o.photos?.[0]?.url||"";
-    const common=tc(o.taxon.preferred_common_name)||"";
-    const latin=o.taxon.name||"";
-    const order=o._treeRanks?.order||"";
-    const family=o._treeRanks?.family||"";
-    const taxoParts=[];
-    if(order)taxoParts.push(`<span style="color:#9bb8a8">Order</span> ${esc(order)}`);
-    if(family)taxoParts.push(`<span style="color:#9bb8a8">Family</span> ${esc(family)}`);
-    const taxoLine=taxoParts.join(" &middot; ");
-    const row=document.createElement("div");
-    row.style.cssText="display:flex;align-items:center;gap:10px;padding:7px 14px";
-    row.innerHTML=`${thumb?`<img src="${esc(thumb)}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0">`:'<div style="width:44px;height:44px;border-radius:8px;background:#d4e8dd;flex-shrink:0"></div>'}<div style="min-width:0">${taxoLine?`<div style="font-size:11px;font-weight:600;color:#3a5a48;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${taxoLine}</div>`:""}<div style="font-size:14px;font-weight:600;font-style:italic;color:#1c2b22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(latin)}</div>${common?`<div style="font-size:12px;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(common)}</div>`:""}</div>`;
-    body.appendChild(row);
+    const ord=o._treeRanks?.order||"";
+    const fam=o._treeRanks?.family||"";
+    if(!orderMap.has(ord))orderMap.set(ord,new Map());
+    const famMap=orderMap.get(ord);
+    if(!famMap.has(fam))famMap.set(fam,[]);
+    famMap.get(fam).push(o);
+  }
+  const IL=16;
+  function addTreeRow(text,level,highlight,style){
+    const d=document.createElement("div");
+    d.style.cssText=`display:flex;align-items:baseline;gap:5px;padding:5px ${highlight?'10px':'14px'} 5px ${14+level*IL}px;margin:0 4px;border-radius:6px;${highlight?'background:rgba(61,139,94,0.12)':''}`;
+    const labelText=style==='order'?'Order':style==='family'?'Family':'Genus';
+    const labelCol=highlight?'#3d8b5e':'#b0c8ba';
+    const nameCol=highlight?'#1c2b22':'#3a5a48';
+    d.innerHTML=`<span style="font-size:10px;font-weight:700;color:${labelCol};text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">${labelText}</span><span style="font-size:13px;font-weight:${highlight?700:500};font-style:italic;color:${nameCol}">${esc(text)}</span>`;
+    body.appendChild(d);
+  }
+  for(const [ord,famMap] of orderMap){
+    addTreeRow(ord,0,rank==="order","order");
+    for(const [fam,obs] of famMap){
+      addTreeRow(fam,1,rank==="family","family");
+      if(rank==="genus")addTreeRow(value,2,true,"genus");
+      const sl=rank==="genus"?3:2;
+      for(const o of obs){
+        const thumb=o.photos?.[0]?.url||"";
+        const latin=o.taxon.name||"";
+        const common=tc(o.taxon.preferred_common_name)||"";
+        const row=document.createElement("div");
+        row.style.cssText=`display:flex;align-items:center;gap:8px;padding:4px 14px 4px ${14+sl*IL}px`;
+        row.innerHTML=`${thumb?`<img src="${esc(thumb)}" alt="" style="width:30px;height:30px;border-radius:5px;object-fit:cover;flex-shrink:0">`:`<div style="width:30px;height:30px;border-radius:5px;background:#d4e8dd;flex-shrink:0"></div>`}<div style="min-width:0"><div style="font-size:12px;font-style:italic;font-weight:600;color:#1c2b22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(latin)}</div>${common?`<div style="font-size:10px;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(common)}</div>`:""}</div>`;
+        body.appendChild(row);
+      }
+    }
   }
   show("tq-sp-popup");
 }
