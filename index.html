@@ -713,6 +713,20 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   </div>
 </div>
 
+<div id="data-notice-popup" class="hidden" style="position:fixed;inset:0;z-index:9200;background:rgba(28,43,34,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px 16px">
+  <div style="background:#fff;border-radius:18px;padding:20px 18px 18px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(28,43,34,.2)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:30px;height:30px;border-radius:50%;background:#fff3cd;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 20h20L12 2z" stroke="#c07830" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14" stroke="#c07830" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="#c07830"/></svg>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#1c2b22">Please note</div>
+    </div>
+    <p style="font-size:13px;color:#4a6650;line-height:1.55;margin-bottom:8px">Your quiz progress and streak will be saved in this browser on this device.</p>
+    <p style="font-size:13px;color:#c0392b;font-weight:600;line-height:1.55;margin-bottom:14px;padding:8px 10px;background:#fdf0ee;border-radius:8px;border-left:3px solid #c0392b">Clearing your browser data will erase your progress permanently.</p>
+    <button onclick="dismissDataNotice()" style="width:100%;background:#3d8b5e;color:#fff;border:none;border-radius:10px;padding:11px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">Got it</button>
+  </div>
+</div>
+
 <div id="lightbox" class="lightbox hidden"><img id="lb-img" src="" alt=""><div id="lb-map-wrap"></div><button id="lb-close">✕</button></div>
 
 <div id="wiki-popup" class="hidden" style="position:fixed;inset:0;z-index:9000;background:rgba(28,43,34,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px 16px" onclick="if(event.target===this)hide('wiki-popup')">
@@ -875,13 +889,13 @@ document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListene
 $("btn-start").addEventListener("click",saveSettingsAndReturn);
 $("btn-settings-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-open-settings").addEventListener("click",()=>{showScreen("setup");populateKingdomCheckboxes();});
-$("btn-learn").addEventListener("click",()=>startFromHome(false));
+$("btn-learn").addEventListener("click",()=>maybeShowDataNotice(()=>startFromHome(false)));
 $("btn-terms").addEventListener("click",()=>showScreen("terms"));
 $("btn-terms-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-open-howto").addEventListener("click",()=>showScreen("howto"));
 $("btn-open-stats").addEventListener("click",()=>showStats());
 $("btn-howto-back").addEventListener("click",()=>showScreen("home-main"));
-$("btn-families-main").addEventListener("click",async()=>{if(!S.allObs?.length)await loadHome();openTaxoQuiz();});
+$("btn-families-main").addEventListener("click",()=>maybeShowDataNotice(async()=>{if(!S.allObs?.length)await loadHome();openTaxoQuiz();}));
 $("btn-exit").addEventListener("click",()=>{killMap();S._mixedMode=false;showScreen("home-main")});
 $("btn-home-back").addEventListener("click",()=>{if(S._fromTaxoQuiz){S._fromTaxoQuiz=false;showScreen("taxoquiz");}else{showScreen("home-main");}});
 $("btn-family-back").addEventListener("click",()=>showHome());
@@ -2806,6 +2820,16 @@ window.addEventListener('appinstalled',()=>{hide('install-banner');_installPromp
   }
 })();
 function dismissIosBanner(){hide('ios-install-banner');localStorage.setItem('inat_ios_banner_dismissed','1');}
+function maybeShowDataNotice(cb){
+  if(localStorage.getItem('inat_data_notice_seen')){cb();return;}
+  show('data-notice-popup');
+  window._dataNoticeCb=cb;
+}
+function dismissDataNotice(){
+  hide('data-notice-popup');
+  localStorage.setItem('inat_data_notice_seen','1');
+  if(window._dataNoticeCb){window._dataNoticeCb();window._dataNoticeCb=null;}
+}
 
 /* ── Taxonomy Quiz ── */
 const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set(),retryQueue:[],results:[],totalCards:0,round:1,completedCards:0};
