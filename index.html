@@ -402,9 +402,9 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <!-- Learn stats — right of Learn button, positioned by JS -->
   <div id="home-stat-learn" style="position:absolute;font-family:'DM Sans',sans-serif;font-size:12px;color:#4a7c5f;line-height:1.3;pointer-events:none"></div>
   <!-- Taxa stat — below Taxa button, positioned by JS -->
-  <div id="home-stat-taxa" style="position:absolute;font-family:'DM Sans',sans-serif;font-size:12px;color:#4a7c5f;line-height:1.7;pointer-events:none;text-align:center"></div>
+  <div id="home-stat-taxa" style="position:absolute;font-family:'DM Sans',sans-serif;font-size:12px;color:#4a7c5f;line-height:1.3;pointer-events:none;text-align:center"></div>
   <!-- Terms stat — below Terms button, positioned by JS -->
-  <div id="home-stat-terms" style="position:absolute;font-family:'DM Sans',sans-serif;font-size:12px;color:#4a7c5f;line-height:1.7;pointer-events:none;text-align:center"></div>
+  <div id="home-stat-terms" style="position:absolute;font-family:'DM Sans',sans-serif;font-size:12px;color:#4a7c5f;line-height:1.3;pointer-events:none;text-align:center"></div>
   <!-- Cladogram SVG decoration -->
   <svg id="home-tree-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible" fill="none"></svg>
   <!-- Title block — positioned by JS -->
@@ -1175,20 +1175,47 @@ function updateHomeMainSub(){
   $("home-stat-memory").textContent="";$("home-stat-learn").innerHTML="";$("home-stat-taxa").textContent="";$("home-stat-terms").textContent="";
   if(!un||!db)return;
   _fetchHomeStats(un);
+  if(!S.allObs.length)_loadObsSilent(un);
+}
+async function _loadObsSilent(un){
+  if(S.allObs.length&&S.currentUser===un.toLowerCase())return;
+  try{
+    let canonLogin=un;
+    try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(ur.ok){const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());if(m)canonLogin=m.login;}}catch{}
+    S.currentUser=canonLogin.toLowerCase();
+    let all=[];const cb=Date.now();
+    for(let p=1;p<=5;p++){
+      const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(canonLogin)}&per_page=200&page=${p}&order=desc&order_by=created_at&locale=en&_=${cb}`);
+      if(!r.ok)break;const d=await r.json();all.push(...(d.results||[]));if((d.results||[]).length<200)break;
+    }
+    const good=all.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
+    const uniq=dedupe(good);
+    await fetchTaxonomy(uniq);
+    S.allObs=uniq;S.csvMode=false;
+    // Refresh stats now that obs are loaded — only if still on home screen
+    if(!document.getElementById('screen-home-main').classList.contains('hidden'))updateHomeMainSub();
+  }catch(e){/* silent fail — user can still load obs manually */}
 }
 async function _fetchHomeStats(un){
+  const now=Date.now();
   try{
     // SRS counts from local DB
     const cards=await dbAllUser(un);
-    const now=Date.now();
     const active=cards.filter(c=>!c.ignored);
-    const studied=active.filter(c=>c.totalReviews>0).length;
-    const inMemory=active.filter(c=>c.interval>=MATURE_IV).length;   // ≥1 week = mature/long-term
-    const due=active.filter(c=>c.nextReview<=now&&c.totalReviews>0).length;
-    // Show DB-based counts immediately while iNat loads
+    // Separate species cards from taxon-quiz cards
+    const spCards=active.filter(c=>!c.taxonKey.startsWith('tq:'));
+    const tqCards=active.filter(c=>c.taxonKey.startsWith('tq:'));
+    const studied=spCards.filter(c=>c.totalReviews>0).length;
+    const inMemory=spCards.filter(c=>c.interval>=MATURE_IV).length;
+    const namesDue=spCards.filter(c=>c.nextReview<=now&&c.totalReviews>0).length;
+    // Taxa quiz counts
+    const tqDue=tqCards.filter(c=>c.nextReview<=now&&c.totalReviews>0).length;
+    const tqSeen=tqCards.filter(c=>c.totalReviews>0).length;
+    const tqTotalPossible=S.allObs?.length?tqBuildQuestions(S.allObs).length:null;
+    const tqNew=tqTotalPossible!==null?Math.max(0,tqTotalPossible-tqSeen):null;
     $("home-stat-memory").textContent=`${inMemory} species in memory`;
-    $("home-stat-taxa").textContent=`${due} due`;
-    $("home-stat-terms").textContent=`0 due`;
+    $("home-stat-taxa").innerHTML=(tqNew!==null?`<div>${tqNew} new</div>`:'')+`<div>${tqDue} due</div>`;
+    $("home-stat-terms").innerHTML=''; // traits not yet active
     // Streak
     const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const studyDays=new Set(cards.filter(c=>c.lastReview).map(c=>dayKey(new Date(c.lastReview))));
@@ -1202,13 +1229,15 @@ async function _fetchHomeStats(un){
     const sd=await sr.json();
     const inatTotal=sd.total_results||0;
     const newCount=Math.max(0,inatTotal-studied);
-    $("home-stat-learn").innerHTML=`<div>${newCount} new</div>`;
+    $("home-stat-learn").innerHTML=`<div>${newCount} new</div><div>${namesDue} due</div>`;
   }catch(e){
-    // iNat unreachable — fall back to DB-only new count
+    // iNat unreachable — fall back to DB-only counts
     const cards=await dbAllUser(un).catch(()=>[]);
     const active=cards.filter(c=>!c.ignored);
-    const isNew=active.filter(c=>c.totalReviews===0).length;
-    $("home-stat-learn").innerHTML=`<div>${isNew} new</div>`;
+    const spCards=active.filter(c=>!c.taxonKey.startsWith('tq:'));
+    const isNew=spCards.filter(c=>c.totalReviews===0).length;
+    const namesDue=spCards.filter(c=>c.nextReview<=now&&c.totalReviews>0).length;
+    $("home-stat-learn").innerHTML=`<div>${isNew} new</div><div>${namesDue} due</div>`;
   }
 }
 function layoutHomeMain(){
@@ -1248,7 +1277,7 @@ function layoutHomeMain(){
       const termsR=$("btn-terms").getBoundingClientRect();
       // Learn stats: vertically centred, just right of learn button
       $("home-stat-learn").style.left=(Math.round(learnR.right)+5)+"px";
-      $("home-stat-learn").style.top=Math.round(learnR.top+(learnR.height/2)-8)+"px";
+      $("home-stat-learn").style.top=Math.round(learnR.top+(learnR.height/2)-15)+"px";
       // Taxa stat: centred below taxa button
       $("home-stat-taxa").style.left=Math.round(taxaR.left)+"px";
       $("home-stat-taxa").style.width=Math.round(taxaR.width)+"px";
