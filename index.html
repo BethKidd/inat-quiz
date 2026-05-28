@@ -424,6 +424,16 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <button onclick="hide('install-banner')" style="background:none;border:none;color:#6b8f78;font-size:20px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
     </div>
   </div>
+  <div id="ios-install-banner" class="hidden" style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #d8ece2;padding:14px 16px 28px;box-shadow:0 -4px 20px rgba(0,0,0,.10);z-index:9999;font-family:inherit">
+    <button onclick="dismissIosBanner()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;color:#9bb8a8;cursor:pointer;line-height:1;padding:0">&times;</button>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="icons/icon-192.png" style="width:44px;height:44px;border-radius:10px;flex-shrink:0" onerror="this.style.display='none'">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1c2b22">To install as an app:</div>
+        <div style="font-size:12px;color:#6b8f78;margin-top:3px;line-height:1.5">Tap <svg style="display:inline;vertical-align:middle;margin:0 2px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> then <strong>"Add to Home Screen"</strong></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Settings screen -->
@@ -2787,6 +2797,15 @@ async function installApp(){
   _installPrompt=null;
 }
 window.addEventListener('appinstalled',()=>{hide('install-banner');_installPrompt=null;});
+(function(){
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  if(isIOS&&isSafari&&!isStandalone&&!localStorage.getItem('inat_ios_banner_dismissed')){
+    show('ios-install-banner');
+  }
+})();
+function dismissIosBanner(){hide('ios-install-banner');localStorage.setItem('inat_ios_banner_dismissed','1');}
 
 /* ── Taxonomy Quiz ── */
 const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set(),retryQueue:[],results:[],totalCards:0,round:1,completedCards:0};
