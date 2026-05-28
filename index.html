@@ -582,7 +582,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
 <div id="screen-stats" class="container hidden">
   <button id="btn-back-setup" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#3d8b5e;font-size:15px;font-weight:600;cursor:pointer;padding:0 0 16px;font-family:inherit;-webkit-tap-highlight-color:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
     <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;margin:0">Your Progress</h2>
     <button id="btn-study-all-due" class="btn-primary" style="font-size:13px;padding:8px 16px;margin:0;width:auto;display:inline-block;white-space:nowrap">Study all due →</button>
   </div>
@@ -792,7 +792,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:"",_pendingTaxaDue:[]};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:"",_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0};
 const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
@@ -867,7 +867,7 @@ $("btn-open-howto").addEventListener("click",()=>showScreen("howto"));
 $("btn-open-stats").addEventListener("click",()=>showStats());
 $("btn-howto-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-families-main").addEventListener("click",async()=>{if(!S.allObs?.length)await loadHome();openTaxoQuiz();});
-$("btn-exit").addEventListener("click",()=>{killMap();showScreen("home-main")});
+$("btn-exit").addEventListener("click",()=>{killMap();S._mixedMode=false;showScreen("home-main")});
 $("btn-home-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-study-due-home").addEventListener("click",()=>startQuizFromHome());
 $("btn-family-back").addEventListener("click",()=>showHome());
@@ -881,7 +881,7 @@ $("btn-replay").addEventListener("click",async()=>{
     catch(e){showErr("Error starting session: "+e.message);}
   }
 });
-$("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];showScreen("home-main");});
+$("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedMode=false;showScreen("home-main");});
 $("btn-continue-taxa").addEventListener("click",()=>{
   const qs=S._pendingTaxaDue;S._pendingTaxaDue=[];
   if(!qs.length){showScreen("home-main");return}
@@ -1375,25 +1375,59 @@ function showErr(m){$("home-main-err").textContent=m;show("home-main-err");showS
 async function startAllDueQuiz(){
   if(!S.currentUser){showScreen("setup");return}
   const now=Date.now();
-  // Load all cards and find due taxa questions
   const allCards=await dbAllUser(S.currentUser);
+  // Collect due species observations
+  const spSrsMap=new Map();
+  for(const c of allCards){if(!c.taxonKey.startsWith('tq:'))spSrsMap.set(c.taxonKey,c);}
+  const dueSpObs=(S.allObs||[]).filter(o=>{const k=S.currentUser+":"+taxonKey(o);const srs=spSrsMap.get(k);return srs&&srs.totalReviews>0&&srs.nextReview<=now&&!srs.ignored;});
+  // Collect due taxa questions
   const tqCards=allCards.filter(c=>c.taxonKey.startsWith('tq:')&&c.totalReviews>0&&c.nextReview<=now);
-  // Build taxo questions from allObs, filter to only due ones
-  S._pendingTaxaDue=[];
+  const dueTqQs=[];
   if(tqCards.length&&S.allObs?.length){
     const tqSrsMap=new Map(tqCards.map(c=>[c.taxonKey,c]));
     const allQ=tqBuildQuestions(S.allObs);
     for(const q of allQ){
       const key=`tq:${q.questionType}:${q.questionType==='order'?q.order:q.family}`;
-      if(tqSrsMap.has(key)){q.tqKey=key;q.srs=tqSrsMap.get(key);S._pendingTaxaDue.push(q);}
+      if(tqSrsMap.has(key)){q.tqKey=key;q.srs=tqSrsMap.get(key);dueTqQs.push(q);}
     }
   }
-  // Start names quiz with due species cards; taxa will follow after results
-  if(S.allObs?.length){
-    S.csvMode=false;S.traitMode=false;S.deckLabel="";
-    await buildDeck(S.allObs,true);
+  if(dueSpObs.length===0&&dueTqQs.length===0){
+    if(S.allObs?.length){S.csvMode=false;S.traitMode=false;S.deckLabel="";await buildDeck(S.allObs,true);}
+    else{await doStart(true);}
+    return;
+  }
+  // Build interleaved mixed queue
+  const spItems=shuffle(dueSpObs).map(o=>({type:'species',obs:o,srs:spSrsMap.get(S.currentUser+":"+taxonKey(o))}));
+  const tqItems=tqShuffle(dueTqQs).map(q=>({type:'taxa',q}));
+  const mixed=[];
+  const maxLen=Math.max(spItems.length,tqItems.length);
+  for(let i=0;i<maxLen;i++){if(i<spItems.length)mixed.push(spItems[i]);if(i<tqItems.length)mixed.push(tqItems[i]);}
+  S._mixedMode=true;S._mixedQueue=mixed;S._mixedIdx=0;S._mixedTotal=mixed.length;S._mixedCompleted=0;
+  S._pendingTaxaDue=[];S.sessionResults=[];S.csvMode=false;S.traitMode=false;
+  advanceMixed();
+}
+
+function advanceMixed(){
+  if(S._mixedIdx>=S._mixedQueue.length){
+    S._mixedMode=false;
+    if(S.sessionResults.length>0)results();
+    else showScreen("home-main");
+    return;
+  }
+  const item=S._mixedQueue[S._mixedIdx++];
+  S._mixedCompleted=S._mixedIdx;
+  const label=`${S._mixedCompleted} / ${S._mixedTotal}`;
+  if(item.type==='taxa'){
+    TQ.questions=[item.q];TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
+    show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
+    $("tq-progress").textContent=label;
   }else{
-    await doStart(true);
+    const o=item.obs,srs=item.srs;
+    const card={obs:o,srs,order:o._treeRanks?.order||"",family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",orderDone:false,familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false};
+    if(!card.order)card.orderDone=true;if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
+    S.deck=[card];S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=1;S.completedCards=0;
+    showScreen("quiz");renderCard();
+    $("q-counter").textContent=label;
   }
 }
 
@@ -2506,7 +2540,7 @@ function next(){
     $("q-card").classList.add("fade-out");setTimeout(()=>renderTraitCard(),150);
     return;
   }
-  if(S.cardIndex>=S.deck.length){if(S.retryQueue.length===0){results();return}S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
+  if(S.cardIndex>=S.deck.length){if(S.retryQueue.length===0){if(S._mixedMode){advanceMixed();return}results();return}S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
   $("q-card").classList.add("fade-out");setTimeout(()=>renderCard(),150)}
 
 function traitResults(){
@@ -2549,9 +2583,9 @@ function results(){
     row.innerHTML=`<span class="rb-name">${esc(nd.primary)}${nd.secondary?`<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(nd.secondary)}</span>`:""}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0"><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>${dueStr?`<span style="font-size:10px;color:#9bb8a8;white-space:nowrap">${dueStr}</span>`:""}</span>`;
     bd.appendChild(row);
   }
-  // Show "Continue to Taxonomy" button if there are pending due taxa
+  // Show "Continue to Taxonomy" button if there are pending due taxa (not in mixed mode)
   const contBtn=$("btn-continue-taxa");
-  if(S._pendingTaxaDue&&S._pendingTaxaDue.length){
+  if(!S._mixedMode&&S._pendingTaxaDue&&S._pendingTaxaDue.length){
     contBtn.textContent=`Continue: Taxonomy (${S._pendingTaxaDue.length} due) →`;
     show("btn-continue-taxa");
   }else{
@@ -2837,7 +2871,7 @@ function tqHandleCheck(){
     TQ.currentQ++;
     if(TQ.currentQ>=TQ.questions.length){
       if(TQ.retryQueue.length){TQ.questions=[...TQ.questions,...TQ.retryQueue];TQ.retryQueue=[];}
-      else{tqShowResults();return;}
+      else{if(S._mixedMode){advanceMixed();return;}tqShowResults();return;}
     }
     tqShowQuestion();
     return;
@@ -2972,7 +3006,7 @@ $("btn-taxoquiz-taxa").addEventListener("click",()=>{if(S.allObs?.length)showHom
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
 $("tq-new-quiz-btn").addEventListener("click",()=>openTaxoQuiz());
-$("tq-quit-btn").addEventListener("click",()=>{S._pendingTaxaDue=[];showScreen("home-main");});
+$("tq-quit-btn").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedMode=false;showScreen("home-main");});
 </script>
 </body>
 </html>
