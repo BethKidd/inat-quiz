@@ -2407,12 +2407,13 @@ if('serviceWorker' in navigator){
   });
 }
 let _carLocked=false;
+const _initialInnerHeight=window.innerHeight;
 function _syncQuizVP(){
   const vv=window.visualViewport;if(!vv)return;
   const el=$('screen-quiz');if(!el)return;
   el.style.top=vv.offsetTop+'px';
   el.style.height=vv.height+'px';
-  if(!_carLocked&&vv.height<window.innerHeight-80){
+  if(!_carLocked&&vv.height<_initialInnerHeight-80){
     _carLocked=true;
     requestAnimationFrame(()=>{
       const c=$('carousel');if(!c)return;
