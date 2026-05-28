@@ -862,10 +862,10 @@ function _setCachedRanks(id,ranks){try{localStorage.setItem('inat_tr_'+id,JSON.s
 /* ── Supabase sync ── */
 const _SB=window.supabase.createClient('https://efxcfytuqczmncydbkyv.supabase.co','sb_publishable_stK6pJJ1F4wQzw_p6i7K8A_MMCweJUz');
 let _sbUser=null;
-_SB.auth.getSession().then(({data:{session}})=>{_sbUser=session?.user||null;_updateSyncUI();});
+_SB.auth.getSession().then(({data:{session}})=>{_sbUser=session?.user||null;_updateSyncUI();if(_sbUser)_syncOnLogin();});
 _SB.auth.onAuthStateChange(async(event,session)=>{
   const wasNull=!_sbUser;_sbUser=session?.user||null;_updateSyncUI();
-  if(event==='SIGNED_IN'&&wasNull){_syncOnLogin();showToast('✓ Signed in as '+_sbUser.email);}
+  if(event==='SIGNED_IN'&&wasNull){_syncOnLogin();if(location.hash.includes('access_token'))showToast('✓ Signed in as '+_sbUser.email);}
   if(event==='SIGNED_OUT')showToast('Signed out');
 });
 function _updateSyncUI(){
