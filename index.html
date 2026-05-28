@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Lora:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{min-height:100vh;background:#f4f2ed;display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;padding:0;color:#e2e4ef;opacity:0;transition:opacity 0.4s ease}
@@ -453,6 +454,22 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
     <p id="error-msg" class="error hidden"></p>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4f0ea">
+      <label class="label">Sync progress</label>
+      <div id="sync-logged-out" style="margin-top:8px">
+        <p style="font-size:12px;color:#6b8f78;margin-bottom:8px;line-height:1.5">Save your progress to the cloud and sync across devices.</p>
+        <input type="email" id="inp-sync-email" class="input" placeholder="your@email.com" style="margin-bottom:8px">
+        <button id="btn-send-magic-link" style="background:#3d8b5e;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;-webkit-tap-highlight-color:transparent">Send login link</button>
+        <p id="sync-email-status" style="font-size:12px;color:#6b8f78;margin-top:6px;min-height:18px"></p>
+      </div>
+      <div id="sync-logged-in" class="hidden" style="margin-top:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><span style="font-size:13px;font-weight:600;color:#3d8b5e">✓ Syncing</span><span id="sync-user-email" style="font-size:12px;color:#6b8f78;display:block;margin-top:1px"></span></div>
+          <button id="btn-sync-logout" style="background:none;border:1.5px solid #c8ddd2;color:#6b8f78;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">Log out</button>
+        </div>
+        <p id="sync-status" style="font-size:12px;color:#6b8f78;margin-top:6px;min-height:18px"></p>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4f0ea">
       <label class="label" style="margin-top:14px">Send feedback</label>
       <textarea id="feedback-msg" class="input" rows="3" placeholder="Bug report or feature request…" style="resize:none;font-family:inherit;font-size:13px;line-height:1.5;margin-top:6px"></textarea>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
@@ -461,7 +478,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       </div>
     </div>
   </div>
-  <p class="footer-text">Progress saved in your browser via IndexedDB.</p>
+  <p class="footer-text" id="footer-sync-text">Progress saved in your browser via IndexedDB.</p>
 </div>
 
 <div id="screen-loading" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0"><div class="spinner" style="border-color:#d6ebe1;border-top-color:#3d8b5e"></div><p id="loading-text" style="font-size:15px;color:#6b8f78">Loading...</p></div>
@@ -565,8 +582,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
           </div>
           <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Your data</h3>
         </div>
-        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0">This is an early-stage app with no server or backend. Your progress is stored only in this browser on this device.</p>
-        <p style="font-size:13px;color:#c0392b;font-weight:600;line-height:1.3;margin:6px 0 0;padding:5px 10px;background:#fdf0ee;border-radius:8px;border-left:3px solid #c0392b">Clearing your browser data will permanently delete your progress.</p>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0">Your progress is saved locally in this browser. You can optionally sync it to the cloud — and across devices — by signing in under <em>Cloud sync</em> in Settings.</p>
+        <p style="font-size:13px;color:#c0392b;font-weight:600;line-height:1.3;margin:6px 0 0;padding:5px 10px;background:#fdf0ee;border-radius:8px;border-left:3px solid #c0392b">If you are not using cloud sync, clearing your browser data will permanently delete your progress.</p>
       </div>
 
       <div style="background:#fff;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:12px 14px">
@@ -733,8 +750,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       </div>
       <div style="font-size:15px;font-weight:700;color:#1c2b22">Please note</div>
     </div>
-    <p style="font-size:13px;color:#4a6650;line-height:1.55;margin-bottom:8px">Your quiz progress and streak will be saved in this browser on this device only.</p>
-    <p style="font-size:13px;color:#c0392b;font-weight:600;line-height:1.55;margin-bottom:14px;padding:8px 10px;background:#fdf0ee;border-radius:8px;border-left:3px solid #c0392b">Clearing your browser data will erase your progress permanently.</p>
+    <p style="font-size:13px;color:#4a6650;line-height:1.55;margin-bottom:8px">Your quiz progress is saved locally in this browser. To sync across devices, sign in under <em>Cloud sync</em> in Settings.</p>
+    <p style="font-size:13px;color:#c0392b;font-weight:600;line-height:1.55;margin-bottom:14px;padding:8px 10px;background:#fdf0ee;border-radius:8px;border-left:3px solid #c0392b">Without cloud sync, clearing your browser data will erase your progress permanently.</p>
     <button onclick="dismissDataNotice()" style="width:100%;background:#3d8b5e;color:#fff;border:none;border-radius:10px;padding:11px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">Got it</button>
   </div>
 </div>
@@ -827,6 +844,36 @@ const HOME_STATS_TTL=5*60*1000;
 const TREE_RANK_TTL=60*24*60*60*1000;
 function _getCachedRanks(id){try{const r=localStorage.getItem('inat_tr_'+id);if(!r)return null;const{ranks,ts}=JSON.parse(r);if(Date.now()-ts>TREE_RANK_TTL)return null;return ranks;}catch{return null}}
 function _setCachedRanks(id,ranks){try{localStorage.setItem('inat_tr_'+id,JSON.stringify({ranks,ts:Date.now()}))}catch{}}
+
+/* ── Supabase sync ── */
+const _SB=window.supabase.createClient('https://efxcfytuqczmncydbkyv.supabase.co','sb_publishable_stK6pJJ1F4wQzw_p6i7K8A_MMCweJUz');
+let _sbUser=null;
+_SB.auth.getSession().then(({data:{session}})=>{_sbUser=session?.user||null;_updateSyncUI();});
+_SB.auth.onAuthStateChange(async(event,session)=>{
+  const wasNull=!_sbUser;_sbUser=session?.user||null;_updateSyncUI();
+  if(event==='SIGNED_IN'&&wasNull)_syncOnLogin();
+});
+function _updateSyncUI(){
+  const li=$('sync-logged-in'),lo=$('sync-logged-out');if(!li||!lo)return;
+  if(_sbUser){li.classList.remove('hidden');lo.classList.add('hidden');const e=$('sync-user-email');if(e)e.textContent=_sbUser.email;}
+  else{li.classList.add('hidden');lo.classList.remove('hidden');}
+  const ft=$('footer-sync-text');if(ft)ft.textContent=_sbUser?'Progress saved locally and synced to cloud.':'Progress saved in your browser via IndexedDB.';
+}
+async function _cloudPut(record){
+  if(!_sbUser)return;
+  try{await _SB.from('srs_records').upsert({user_id:_sbUser.id,taxon_key:record.taxonKey,data:record,updated_at:new Date(record.lastReview||Date.now()).toISOString()},{onConflict:'user_id,taxon_key'});}catch{}
+}
+async function _syncOnLogin(){
+  const st=$('sync-status');if(st)st.textContent='Syncing…';
+  try{
+    const{data:cloud,error}=await _SB.from('srs_records').select('data');
+    if(error)throw error;
+    for(const r of cloud||[]){const local=await dbGet(r.data.taxonKey);if(!local||(r.data.lastReview||0)>(local.lastReview||0))await dbPut(r.data);}
+    const un=localStorage.getItem('inat_quiz_user')||'';
+    if(un){const recs=await dbAllUser(un);if(recs.length)await _SB.from('srs_records').upsert(recs.map(r=>({user_id:_sbUser.id,taxon_key:r.taxonKey,data:r,updated_at:new Date(r.lastReview||Date.now()).toISOString()})),{onConflict:'user_id,taxon_key'});}
+    if(st)st.textContent=`Last synced ${new Date().toLocaleTimeString()}`;
+  }catch(e){if(st)st.textContent='Sync failed — will retry next session';}
+}
 
 /* ── SM-2 (session-aware: in-session retries replace learning steps) ── */
 // Intervals stored in minutes. No sub-day learning steps — session IS the learning phase.
@@ -997,6 +1044,17 @@ $("btn-view-stats").addEventListener("click",()=>showStats());
 $("btn-back-setup").addEventListener("click",()=>showScreen("home-main"));
 $("btn-study-all-due").addEventListener("click",()=>startAllDueQuiz());
 $("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
+$("btn-send-magic-link").addEventListener("click",async()=>{
+  const email=$("inp-sync-email").value.trim();if(!email)return;
+  const btn=$("btn-send-magic-link");btn.disabled=true;btn.textContent="Sending…";
+  const{error}=await _SB.auth.signInWithOtp({email,options:{emailRedirectTo:"https://nominanaturae.com"}});
+  const st=$("sync-email-status");
+  if(error){if(st)st.textContent=`Error: ${error.message}`;btn.disabled=false;btn.textContent="Send login link";}
+  else{if(st)st.textContent="Check your email for a login link!";btn.textContent="Sent ✓";}
+});
+$("btn-sync-logout").addEventListener("click",async()=>{
+  await _SB.auth.signOut();_sbUser=null;_updateSyncUI();
+});
 $("btn-feedback-send").addEventListener("click",async()=>{
   const msg=$("feedback-msg").value.trim();
   const st=$("feedback-status");
@@ -2007,7 +2065,7 @@ function revealCard(c){
     c._sessionResultPushed=true;
     const score=cardSessionScore(c);
     const q=score>=10?5:score>=5?4:score>=4?3:0;
-    sm2(c.srs,q);dbPut(c.srs);
+    sm2(c.srs,q);dbPut(c.srs);_cloudPut(c.srs);
     S.sessionResults.push({species:c.species,common:c.common,score,nextReview:c.srs.nextReview});
   }
   if(!allCorrect){S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this card again until all fields are correct.";show("retry-notice")}
@@ -2056,7 +2114,7 @@ function handleMC(c,chosenIdx){
     c._sessionResultPushed=true;
     const score=cardSessionScore(c);
     const q=score>=10?5:score>=5?4:score>=4?3:0;
-    sm2(c.srs,q);dbPut(c.srs);
+    sm2(c.srs,q);dbPut(c.srs);_cloudPut(c.srs);
     S.sessionResults.push({species:c.species,common:c.common,score,nextReview:c.srs.nextReview});
   }
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
