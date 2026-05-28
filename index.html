@@ -163,12 +163,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz .etym-note{background:#f0f7f3;border-color:#c8ddd2;color:#2a5e40}
 #screen-quiz .etym-note .etym-label{color:#3d8b5e}
 #screen-quiz .etym-loading{color:#6b8f78}
-#screen-quiz #traits-box{background:#f0f7f3!important;border-color:#c8ddd2!important}
-#screen-quiz #traits-box .etym-label{color:#3d8b5e!important}
-/* Trait label colours for light bg */
-#screen-quiz .trait-label{color:#3d8b5e}
-#screen-quiz .trait-val{color:#2a3d2e}
-#screen-quiz .trait-distinguish{color:#2a3d2e;border-top-color:rgba(61,139,94,.15)}
+
 .field-stage{position:relative;overflow:hidden;min-height:84px}
 .field-stage .field-group{transition:transform .25s ease,opacity .25s ease}
 .field-stage .field-group.slide-out-left{transform:translateX(-110%);opacity:0}
@@ -190,20 +185,6 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .mc-btn .mc-common{font-size:12px;color:#7c80a3;margin-top:2px}
 .mc-btn.mc-correct .mc-common{color:rgba(74,222,128,.7)}
 .mc-btn.mc-wrong .mc-common{color:rgba(248,113,113,.6)}
-.trait-q{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px}
-.trait-q .trait-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7c80a3;margin-bottom:5px}
-.trait-mc-btn{width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #3a3f58;background:rgba(255,255,255,.03);color:#e2e4ef;font-size:13px;font-family:inherit;cursor:pointer;text-align:left;transition:all .15s;margin-top:4px}
-.trait-mc-btn:hover{border-color:rgba(129,140,248,.4)}
-.trait-mc-btn.mc-correct{border-color:#4ade80;background:rgba(74,222,128,.1);color:#4ade80}
-.trait-mc-btn.mc-wrong{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171}
-.trait-mc-btn.mc-dim{opacity:.4;cursor:default}
-.trait-fb{font-size:11px;margin-top:3px;font-weight:600;min-height:14px}
-.trait-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;line-height:1.5}
-.trait-label{color:#22d3ee;font-weight:700;white-space:nowrap}
-.trait-val{color:#c4c6e7}
-.trait-distinguish{grid-column:1/-1;margin-top:4px;padding-top:6px;border-top:1px solid rgba(34,211,238,.1);color:#e2e4ef;font-size:12px;line-height:1.5}
-.gloss{border-bottom:1px dotted rgba(34,211,238,.4);cursor:help;position:relative}
-.gloss:hover::after{content:attr(data-def);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e4ef;border:1px solid rgba(34,211,238,.3);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:400;font-style:normal;white-space:normal;width:220px;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4);line-height:1.4}
 /* ── Results & Stats screens ── */
 #screen-results{padding:24px 16px 40px}
 #screen-results .btn-primary,#screen-taxoquiz .btn-primary{background:#3d8b5e;border-radius:12px}
@@ -478,15 +459,13 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     </div>
     <input type="password" id="inp-apikey" class="input" style="display:none">
     <input type="file" id="inp-csv" accept=".csv,.txt,.tsv" style="display:none">
-    <input type="file" id="inp-traits" accept=".csv" style="display:none">
+
     <p id="error-msg" class="error hidden"></p>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4f0ea">
       <button id="btn-csv" class="btn-secondary" style="display:none"></button>
       <p id="csv-status" style="font-size:12px;color:#6b8f78;margin-top:6px" class="hidden"></p>
       <button id="btn-start-csv" class="btn-primary hidden" style="margin-top:10px">Start List Quiz →</button>
-      <button id="btn-traits" class="btn-secondary" style="display:none"></button>
-      <p id="traits-status" style="font-size:12px;color:#6b8f78;margin-top:6px" class="hidden"></p>
-      <button id="btn-start-traits" class="btn-primary hidden" style="margin-top:10px">Start Traits Quiz →</button>
+
       <label class="label" style="margin-top:14px">Send feedback</label>
       <textarea id="feedback-msg" class="input" rows="3" placeholder="Bug report or feature request…" style="resize:none;font-family:inherit;font-size:13px;line-height:1.5;margin-top:6px"></textarea>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
@@ -531,15 +510,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <div id="mc-options" style="display:flex;flex-direction:column;gap:6px"></div>
       <div id="mc-feedback" style="margin-top:8px;font-size:13px;font-weight:600;min-height:20px"></div>
     </div>
-    <div id="trait-panel" class="hidden">
-      <div style="text-align:center;margin-bottom:12px">
-        <span style="font-size:20px;font-weight:800;color:#a5b4fc" id="trait-species"></span>
-        <span style="font-size:13px;color:#7c80a3;display:block" id="trait-common"></span>
-      </div>
-      <div id="trait-questions" style="display:flex;flex-direction:column;gap:10px"></div>
-    </div>
     <div id="etym-box" class="etym-note hidden"><div class="etym-label">📖 Etymology</div><div id="etym-text"></div></div>
-    <div id="traits-box" class="etym-note hidden" style="background:rgba(34,211,238,.05);border-color:rgba(34,211,238,.15);max-height:260px;overflow-y:auto"><div class="etym-label" style="color:#22d3ee">🔬 Key Traits</div><div id="traits-text"></div></div>
     <div id="btn-row-submit" class="hidden"><button type="button" class="btn-submit" id="btn-submit">→</button></div>
     <button type="button" class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     <div class="retry-notice hidden" id="retry-notice"></div>
@@ -875,8 +846,8 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0};
-const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map(),commonNamesCache=new Map();
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0};
+const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
 
@@ -986,9 +957,8 @@ $("btn-exit").addEventListener("click",()=>{killMap();S._mixedMode=false;showScr
 $("btn-home-back").addEventListener("click",()=>{if(S._fromTaxoQuiz){S._fromTaxoQuiz=false;showScreen("taxoquiz");}else{showScreen("home-main");}});
 $("btn-family-back").addEventListener("click",()=>showHome());
 $("btn-study-family").addEventListener("click",()=>startQuizFromFamily());
-$("btn-submit").addEventListener("click",()=>{if(S.traitMode)checkTraits();else check()});
+$("btn-submit").addEventListener("click",()=>check());
 $("btn-replay").addEventListener("click",async()=>{
-  S.traitMode=false;
   if(S.csvMode){csvNextDeck();}
   else{
     try{await buildDeck(S.allObs,false);}
@@ -1017,9 +987,7 @@ $("wiki-info-btn").addEventListener("click",()=>{
 $("btn-csv").addEventListener("click",()=>$("inp-csv").click());
 $("inp-csv").addEventListener("change",handleCSV);
 $("btn-start-csv").addEventListener("click",()=>doStartCSV());
-$("btn-traits").addEventListener("click",()=>$("inp-traits").click());
-$("inp-traits").addEventListener("change",handleTraits);
-$("btn-start-traits").addEventListener("click",doStartTraits);
+
 $("btn-view-stats").addEventListener("click",()=>showStats());
 $("btn-back-setup").addEventListener("click",()=>showScreen("home-main"));
 $("btn-study-all-due").addEventListener("click",()=>startAllDueQuiz());
@@ -1039,7 +1007,6 @@ $("btn-feedback-send").addEventListener("click",async()=>{
 function quizSubmit(e){e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}
 document.addEventListener("keyup",e=>{if((e.key==="Enter"||e.keyCode===13)&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
   const c=S.deck?.[S.cardIndex];
-  if(S.traitMode&&c&&!c._revealed){checkTraits();return}
   if(c&&c._revealed&&Date.now()-_revealedAt>400)next();
 }});
 $("car-prev").addEventListener("click",e=>{e.stopPropagation();moveCar(-1)});
@@ -1210,58 +1177,8 @@ function showWiki(species){
   fetchWiki(species).then(text=>{if(text){_wikiText=text;updateWikiBtn();}});
 }
 
-async function fetchTraits(species,family){
-  const key=$("inp-apikey")?.value?.trim();
-  if(!key)return null;
-  const ck=species.toLowerCase();
-  if(traitsCache.has(ck))return traitsCache.get(ck);
-  try{
-    const r=await fetch("https://api.openai.com/v1/chat/completions",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-      body:JSON.stringify({
-        model:"gpt-4o-mini",max_tokens:300,temperature:0.1,
-        messages:[
-          {role:"system",content:`You are an expert field botanist. Return ONLY valid JSON with these exact keys for the given plant species. Be precise and factual — use Stace's New Flora or similar authoritative sources. If a trait is variable or unknown, say so briefly.
-Keys: "stamens" (number or range), "petals" (count, arrangement e.g. "5, free" or "fused, 2-lipped"), "leaf" (type and shape, e.g. "simple, ovate, serrate margins"), "flower_colour", "fruit" (type e.g. "achene", "berry", "capsule"), "habitat" (typical UK habitats), "flowering" (months), "height" (typical range), "distinguish" (1-2 sentences on how to tell apart from most similar species in the same family/genus — name those species).
-No markdown, no backticks, no explanation — just the JSON object.`},
-          {role:"user",content:`${species}${family?` (${family})`:""}`}
-        ]
-      })
-    });
-    if(!r.ok)return null;
-    const d=await r.json();
-    let txt=d.choices?.[0]?.message?.content?.trim()||"";
-    txt=txt.replace(/```json|```/g,"").trim();
-    const parsed=JSON.parse(txt);
-    traitsCache.set(ck,parsed);
-    return parsed;
-  }catch(e){console.log("Traits parse error:",e);return null}
-}
-
-function renderTraits(t){
-  if(!t)return"<em>Traits not available.</em>";
-  const rows=[
-    ["Stamens",t.stamens],["Petals",t.petals],["Leaf",t.leaf],
-    ["Flower",t.flower_colour],["Fruit",t.fruit],["Habitat",t.habitat],
-    ["Flowering",t.flowering],["Height",t.height]
-  ].filter(([,v])=>v).map(([k,v])=>`<span class="trait-label">${esc(k)}</span><span class="trait-val">${esc(String(v))}</span>`).join("");
-  const dist=t.distinguish?`<div class="trait-distinguish"><strong>How to distinguish:</strong> ${esc(t.distinguish)}</div>`:"";
-  return`<div class="trait-grid">${rows}${dist}</div>`;
-}
-
-function showTraits(species,family,gotWrong){
-  const key=$("inp-apikey")?.value?.trim();
-  if(!key||!gotWrong){hide("traits-box");return}
-  show("traits-box");$("traits-text").innerHTML='<span class="etym-loading">Loading traits\u2026</span>';
-  fetchTraits(species,family).then(t=>{
-    if(t)$("traits-text").innerHTML=renderTraits(t);
-    else hide("traits-box");
-  });
-}
-
 /* ── Fetch & Start ── */
-async function doStart(dueOnly){S.csvMode=false;S.traitMode=false;hide("error-msg");showScreen("loading");$("loading-text").textContent="Checking username\u2026";
+async function doStart(dueOnly){S.csvMode=false;hide("error-msg");showScreen("loading");$("loading-text").textContent="Checking username\u2026";
   const un=$("inp-user").value.trim();localStorage.setItem("inat_quiz_user",un);
   const ak=$("inp-apikey")?.value?.trim();if(ak)localStorage.setItem("inat_quiz_apikey",ak);
   try{const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);if(!ur.ok)throw Error("Could not reach iNaturalist API");
@@ -1342,7 +1259,7 @@ async function _fetchHomeStats(un){
     const tqNew=tqTotalPossible!==null?Math.max(0,tqTotalPossible-tqSeen):null;
     $("home-stat-memory").textContent=`${inMemory} species in memory`;
     $("home-stat-taxa").innerHTML=(tqNew!==null?`<div>${tqNew} new</div>`:'')+`<div>${tqDue} due</div>`;
-    $("home-stat-terms").innerHTML=''; // traits not yet active
+    $("home-stat-terms").innerHTML='';
     // Streak
     const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const studyDays=new Set(cards.filter(c=>c.lastReview).map(c=>dayKey(new Date(c.lastReview))));
@@ -1492,7 +1409,7 @@ async function startFromHome(practiseMode){
   const un=localStorage.getItem("inat_quiz_user");
   if(!un){showUsernamePopup(()=>startFromHome(practiseMode));return}
   hide("home-main-err");
-  S.csvMode=false;S.traitMode=false;S.deckLabel="";
+  S.csvMode=false;S.deckLabel="";
   if(S.allObs.length&&S.currentUser===un.toLowerCase()){
     // Obs already loaded — go straight to deck
     await buildDeck(S.allObs,practiseMode);
@@ -1522,7 +1439,7 @@ async function startAllDueQuiz(){
     }
   }
   if(dueSpObs.length===0&&dueTqQs.length===0){
-    if(S.allObs?.length){S.csvMode=false;S.traitMode=false;S.deckLabel="";await buildDeck(S.allObs,true);}
+    if(S.allObs?.length){S.csvMode=false;S.deckLabel="";await buildDeck(S.allObs,true);}
     else{await doStart(true);}
     return;
   }
@@ -1533,7 +1450,7 @@ async function startAllDueQuiz(){
   const maxLen=Math.max(spItems.length,tqItems.length);
   for(let i=0;i<maxLen;i++){if(i<spItems.length)mixed.push(spItems[i]);if(i<tqItems.length)mixed.push(tqItems[i]);}
   S._mixedMode=true;S._mixedQueue=mixed;S._mixedIdx=0;S._mixedTotal=mixed.length;S._mixedCompleted=0;
-  S._pendingTaxaDue=[];S.sessionResults=[];S.csvMode=false;S.traitMode=false;
+  S._pendingTaxaDue=[];S.sessionResults=[];S.csvMode=false;
   advanceMixed();
 }
 
@@ -1869,9 +1786,9 @@ function showFamily(fam,obs,srsMap){
   showScreen("family");
 }
 
-function startQuizFromHome(){S.csvMode=false;S.traitMode=false;S.deckLabel="";buildDeck(S.allObs,true)}
+function startQuizFromHome(){S.csvMode=false;S.deckLabel="";buildDeck(S.allObs,true)}
 function startQuizFromFamily(){
-  S.csvMode=false;S.traitMode=false;
+  S.csvMode=false;
   const filtered=_familyObs;
   buildDeck(filtered,false);
 }
@@ -1992,346 +1909,6 @@ async function csvNextDeck(){
   S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=pool.length;S.completedCards=0;
   showScreen("quiz");renderCard();
 }
-
-/* ── Traits Database ── */
-let traitsDB=new Map(); // species name → trait object
-const GLOSSARY={
-  "actinomorphic":"Radially symmetrical — can be divided into equal halves along any diameter",
-  "zygomorphic":"Bilaterally symmetrical — can be divided into mirror halves along only one plane",
-  "superior":"Ovary sits above where sepals/petals attach (hypogynous)",
-  "inferior":"Ovary sits below where sepals/petals attach (epigynous)",
-  "semi-inferior":"Ovary partially embedded in the receptacle (perigynous)",
-  "alternate":"Leaves arranged singly at each node, alternating sides up the stem",
-  "opposite":"Leaves in pairs at each node, directly across from each other",
-  "whorled":"Three or more leaves at each node, arranged in a ring",
-  "basal":"Leaves arising from the base of the stem or root crown",
-  "serrate":"Leaf margin with sharp forward-pointing teeth like a saw",
-  "crenate":"Leaf margin with rounded teeth",
-  "entire":"Leaf margin smooth and unbroken, without teeth or lobes",
-  "dentate":"Leaf margin with outward-pointing teeth",
-  "pinnate":"Compound leaf with leaflets arranged along a central axis",
-  "palmate":"Compound leaf with leaflets radiating from a single point",
-  "ternate":"Divided into three parts or leaflets",
-  "bipinnate":"Doubly pinnate — leaflets themselves divided pinnately",
-  "tripinnate":"Triply pinnate — bipinnate leaflets further divided",
-  "lanceolate":"Lance-shaped — much longer than wide, widest below middle",
-  "ovate":"Egg-shaped in outline, widest below the middle",
-  "obovate":"Inversely egg-shaped, widest above the middle",
-  "elliptic":"Oval, widest at the middle, tapering equally at both ends",
-  "linear":"Very narrow with parallel sides",
-  "cordate":"Heart-shaped at the base",
-  "sagittate":"Arrow-shaped, with basal lobes pointing downward",
-  "hastate":"Arrow-shaped, with basal lobes pointing outward",
-  "capitulum":"Dense head of many small flowers (typical of Asteraceae)",
-  "radiate":"Capitulum with outer ray florets and inner disc florets",
-  "ligulate":"Capitulum where all florets are strap-shaped (e.g. dandelion)",
-  "discoid":"Capitulum with disc florets only, no rays",
-  "umbel":"Flat or rounded flower cluster with stalks arising from one point",
-  "compound umbel":"Umbel of umbels — primary rays bear secondary umbels (umbellets)",
-  "corymb":"Flat-topped cluster where outer flowers open first",
-  "raceme":"Unbranched cluster with stalked flowers along a central axis",
-  "panicle":"Branched raceme — a compound flower cluster",
-  "cyme":"Flower cluster where central/terminal flower opens first",
-  "scorpioid":"Coiled cyme, curled like a scorpion's tail",
-  "spike":"Unbranched cluster with unstalked (sessile) flowers",
-  "catkin":"Drooping spike of tiny, usually unisexual flowers",
-  "achene":"Small dry one-seeded fruit that doesn't split open (e.g. buttercup)",
-  "capsule":"Dry fruit that splits open to release seeds",
-  "drupe":"Fleshy fruit with a hard stone inside (e.g. cherry, blackthorn)",
-  "berry":"Fleshy fruit with seeds embedded in pulp (e.g. tomato, grape)",
-  "follicle":"Dry fruit splitting along one side only",
-  "legume":"Pod splitting along two sides (typical of Fabaceae)",
-  "silique":"Long narrow pod of Brassicaceae, splitting from below",
-  "silicula":"Short broad pod of Brassicaceae",
-  "samara":"Winged dry fruit (e.g. ash, maple)",
-  "schizocarp":"Fruit splitting into separate one-seeded units (e.g. Apiaceae)",
-  "nut":"Hard-shelled dry fruit, usually single-seeded",
-  "nutlet":"Small nut, often in groups of four (e.g. Lamiaceae, Boraginaceae)",
-  "caryopsis":"Grain — dry fruit fused to seed coat (grasses)",
-  "papilionaceous":"Butterfly-shaped flower with standard, wings, and keel (Fabaceae)",
-  "spathulate":"Spoon-shaped or spatula-shaped",
-  "sessile":"Without a stalk — attached directly",
-  "petiolate":"Having a leaf stalk (petiole)",
-  "stipulate":"Having stipules (small appendages at leaf base)",
-  "glabrous":"Smooth, without hairs",
-  "pubescent":"Covered in soft short hairs",
-  "hirsute":"Covered in rough or coarse hairs",
-  "tomentose":"Densely covered in matted woolly hairs",
-  "decurrent":"Leaf blade extending down the stem as a wing",
-  "perennial":"Living for more than two years",
-  "annual":"Completing life cycle in one year",
-  "biennial":"Completing life cycle over two years",
-  "rhizomatous":"Spreading by underground stems (rhizomes)",
-  "stoloniferous":"Spreading by above-ground runners (stolons)",
-  "diadelphous":"Stamens in two groups (typically 9+1 in Fabaceae)",
-  "tetradynamous":"Four long + two short stamens (typical of Brassicaceae)",
-  "epicalyx":"Ring of bracts below and resembling an extra calyx",
-  "involucre":"Ring of bracts surrounding a flower head or umbel",
-  "bract":"Modified leaf at base of a flower or flower cluster",
-  "bracteole":"Small bract on a flower stalk",
-  "pappus":"Tuft of hairs or scales on achene (aids wind dispersal in Asteraceae)",
-  "receptacle":"Enlarged tip of stem bearing floral parts",
-  "hypanthium":"Cup-shaped structure formed by fused bases of sepals, petals, and stamens",
-  "calyx":"Collective term for all sepals",
-  "corolla":"Collective term for all petals",
-  "sepal":"Outer floral leaf, usually green and protective",
-  "tepal":"Perianth segment where sepals and petals are indistinguishable",
-  "stamen":"Male reproductive organ: filament + anther",
-  "anther":"Pollen-bearing tip of a stamen",
-  "stigma":"Pollen-receiving tip of the pistil",
-  "style":"Stalk connecting stigma to ovary",
-  "pistil":"Female reproductive organ: ovary + style + stigma",
-  "carpel":"Basic unit of the female reproductive structure",
-  "lobed":"Divided into rounded segments not reaching the midrib",
-  "pinnately lobed":"Lobed along both sides of the midrib",
-  "palmately lobed":"Lobed radiating from a central point like fingers",
-  "simple":"Leaf blade in one piece, not divided into leaflets",
-  "compound":"Leaf divided into separate leaflets",
-  "trifoliate":"Having three leaflets",
-  "imparipinnate":"Pinnate with an odd terminal leaflet",
-  "paripinnate":"Pinnate without a terminal leaflet (even number)",
-  "fused":"Petals or sepals joined together into a tube or ring",
-  "free":"Petals or sepals separate from each other"
-};
-
-function annotateGloss(html){
-  // Sort terms by length (longest first) to match multi-word terms before single words
-  const terms=Object.keys(GLOSSARY).sort((a,b)=>b.length-a.length);
-  for(const term of terms){
-    const re=new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})\\b`,"gi");
-    html=html.replace(re,(m)=>`<span class="gloss" data-def="${esc(GLOSSARY[term.toLowerCase()])}">${m}</span>`);
-  }
-  return html;
-}
-const TRAIT_FIELDS=[
-  {key:"habit",label:"Habit",mc:true},
-  {key:"flower_type",label:"Flower type",mc:true},
-  {key:"petal_count",label:"Petal count",mc:true},
-  {key:"stamen_count",label:"Stamen count",mc:true},
-  {key:"ovary_position",label:"Ovary position",mc:true},
-  {key:"floral_symmetry",label:"Floral symmetry",mc:true},
-  {key:"leaf_type",label:"Leaf type",mc:true},
-  {key:"leaf_arrangement",label:"Leaf arrangement",mc:true},
-  {key:"leaf_margin",label:"Leaf margin",mc:true},
-  {key:"fruit_type",label:"Fruit type",mc:true},
-  {key:"distinguishing_notes",label:"Key features",mc:true}
-];
-
-function parseTraitsCSV(text){
-  const lines=text.split(/\r?\n/).filter(l=>l.trim());
-  if(lines.length<2)return;
-  const headers=lines[0].split(",").map(h=>h.trim());
-  for(let i=1;i<lines.length;i++){
-    // Handle CSV fields that might contain commas within quotes
-    const vals=[];let cur="",inQ=false;
-    for(const ch of lines[i]){
-      if(ch==='"'){inQ=!inQ}else if(ch===","&&!inQ){vals.push(cur.trim());cur=""}else{cur+=ch}
-    }
-    vals.push(cur.trim());
-    const obj={};headers.forEach((h,j)=>obj[h]=vals[j]||"");
-    if(obj.species)traitsDB.set(obj.species.toLowerCase(),obj);
-  }
-}
-
-async function handleTraits(){
-  const file=$("inp-traits").files[0];if(!file)return;
-  const text=await file.text();
-  parseTraitsCSV(text);
-  $("traits-status").textContent=`\u2705 ${traitsDB.size} species traits loaded`;show("traits-status");
-  console.log(`Traits DB: ${traitsDB.size} species loaded`);
-  show("btn-start-traits");
-}
-
-async function buildTraitsDeck(){
-  if(traitsDB.size===0)return false;
-  // Filter out ignored species before building deck
-  const existing=await dbAllUser(S.currentUser);
-  const ignoredSet=new Set(existing.filter(c=>c.ignored).map(c=>c.species?.toLowerCase()));
-  // Use allObs if available, otherwise build from traitsDB keys
-  let candidates=S.allObs.filter(o=>traitsDB.has(o.taxon.name.toLowerCase())&&!ignoredSet.has(o.taxon.name.toLowerCase()));
-  if(candidates.length===0)return false;
-  const count=Math.min(S.qCount,candidates.length);
-  const pool=shuffle(candidates).slice(0,count);
-  S.deck=[];S.sessionResults=[];S.traitMode=true;
-  for(const o of pool){
-    const traits=traitsDB.get(o.taxon.name.toLowerCase());
-    const available=TRAIT_FIELDS.filter(f=>{const v=traits[f.key]?.trim();return v&&v.toLowerCase()!=="n/a"&&v!=="-"});
-    const picked=shuffle(available);
-    const questions=picked.map(f=>{
-      const answer=traits[f.key].trim();
-      if(f.mc){
-        const fam=traits.family||"";
-        const sameFamily=[...traitsDB.values()].filter(t=>t.family===fam&&t.species!==traits.species&&t[f.key]?.trim());
-        const diffFamily=[...traitsDB.values()].filter(t=>t.family!==fam&&t[f.key]?.trim());
-        const stopWords=new Set(["a","an","the","of","to","in","on","and","or","with","is","are","not","for","as","at","by","from","up","very","often","sometimes","usually","can","may","be"]);
-        const getWords=s=>new Set(s.toLowerCase().split(/[\s,;()]+/).filter(w=>w.length>2&&!stopWords.has(w)));
-        const answerWords=getWords(answer);
-        // Get candidates: no N/A, no exact match, no shared words with answer
-        let candidates=[...shuffle(sameFamily),...shuffle(diffFamily)].map(t=>t[f.key].trim())
-          .filter(d=>d&&d.toLowerCase()!=="n/a"&&d!=="-"&&d.toLowerCase()!==answer.toLowerCase())
-          .filter(d=>{const dw=getWords(d);return!([...dw].some(w=>answerWords.has(w)))});
-        // Pick 3 distractors that also don't share words with each other
-        let dists=[];const usedWords=new Set();
-        for(const d of candidates){
-          if(dists.length>=3)break;
-          const dw=getWords(d);
-          if([...dw].some(w=>usedWords.has(w)))continue;
-          dists.push(d);
-          dw.forEach(w=>usedWords.add(w));
-        }
-        // Fallback: relax word-uniqueness between distractors
-        if(dists.length<3){
-          for(const d of candidates){
-            if(dists.length>=3)break;
-            if(!dists.includes(d))dists.push(d);
-          }
-        }
-        // Last resort fallback: just no exact match or N/A
-        if(dists.length<3){
-          const fallback=[...shuffle(sameFamily),...shuffle(diffFamily)].map(t=>t[f.key].trim())
-            .filter(d=>d&&d.toLowerCase()!=="n/a"&&d!=="-"&&d.toLowerCase()!==answer.toLowerCase()&&!dists.includes(d));
-          dists=[...dists,...fallback].slice(0,3);
-        }
-        const options=shuffle([{text:answer,correct:true},...dists.map(d=>({text:d,correct:false}))]);
-        return{...f,answer,mc:true,options,answered:false};
-      }
-      return{...f,answer,mc:false,answered:false};
-    });
-    const card={obs:o,species:o.taxon.name,common:tc(o.taxon.preferred_common_name)||"",family:traits.family||"",
-      _traitMode:true,_traitQuestions:questions,_revealed:false,_traitScore:0,_traitTotal:questions.length};
-    S.deck.push(card);
-  }
-  S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=pool.length;S.completedCards=0;
-  return true;
-}
-
-async function doStartTraits(){
-  if(traitsDB.size===0){showErr("Upload a traits database first.");return}
-  // If no observations loaded yet, fetch them from iNaturalist
-  if(S.allObs.length===0){
-    const un=$("inp-user").value.trim();
-    if(!un){showErr("Enter your iNaturalist username first.");return}
-    hide("error-msg");showScreen("loading");$("loading-text").textContent="Loading observations for traits quiz\u2026";
-    try{
-      const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=20`);
-      if(!ur.ok)throw Error("Could not reach iNaturalist API");
-      const ud=await ur.json();const m=(ud.results||[]).find(u=>u.login?.toLowerCase()===un.toLowerCase());
-      if(!m){showErr(`Username "${un}" not found.`);return}
-      const login=m.login;S.currentUser=login.toLowerCase();
-      localStorage.setItem("inat_quiz_user",un);
-      const cacheBust=Date.now();let allResults=[];
-      for(let page=1;page<=5;page++){
-        const r=await fetch(`${API}/observations?user_id=${encodeURIComponent(login)}&per_page=200&page=${page}&order=desc&order_by=created_at&locale=en&_=${cacheBust}`);
-        if(!r.ok)throw Error(`API error ${r.status}`);const d=await r.json();
-        allResults.push(...(d.results||[]));if((d.results||[]).length<200)break;
-      }
-      const good=allResults.filter(o=>o.photos?.length&&o.taxon?.name&&SP_RANKS.has((o.taxon.rank||"").toLowerCase()));
-      const uniq=dedupe(good);
-      await fetchTaxonomy(uniq);
-      S.allObs=uniq;S.csvMode=false;
-    }catch(e){showErr(`Error: ${e.message}`);return}
-  }
-  S.traitMode=true;
-  if(await buildTraitsDeck()){
-    showScreen("quiz");renderTraitCard();
-  }else{
-    showErr("No species found matching between your observations and traits database.");
-  }
-}
-
-function renderTraitCard(){
-  const c=S.deck[S.cardIndex];c._revealed=false;
-  $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
-  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Characters</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
-  const o=c.obs;
-  $("q-prompt").textContent="What do you know about this species?";
-  $("trait-species").textContent=c.species;
-  $("trait-common").textContent=c.common;
-  // Show photo
-  const userP={type:"photo",url:o.photos[0].url?.replace("square","medium"),observer:"",yours:false};
-  renderCar([userP]);
-  fetchExtra(o.taxon.id,null).then(ex=>{if(S.deck[S.cardIndex]===c){renderCar([userP,...ex])}});
-  killMap();hide("map-strip");hide("obs-notes");
-  // Hide other panels
-  document.querySelector(".fields").classList.add("hidden");
-  hide("mc-panel");hide("etym-box");hide("traits-box");hide("retry-notice");hide("btn-next");
-  show("trait-panel");show("btn-row-submit");
-  $("btn-submit").textContent="Check Traits";
-  // Render questions
-  const qDiv=$("trait-questions");qDiv.innerHTML="";
-  c._traitQuestions.forEach((q,qi)=>{
-    const wrap=document.createElement("div");wrap.className="trait-q";wrap.dataset.qi=qi;
-    if(q.mc){
-      wrap.innerHTML=`<div class="trait-label">${esc(q.label)}</div>`;
-      q.options.forEach((opt,oi)=>{
-        const btn=document.createElement("button");btn.className="trait-mc-btn";btn.textContent=opt.text;
-        btn.dataset.qi=qi;btn.dataset.oi=oi;
-        btn.addEventListener("click",()=>handleTraitMC(c,qi,oi));
-        wrap.appendChild(btn);
-      });
-      const fb=document.createElement("div");fb.className="trait-fb";fb.id=`trait-fb-${qi}`;
-      wrap.appendChild(fb);
-    }else{
-      wrap.innerHTML=`<div class="trait-label">${esc(q.label)}</div><input type="text" class="answer-input trait-input" data-qi="${qi}" autocomplete="off" spellcheck="false"><div class="trait-fb" id="trait-fb-${qi}"></div>`;
-    }
-    qDiv.appendChild(wrap);
-  });
-  $("q-card").classList.remove("fade-out");
-}
-
-function handleTraitMC(c,qi,oi){
-  const q=c._traitQuestions[qi];if(q.answered)return;q.answered=true;
-  const chosen=q.options[oi];
-  const wrap=$("trait-questions").children[qi];
-  const btns=wrap.querySelectorAll(".trait-mc-btn");
-  btns.forEach((btn,i)=>{
-    if(q.options[i].correct)btn.classList.add("mc-correct");
-    else if(i===oi)btn.classList.add("mc-wrong");
-    else btn.classList.add("mc-dim");
-    btn.style.pointerEvents="none";
-  });
-  const fb=wrap.querySelector(`#trait-fb-${qi}`);
-  if(chosen.correct){fb.textContent="\u2713 Correct";fb.style.color="#4ade80";c._traitScore++;q._correct=true}
-  else{fb.textContent=`\u2717 ${q.answer}`;fb.style.color="#f87171";q._correct=false}
-}
-
-function checkTraits(){
-  const c=S.deck[S.cardIndex];if(c._revealed)return;c._revealed=true;
-  // Mark any unanswered MC as wrong
-  c._traitQuestions.forEach((q,qi)=>{
-    if(!q.answered){q.answered=true;q._correct=false}
-  });
-  // Show full traits from CSV database
-  const t=traitsDB.get(c.species.toLowerCase());
-  if(t){
-    show("traits-box");
-    const fields=[["Habit","habit"],["Flower type","flower_type"],["Petal count","petal_count"],
-      ["Stamens","stamen_count"],["Ovary","ovary_position"],["Symmetry","floral_symmetry"],
-      ["Leaf type","leaf_type"],["Leaf arrangement","leaf_arrangement"],["Leaf margin","leaf_margin"],["Fruit","fruit_type"]];
-    const rows=fields.filter(([,k])=>t[k]?.trim()).map(([label,k])=>`<span class="trait-label">${esc(label)}</span><span class="trait-val">${esc(t[k])}</span>`).join("");
-    const dist=t.distinguishing_notes?`<div class="trait-distinguish"><strong>Key features:</strong> ${esc(t.distinguishing_notes)}</div>`:"";
-    $("traits-text").innerHTML=annotateGloss(`<div class="trait-grid">${rows}${dist}</div>`);
-  }else{hide("traits-box")}
-  // Check if any wrong — retry those
-  const anyWrong=c._traitQuestions.some(q=>!q._correct);
-  if(anyWrong){
-    // Keep only wrong questions for retry
-    const retryCard={...c,_traitQuestions:c._traitQuestions.filter(q=>!q._correct).map(q=>({...q,answered:false,_correct:undefined,
-      options:q.options?shuffle(q.options.map(o=>({...o}))):undefined})),
-      _revealed:false,_traitScore:0};
-    retryCard._traitTotal=retryCard._traitQuestions.length;
-    S.retryQueue.push(retryCard);
-    $("retry-notice").textContent=`${retryCard._traitQuestions.length} wrong \u2014 you\u2019ll see those again.`;show("retry-notice");
-  }
-  hide("btn-row-submit");show("btn-next");show("btn-ignore-link");
-  S.completedCards++;
-  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge" style="background:rgba(251,191,36,.15);color:#fbbf24">Characters</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
-  const isLast=S.cardIndex+1>=S.deck.length&&S.retryQueue.length===0;
-  $("btn-next").innerHTML=isLast?SVG_CHECK:SVG_ARROW;
-}
-
 async function buildDeck(obs,dueOnly){
   obs=filteredObs(obs);
   const now=Date.now(),count=Math.min(S.qCount,obs.length);
@@ -2424,7 +2001,7 @@ async function renderCard(){
       car.style.height="";
     }
   });
-  hide("etym-box");$("etym-text").textContent="";hide("traits-box");$("traits-text").textContent="";_wikiText=null;updateWikiBtn();hide("btn-next");hide("retry-notice");show("btn-ignore-link");
+  hide("etym-box");$("etym-text").textContent="";_wikiText=null;updateWikiBtn();hide("btn-next");hide("retry-notice");show("btn-ignore-link");
   // Notes stay visible throughout
   if(c._mcMode&&c._mcOptions){
     $("q-prompt").textContent="Which species is this?";
@@ -2443,7 +2020,6 @@ async function renderCard(){
     hide("btn-row-submit");
     showFieldStep(c);
   }
-  hide("trait-panel");
   $("q-card").classList.remove("fade-out");
   $("q-card-scroll").scrollTop=0;
 }
@@ -2499,7 +2075,6 @@ function revealCard(c){
   const _ef2=getEnabledFields();
   const allCorrect=(!_ef2.includes("order")||c.orderDone)&&(!_ef2.includes("family")||c.familyDone)&&(!_ef2.includes("species")||c.speciesDone)&&(!_ef2.includes("common")||c.commonDone);
   showWiki(c.species);
-  showTraits(c.species,c.family,!allCorrect);
   // Record first-pass data (SRS rated later when card is fully complete)
   if(!c._firstPassDone){
     c._firstPassDone=true;
@@ -2556,7 +2131,6 @@ function handleMC(c,chosenIdx){
   // Show etymology, wiki, next button
   showEtym(c.species,c.common);
   showWiki(c.species);
-  showTraits(c.species,c.family,!correct);
   // Record first-pass data (MC counts as 1 field; SRS rated when fully complete)
   if(!c._firstPassDone){
     c._firstPassDone=true;
@@ -2664,32 +2238,8 @@ function ignoreCurrentObservation(){
 
 function next(){
   killMap();S.cardIndex++;
-  if(S.traitMode){
-    if(S.cardIndex>=S.deck.length){
-      if(S.retryQueue.length===0){traitResults();return}
-      S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0;
-    }
-    $("q-card").classList.add("fade-out");setTimeout(()=>renderTraitCard(),150);
-    return;
-  }
   if(S.cardIndex>=S.deck.length){if(S.retryQueue.length===0){if(S._mixedMode){advanceMixed();return}results();return}S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
   $("q-card").classList.add("fade-out");setTimeout(()=>renderCard(),150)}
-
-function traitResults(){
-  const totalQ=S.deck.reduce((s,c)=>s+c._traitTotal,0);
-  const correctQ=S.deck.reduce((s,c)=>s+c._traitScore,0);
-  const pct=totalQ?Math.round(correctQ/totalQ*100):0;
-  const col=pct>=70?"#3d8b5e":pct>=50?"#d97706":"#dc2626";
-  $("res-score-ring").style.background=col;$("res-score-ring").textContent=`${pct}%`;
-  $("res-score").textContent=`${correctQ} / ${totalQ}`;$("res-sub").textContent="trait questions correct";
-  const bd=$("res-breakdown");bd.innerHTML="";
-  for(const c of S.deck){const nm=c.common||c.species;const row=document.createElement("div");row.className="rb-row";
-    const ok=c._traitScore===c._traitTotal;
-    row.style.background=ok?"rgba(61,139,94,.06)":"rgba(220,38,38,.04)";
-    row.innerHTML=`<span class="rb-icon ${ok?"rb-ok":"rb-fail"}">${ok?"\u2713":"\u2717"}</span><span class="rb-name">${esc(nm)}</span><span class="rb-detail">${c._traitScore}/${c._traitTotal} traits</span>`;
-    bd.appendChild(row)}
-  showScreen("results");
-}
 
 function results(){
   killMap();
