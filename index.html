@@ -2464,7 +2464,7 @@ function maybeShowDataNotice(cb){
   if(localStorage.getItem('inat_data_notice_seen')){cb();return;}
   const sessions=parseInt(localStorage.getItem('inat_session_count')||'0')+1;
   localStorage.setItem('inat_session_count',sessions);
-  if(sessions<3){cb();return;}
+  if(sessions<2){cb();return;}
   show('data-notice-popup');
   window._dataNoticeCb=cb;
 }
