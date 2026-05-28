@@ -372,27 +372,30 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
 <!-- Main home screen -->
 <div id="screen-home-main" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;overflow:hidden">
-  <!-- Top-right: settings + info -->
-  <div style="position:absolute;top:18px;right:16px;text-align:right;display:flex;flex-direction:column;align-items:center;gap:10px">
-    <button id="btn-open-settings" style="background:none;border:none;cursor:pointer;padding:0;display:block">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b8f78" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </button>
-    <button id="btn-open-howto" style="background:none;border:none;cursor:pointer;padding:0;display:block">
+  <!-- Top-right: info + settings + stats (clock) -->
+  <div style="position:absolute;top:18px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+    <button id="btn-open-howto" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b8f78" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="8" stroke-width="2"/>
         <line x1="12" y1="12" x2="12" y2="16"/>
       </svg>
     </button>
-    <button id="btn-open-stats" style="background:none;border:none;cursor:pointer;padding:0;display:block">
+    <button id="btn-open-settings" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b8f78" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     </button>
+    <div style="display:flex;align-items:center;gap:5px">
+      <span id="home-streak-label" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:#3d8b5e;background:rgba(61,139,94,0.12);padding:3px 9px;border-radius:8px;white-space:nowrap"></span>
+      <button id="btn-open-stats" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b8f78" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </button>
+    </div>
   </div>
   <!-- Memory count — vertical, hugging right of trunk -->
   <div id="home-stat-memory" style="position:absolute;top:24px;font-family:'DM Sans',sans-serif;font-size:11px;color:#4a7c5f;pointer-events:none;writing-mode:vertical-lr;letter-spacing:0.04em"></div>
@@ -1186,6 +1189,11 @@ async function _fetchHomeStats(un){
     $("home-stat-memory").textContent=`${inMemory} species in memory`;
     $("home-stat-taxa").textContent=`${due} due`;
     $("home-stat-terms").textContent=`0 due`;
+    // Streak
+    const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const studyDays=new Set(cards.filter(c=>c.lastReview).map(c=>dayKey(new Date(c.lastReview))));
+    let streak=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
+    $("home-streak-label").textContent=`${streak} day${streak!==1?'s':''}`;
     // Fetch total unique species from iNaturalist for accurate "new" count
     const ur=await fetch(`${API}/users/autocomplete?q=${encodeURIComponent(un)}&per_page=10`);
     const ud=await ur.json();
