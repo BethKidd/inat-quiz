@@ -2375,7 +2375,7 @@ function cardSessionScore(c){
   return base-(c._retryWrong||0);
 }
 async function renderCard(){
-  _carLocked=false;const _car=$('carousel');if(_car){_car.style.flex='';_car.style.height='';}
+  _carLocked=false;
   const c=S.deck[S.cardIndex];c._revealed=false;
   // If this card has been seen before, it's a retry — count the penalty
   if(c._firstPassDone){
