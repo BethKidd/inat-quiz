@@ -336,15 +336,13 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .ignore-btn-label{font-size:11px;font-weight:400;opacity:.7;display:block;margin-top:2px}
 /* ── Taxonomy Quiz ── */
 #screen-taxoquiz{background:#f4f2ed;min-height:100vh;padding-bottom:32px}
-.tq-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;flex-shrink:0}
-.tq-header-title{font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#1c2b22}
-.tq-back-btn{background:#e4ede8;border:none;color:#3d8b5e;padding:7px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
-.tq-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);margin:0 10px 12px;padding:16px 16px 14px}
-.tq-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:13px;font-weight:600;color:#6b8f78}
-.tq-order-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6b8f78;margin-bottom:4px;text-align:center}
-.tq-order-name{font-family:'Lora',Georgia,serif;font-size:24px;font-weight:700;font-style:italic;color:#1c2b22;line-height:1.15;text-align:center;margin-bottom:14px}
-.tq-prompt{font-size:13px;color:#6b8f78;margin-bottom:12px;text-align:center}
-.tq-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.tq-back-btn{background:#ebe8e0;border:none;color:#4a6650;padding:7px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.tq-top-bar{display:flex;align-items:center;gap:8px;padding:6px 8px 4px;font-size:13px;font-weight:600;color:#556b5e;flex-shrink:0}
+.tq-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);margin:8px 10px 8px;padding:24px 16px 20px}
+.tq-order-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6b8f78;margin-bottom:6px;text-align:center}
+.tq-order-name{font-family:'Lora',Georgia,serif;font-size:26px;font-weight:700;font-style:italic;color:#1c2b22;line-height:1.15;text-align:center;margin-bottom:20px}
+.tq-prompt{font-size:13px;color:#6b8f78;margin-bottom:16px;text-align:center}
+.tq-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 .tq-chip{background:#f4f2ed;border:2px solid #d4e8dd;border-radius:12px;padding:10px 8px 8px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:border-color .1s,background .1s,transform .08s;text-align:center;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .tq-chip:active{transform:scale(.97)}
 .tq-chip.selected{background:#eaf5ee;border-color:#3d8b5e}
@@ -355,7 +353,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .tq-chip.correct .tq-chip-type{color:#3d8b5e}
 .tq-chip.wrong .tq-chip-type,.tq-chip.missed .tq-chip-type{color:inherit;opacity:.7}
 .tq-chip-name{font-family:'Lora',Georgia,serif;font-size:13px;font-style:italic;font-weight:700;line-height:1.2;color:#1c2b22}
-.tq-feedback{text-align:center;min-height:20px;font-size:14px;font-weight:600;margin-bottom:10px}
+.tq-feedback{text-align:center;min-height:20px;font-size:14px;font-weight:600;margin-bottom:14px}
 .tq-check-btn{display:block;width:100%;padding:13px 0;background:#3d8b5e;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s;-webkit-tap-highlight-color:transparent}
 .tq-check-btn:disabled{background:#c8ddd2;color:#8aaa98;cursor:default}
 .tq-check-btn.next-mode{background:#82c97a}
@@ -623,17 +621,14 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
 <!-- Taxonomy Quiz screen -->
 <div id="screen-taxoquiz" class="container hidden">
-  <div class="tq-header">
-    <button class="tq-back-btn" id="btn-taxoquiz-home">← Home</button>
-    <button class="tq-back-btn" id="btn-taxoquiz-taxa">View all taxa</button>
-  </div>
   <div id="tq-quiz">
+    <div class="tq-top-bar">
+      <button id="btn-taxoquiz-home" style="background:none;border:none;color:#6b8f78;font-size:20px;cursor:pointer;padding:0 4px;font-family:inherit;flex-shrink:0;-webkit-tap-highlight-color:transparent" title="Exit to home">✕</button>
+      <span id="tq-progress">1 / 5</span>
+      <div class="progress-track" style="flex:1;margin:0 8px"><div class="progress-fill" id="tq-progress-fill"></div></div>
+      <span id="tq-round-info" style="display:flex;align-items:center;gap:6px"></span>
+    </div>
     <div class="tq-card">
-      <div class="tq-progress-row">
-        <span id="tq-progress">1 / 5</span>
-        <div class="progress-track" style="flex:1;margin:0 10px"><div class="progress-fill" id="tq-progress-fill"></div></div>
-        <span id="tq-round-info" style="display:flex;align-items:center;gap:6px"></span>
-      </div>
       <div id="tq-order-block">
         <div class="tq-order-label" id="tq-order-label">Order</div>
         <div class="tq-order-name" id="tq-order-name"></div>
@@ -645,6 +640,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
     </div>
   </div>
+  <button id="btn-taxoquiz-taxa" style="position:fixed;bottom:20px;right:16px;background:none;border:none;color:#2a5c3f;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;z-index:10">View all taxa →</button>
   <div id="tq-results" class="hidden" style="padding:0 10px">
     <div class="results-card">
       <div class="res-score-ring" id="tq-res-ring"></div>
