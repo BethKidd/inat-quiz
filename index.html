@@ -573,6 +573,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <div class="results-breakdown" id="res-breakdown"></div>
     <div style="margin-top:20px;display:flex;flex-direction:column;gap:4px">
       <button class="btn-primary" id="btn-replay">Continue Studying →</button>
+      <button class="btn-primary hidden" id="btn-continue-taxa" style="background:#4a7c5f"></button>
       <button class="btn-secondary" id="btn-results-home" style="display:inline-flex;align-items:center;justify-content:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home</button>
       <button class="btn-secondary" id="btn-view-stats">View All Progress</button>
     </div>
@@ -581,7 +582,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 
 <div id="screen-stats" class="container hidden">
   <button id="btn-back-setup" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#3d8b5e;font-size:15px;font-weight:600;cursor:pointer;padding:0 0 16px;font-family:inherit;-webkit-tap-highlight-color:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
-  <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;margin-bottom:4px">Your Progress</h2>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;margin:0">Your Progress</h2>
+    <button id="btn-study-all-due" class="btn-primary" style="font-size:13px;padding:8px 16px;margin:0;width:auto;display:inline-block;white-space:nowrap">Study all due →</button>
+  </div>
   <p style="font-size:13px;color:#6b8f78;margin-bottom:12px" id="stats-user"></p>
   <div style="background:#fff;border-radius:14px;border:1.5px solid #d8ece2;padding:14px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
@@ -788,7 +792,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:""};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",csvMode:false,csvSpecies:[],csvSeen:new Set(),traitMode:false,deckLabel:"",_pendingTaxaDue:[]};
 const photoCache=new Map(),etymCache=new Map(),wikiCache=new Map(),traitsCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
@@ -877,7 +881,13 @@ $("btn-replay").addEventListener("click",async()=>{
     catch(e){showErr("Error starting session: "+e.message);}
   }
 });
-$("btn-results-home").addEventListener("click",()=>showScreen("home-main"));
+$("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];showScreen("home-main");});
+$("btn-continue-taxa").addEventListener("click",()=>{
+  const qs=S._pendingTaxaDue;S._pendingTaxaDue=[];
+  if(!qs.length){showScreen("home-main");return}
+  TQ.questions=tqShuffle(qs);TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
+  show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
+});
 $("wiki-info-btn").addEventListener("click",()=>{
   if(!_wikiText)return;
   const c=S.deck?.[S.cardIndex];
@@ -899,6 +909,7 @@ $("btn-start-traits").addEventListener("click",doStartTraits);
 $("btn-view-stats").addEventListener("click",()=>showStats());
 $("btn-back-setup").addEventListener("click",()=>showScreen("home-main"));
 $("btn-study-due").addEventListener("click",()=>doStart(true));
+$("btn-study-all-due").addEventListener("click",()=>startAllDueQuiz());
 $("btn-reset").addEventListener("click",async()=>{if(confirm("Reset all progress? This cannot be undone.")){await dbClearUser(S.currentUser||$("inp-user").value.trim());showStats()}});
 $("btn-feedback-send").addEventListener("click",async()=>{
   const msg=$("feedback-msg").value.trim();
@@ -1194,6 +1205,7 @@ async function _loadObsSilent(un){
     S.allObs=uniq;S.csvMode=false;
     // Refresh stats now that obs are loaded — only if still on home screen
     if(!document.getElementById('screen-home-main').classList.contains('hidden'))updateHomeMainSub();
+    if(!document.getElementById('screen-stats').classList.contains('hidden'))showStats();
   }catch(e){/* silent fail — user can still load obs manually */}
 }
 async function _fetchHomeStats(un){
@@ -1359,6 +1371,31 @@ async function startFromHome(practiseMode){
   }
 }
 function showErr(m){$("home-main-err").textContent=m;show("home-main-err");showScreen("home-main")}
+
+async function startAllDueQuiz(){
+  if(!S.currentUser){showScreen("setup");return}
+  const now=Date.now();
+  // Load all cards and find due taxa questions
+  const allCards=await dbAllUser(S.currentUser);
+  const tqCards=allCards.filter(c=>c.taxonKey.startsWith('tq:')&&c.totalReviews>0&&c.nextReview<=now);
+  // Build taxo questions from allObs, filter to only due ones
+  S._pendingTaxaDue=[];
+  if(tqCards.length&&S.allObs?.length){
+    const tqSrsMap=new Map(tqCards.map(c=>[c.taxonKey,c]));
+    const allQ=tqBuildQuestions(S.allObs);
+    for(const q of allQ){
+      const key=`tq:${q.questionType}:${q.questionType==='order'?q.order:q.family}`;
+      if(tqSrsMap.has(key)){q.tqKey=key;q.srs=tqSrsMap.get(key);S._pendingTaxaDue.push(q);}
+    }
+  }
+  // Start names quiz with due species cards; taxa will follow after results
+  if(S.allObs?.length){
+    S.csvMode=false;S.traitMode=false;S.deckLabel="";
+    await buildDeck(S.allObs,true);
+  }else{
+    await doStart(true);
+  }
+}
 
 /* ── Home screen ── */
 async function loadHome(){
@@ -2512,6 +2549,14 @@ function results(){
     row.innerHTML=`<span class="rb-name">${esc(nd.primary)}${nd.secondary?`<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(nd.secondary)}</span>`:""}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0"><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>${dueStr?`<span style="font-size:10px;color:#9bb8a8;white-space:nowrap">${dueStr}</span>`:""}</span>`;
     bd.appendChild(row);
   }
+  // Show "Continue to Taxonomy" button if there are pending due taxa
+  const contBtn=$("btn-continue-taxa");
+  if(S._pendingTaxaDue&&S._pendingTaxaDue.length){
+    contBtn.textContent=`Continue: Taxonomy (${S._pendingTaxaDue.length} due) →`;
+    show("btn-continue-taxa");
+  }else{
+    hide("btn-continue-taxa");
+  }
   showScreen("results");
 }
 
@@ -2522,12 +2567,18 @@ async function showStats(){
   const all=await dbAllUser(un);
   const now=Date.now();
   const active=all.filter(c=>!c.ignored);
+  const spCount=active.filter(c=>!c.taxonKey.startsWith('tq:')).length;
+  const tqCount=active.filter(c=>c.taxonKey.startsWith('tq:')).length;
   const reviewed=active.filter(c=>c.totalReviews>0).sort((a,b)=>a.nextReview-b.nextReview);
   const fresh=active.filter(c=>c.totalReviews===0);
-  $("stats-user").textContent=`${un} \u00B7 ${active.length} species`;
+  $("stats-user").textContent=`${un} · ${spCount} species · ${tqCount} taxa`;
+  // Trigger silent obs load if needed (photos won't appear until obs arrive)
+  if(!S.allObs.length&&un)_loadObsSilent(un);
+  // Build photo lookup from loaded observations
+  const photoMap=new Map();
+  for(const o of (S.allObs||[])){const url=o.photos?.[0]?.url||"";if(url)photoMap.set(taxonKey(o),url);}
   const MAX_IV=30*1440;
   const sl=$("species-list");sl.innerHTML="";
-  // Split into display groups
   const DAY_MS=24*60*60*1000;
   const grpDue=reviewed.filter(c=>c.nextReview<=now+DAY_MS);
   const grpLearning=reviewed.filter(c=>c.nextReview>now+DAY_MS&&c.interval<MATURE_IV);
@@ -2538,9 +2589,10 @@ async function showStats(){
     h.innerHTML=`<span style="font-size:11px;font-weight:700;color:#6b8f78;text-transform:uppercase;letter-spacing:0.05em">${label}</span><span style="background:${bg};color:${col};font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px">${count}</span>`;
     return h;
   }
-  // grp: "due"|"learning"|"mature"|"new" — drives consistent colour per section
+  // grp: "due"|"learning"|"mature"|"new"
   function makeRow(c,grp){
-    const nd=nameDisplay(c.species,c.common);
+    const isTq=c.taxonKey.startsWith('tq:');
+    const nd=isTq?{primary:c.species,secondary:c.common.charAt(0).toUpperCase()+c.common.slice(1)}:nameDisplay(c.species,c.common);
     const minsUntil=(c.nextReview-now)/60000;
     const dueStr=grp==="new"?"New":grp==="due"?(minsUntil<=0?"Due now":"in "+fmtIv(minsUntil)):"in "+fmtIv(minsUntil);
     const dueCol=grp==="new"?"#9bb8a8":grp==="due"?"#e05252":grp==="learning"?"#c07830":"#3d8b5e";
@@ -2548,9 +2600,11 @@ async function showStats(){
     const barCol=grp==="new"?"#c8ddd2":grp==="due"?"#f87171":grp==="learning"?"#fbbf24":"#3d8b5e";
     const borderCol=grp==="new"?"#c8ddd2":grp==="due"?"#f87171":grp==="learning"?"#f5c07a":"#3d8b5e";
     const bgCol=grp==="new"?"#fff":grp==="due"?"rgba(248,113,113,.06)":grp==="learning"?"rgba(251,191,36,.06)":"rgba(61,139,94,.07)";
+    const thumb=!isTq?(photoMap.get(c.species.toLowerCase())||""):"";
     const row=document.createElement("div");row.className="prog-row";
-    row.style.cssText=`border-left:3px solid ${borderCol};background:${bgCol};border-radius:10px;padding:10px 12px;margin-bottom:5px`;
-    row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-weight:600;font-size:13px;color:#1c2b22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:8px">${esc(nd.primary)}</span><span style="font-size:11px;color:${dueCol};font-weight:600;white-space:nowrap;flex-shrink:0">${dueStr}</span></div><div style="display:flex;align-items:center;gap:8px">${nd.secondary?`<span style="font-size:11px;font-style:italic;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;max-width:50%">${esc(nd.secondary)}</span>`:"<span></span>"}<div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%;background:${barCol}"></div></div></div>`;
+    row.style.cssText=`border-left:3px solid ${borderCol};background:${bgCol};border-radius:10px;padding:10px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px`;
+    const thumbHtml=thumb?`<img src="${esc(thumb)}" alt="" loading="lazy" style="width:42px;height:42px;border-radius:7px;object-fit:cover;flex-shrink:0">`:`${!isTq?'<div style="width:42px;height:42px;border-radius:7px;background:#e4f0ea;flex-shrink:0"></div>':''}`;
+    row.innerHTML=`${thumbHtml}<div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px"><span style="font-weight:600;font-size:13px;color:#1c2b22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:8px">${esc(nd.primary)}</span><span style="font-size:11px;color:${dueCol};font-weight:600;white-space:nowrap;flex-shrink:0">${dueStr}</span></div><div style="display:flex;align-items:center;gap:8px">${nd.secondary?`<span style="font-size:11px;font-style:italic;color:#6b8f78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">${esc(nd.secondary)}</span>`:"<span></span>"}<div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%;background:${barCol}"></div></div></div></div>`;
     return row;
   }
   if(grpDue.length){sl.appendChild(makeHeading("Due today",grpDue.length,"#e05252","rgba(248,113,113,.15)"));grpDue.forEach(c=>sl.appendChild(makeRow(c,"due")))}
@@ -2918,7 +2972,7 @@ $("btn-taxoquiz-taxa").addEventListener("click",()=>{if(S.allObs?.length)showHom
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
 $("tq-new-quiz-btn").addEventListener("click",()=>openTaxoQuiz());
-$("tq-quit-btn").addEventListener("click",()=>showScreen("home-main"));
+$("tq-quit-btn").addEventListener("click",()=>{S._pendingTaxaDue=[];showScreen("home-main");});
 </script>
 </body>
 </html>
