@@ -558,26 +558,71 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   <button id="btn-terms-back" style="margin-top:32px;background:none;border:1.5px solid #c8ddd2;border-radius:12px;color:#3d8b5e;font-size:15px;font-weight:600;padding:12px 28px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
 </div>
 
-<div id="screen-howto" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;overflow-y:auto;padding:32px 24px 48px">
-  <button id="btn-howto-back" style="background:none;border:none;color:#3d8b5e;cursor:pointer;padding:0;margin-bottom:20px;display:flex;align-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-  <h2 style="font-family:'Lora',Georgia,serif;font-size:24px;font-weight:700;color:#1c2b22;margin-bottom:20px;line-height:1.2">How it works</h2>
+<div id="screen-howto" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="max-width:540px;margin:0 auto;padding:20px 16px 56px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+      <button id="btn-howto-back" style="background:none;border:none;color:#3d8b5e;cursor:pointer;padding:0;display:flex;align-items:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h2 style="font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700;color:#1c2b22;line-height:1.2;margin:0">How it works</h2>
+    </div>
 
-  <p style="font-size:15px;color:#3a4a40;line-height:1.6;margin-bottom:24px">Nomina Naturæ is designed to help you memorise the names of species you have observed on iNaturalist. Simply enter your iNaturalist username in Settings to get started.</p>
+    <div style="display:flex;flex-direction:column;gap:16px">
 
-  <h3 style="font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#3d8b5e;margin-bottom:10px">Spaced repetition</h3>
-  <p style="font-size:15px;color:#3a4a40;line-height:1.6;margin-bottom:24px">The app tracks which species you find easy and which you struggle with. Get one right and it won't come back for a while; get it wrong and you'll see it again soon. Species you know well gradually move into long-term memory, so you only spend time on what you actually need to practice. Your Progress page shows where everything stands.</p>
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:9px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+          </div>
+          <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Memorisation</h3>
+        </div>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0"><span style="font-family:'Lora',Georgia,serif;font-weight:700;color:#1c2b22;letter-spacing:-0.01em">Nomina Naturæ</span> helps you memorise the names and taxonomic organisation of species you've observed on iNaturalist.</p>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:8px 0 0">Enter your username in <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin:0 1px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Settings to get started.</p>
+      </div>
 
-  <h3 style="font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#3d8b5e;margin-bottom:10px">How your progress is saved</h3>
-  <p style="font-size:15px;color:#3a4a40;line-height:1.6;margin-bottom:24px">Nomina Naturæ is an early-stage app with no server or account system. Your progress is stored only in this browser on this device. Please note that <span style="color:#dc2626;font-weight:600">clearing your browser or app data will permanently delete your progress.</span></p>
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:9px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Spaced repetition</h3>
+        </div>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0">The app schedules each species review card based on how well you know it.</p>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:8px 0 0">Ones you usually get right first time will fade into the background; tricky ones you'll see more often.</p>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:8px 0 0">Tap <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin:0 1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> at the top of the screen to view your progress across all species.</p>
+      </div>
 
-  <h3 style="font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#3d8b5e;margin-bottom:10px">Taxa</h3>
-  <p style="font-size:15px;color:#3a4a40;line-height:1.6;margin-bottom:24px">The Taxa button on the home screen lets you browse your observations by phylogeny (kingdom down to family), as well as navigate to your progress on individual species.</p>
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:9px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Wikipedia</h3>
+        </div>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0">Tap ℹ after a species card is revealed to read a Wikipedia summary of that species.</p>
+      </div>
 
-  <h3 style="font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#3d8b5e;margin-bottom:10px">Wikipedia</h3>
-  <p style="font-size:15px;color:#3a4a40;line-height:1.6;margin-bottom:24px">Tap ℹ after a card is revealed to read a Wikipedia summary of the species.</p>
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:9px;background:#fff3cd;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 20h20L12 2z" stroke="#c07830" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14" stroke="#c07830" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="#c07830"/></svg>
+          </div>
+          <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Your data</h3>
+        </div>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0">This is an early-stage app with no server or account. Your progress is stored only in this browser on this device.</p>
+        <p style="font-size:13.5px;color:#c0392b;font-weight:600;line-height:1.65;margin:8px 0 0">Clearing your browser data will permanently delete your progress.</p>
+      </div>
 
-  <h3 style="font-family:'Lora',Georgia,serif;font-size:17px;font-weight:700;color:#3d8b5e;margin-bottom:10px">Feedback &amp; bugs</h3>
-  <p style="font-size:15px;color:#3a4a40;line-height:1.6;margin-bottom:8px">Use the feedback form in Settings to report a bug or request a feature.</p>
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:9px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3d8b5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3 style="font-family:'Lora',Georgia,serif;font-size:15px;font-weight:700;color:#1c2b22;margin:0">Feedback &amp; bugs</h3>
+        </div>
+        <p style="font-size:13.5px;color:#4a6050;line-height:1.65;margin:0">Use the feedback form in Settings to report a bug or suggest a feature.</p>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 <div id="screen-results" class="container center hidden">
