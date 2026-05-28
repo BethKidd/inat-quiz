@@ -127,7 +127,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 #screen-quiz .q-card{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0;border-radius:14px}
 #screen-quiz .q-card-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column}
 #screen-quiz .prompt{display:block;flex-shrink:0}
-#screen-quiz .carousel{margin-bottom:6px;border-radius:10px;flex-shrink:1;min-height:80px;width:100%;align-self:stretch}
+#screen-quiz .carousel{margin-bottom:6px;border-radius:10px;flex:1;min-height:80px;width:100%;align-self:stretch;aspect-ratio:unset}
+#screen-quiz #quiz-form{flex-shrink:0}
 #screen-quiz .map-strip{margin-bottom:6px;height:90px}
 #screen-quiz .map-strip.expanded{height:280px}
 #screen-quiz #obs-notes{margin-bottom:6px!important;padding:7px 11px 8px!important}
@@ -898,7 +899,7 @@ function flashScore(s){
 function $(id){return document.getElementById(id)}
 function show(id){$(id).classList.remove("hidden")}
 function hide(id){$(id).classList.add("hidden")}
-function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms","screen-howto","screen-taxoquiz"].forEach(s=>s==="screen-"+n?show(s):hide(s));window.scrollTo(0,0);if(n==="home-main"){updateHomeMainSub();requestAnimationFrame(layoutHomeMain);}}
+function showScreen(n){["screen-home-main","screen-setup","screen-loading","screen-quiz","screen-results","screen-stats","screen-home","screen-family","screen-terms","screen-howto","screen-taxoquiz"].forEach(s=>s==="screen-"+n?show(s):hide(s));window.scrollTo(0,0);if(n==="home-main"){updateHomeMainSub();requestAnimationFrame(layoutHomeMain);}if(n==="quiz")requestAnimationFrame(_syncQuizVP);}
 function esc(s){if(!s)return"";const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function normalize(s){return(s||"").toLowerCase().trim().replace(/[''`]/g,"'").replace(/[-–—]/g," ").replace(/[^a-z0-9' ]/g,"").replace(/\s+/g," ")}
 function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)d[i][0]=i;for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));return d[m][n]}
@@ -2866,6 +2867,16 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW error:',e));
   });
+}
+function _syncQuizVP(){
+  const vv=window.visualViewport;if(!vv)return;
+  const el=$('screen-quiz');if(!el)return;
+  el.style.top=vv.offsetTop+'px';
+  el.style.height=vv.height+'px';
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',_syncQuizVP);
+  window.visualViewport.addEventListener('scroll',_syncQuizVP);
 }
 let _resizeTimer=null;
 window.addEventListener('resize',()=>{
