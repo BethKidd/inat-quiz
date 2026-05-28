@@ -205,8 +205,8 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .gloss:hover::after{content:attr(data-def);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e4ef;border:1px solid rgba(34,211,238,.3);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:400;font-style:normal;white-space:normal;width:220px;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4);line-height:1.4}
 /* ── Results & Stats screens ── */
 #screen-results{padding:24px 16px 40px}
-#screen-results .btn-primary{background:#3d8b5e;border-radius:12px}
-#screen-results .btn-secondary{color:#3d8b5e;border:1.5px solid #c8ddd2;background:transparent;border-radius:12px}
+#screen-results .btn-primary,#screen-taxoquiz .btn-primary{background:#3d8b5e;border-radius:12px}
+#screen-results .btn-secondary,#screen-taxoquiz .btn-secondary{color:#3d8b5e;border:1.5px solid #c8ddd2;background:transparent;border-radius:12px}
 #screen-stats{background:#f4f2ed;min-height:100vh;padding:20px 14px 40px;color:#1c2b22}
 #screen-stats h2{color:#1c2b22}
 #screen-stats p{color:#6b8f78}
@@ -359,11 +359,6 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
 .tq-check-btn{display:block;width:100%;padding:13px 0;background:#3d8b5e;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s;-webkit-tap-highlight-color:transparent}
 .tq-check-btn:disabled{background:#c8ddd2;color:#8aaa98;cursor:default}
 .tq-check-btn.next-mode{background:#82c97a}
-.tq-results-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.09);margin:0 10px;padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
-.tq-results-title{font-family:'Lora',Georgia,serif;font-size:26px;font-weight:700;color:#1c2b22}
-.tq-results-score{font-size:52px;font-weight:700;color:#3d8b5e;line-height:1}
-.tq-results-denom{font-size:14px;color:#6b8f78}
-.tq-results-msg{font-size:15px;color:#3a4a40;line-height:1.5;max-width:280px}
 </style>
 </head>
 <body>
@@ -649,15 +644,16 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <button class="tq-check-btn" id="tq-check-btn" disabled>Check</button>
     </div>
   </div>
-  <div id="tq-results" class="hidden">
-    <div class="tq-results-card">
-      <div class="tq-results-title">Quiz complete</div>
-      <div class="tq-results-score" id="tq-res-score"></div>
-      <div class="tq-results-denom" id="tq-res-denom"></div>
-      <div class="tq-results-msg" id="tq-res-msg"></div>
-      <button class="tq-check-btn" id="tq-retry-btn">Try again</button>
-      <button class="tq-check-btn" id="tq-new-quiz-btn" style="background:#3d8b5e">New quiz</button>
-      <button class="tq-back-btn" id="tq-quit-btn" style="width:100%;text-align:center;padding:10px 0">← Home</button>
+  <div id="tq-results" class="hidden" style="padding:0 10px">
+    <div class="results-card">
+      <div class="res-score-ring" id="tq-res-ring"></div>
+      <h2 class="results-title">Session Complete</h2>
+      <div class="results-sub" id="tq-res-sub"></div>
+      <div class="results-breakdown" id="tq-res-breakdown"></div>
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:4px">
+        <button class="btn-primary" id="tq-new-quiz-btn">Continue Studying →</button>
+        <button class="btn-secondary" id="tq-quit-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Home</button>
+      </div>
     </div>
   </div>
 </div>
@@ -881,7 +877,7 @@ $("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixe
 $("btn-continue-taxa").addEventListener("click",()=>{
   const qs=S._pendingTaxaDue;S._pendingTaxaDue=[];
   if(!qs.length){showScreen("home-main");return}
-  TQ.questions=tqShuffle(qs);TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
+  TQ.questions=tqShuffle(qs);TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];
   show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
 });
 $("wiki-info-btn").addEventListener("click",()=>{
@@ -1415,7 +1411,7 @@ function advanceMixed(){
   S._mixedCompleted=S._mixedIdx;
   const label=`${S._mixedCompleted} / ${S._mixedTotal}`;
   if(item.type==='taxa'){
-    TQ.questions=[item.q];TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
+    TQ.questions=[item.q];TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];
     show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
     $("tq-progress").textContent=label;
   }else{
@@ -2753,7 +2749,7 @@ async function installApp(){
 window.addEventListener('appinstalled',()=>{hide('install-banner');_installPrompt=null;});
 
 /* ── Taxonomy Quiz ── */
-const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set(),retryQueue:[]};
+const TQ={questions:[],currentQ:0,score:0,checked:false,selected:new Set(),retryQueue:[],results:[]};
 function tqShuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function tqRnd(min,max){return min+Math.floor(Math.random()*(max-min+1))}
 
@@ -2875,6 +2871,7 @@ function tqHandleCheck(){
   if(isFullyCorrect)TQ.score++;
   // Save SRS progress for this taxon question
   if(q.srs){sm2(q.srs,isFullyCorrect?4:0);dbPut(q.srs);}
+  TQ.results.push({label:q.questionType==='order'?q.order:q.family,questionType:q.questionType,isCorrect:isFullyCorrect,nextReview:q.srs?.nextReview||0});
   $("tq-grid").querySelectorAll(".tq-chip").forEach(chip=>{
     const name=chip.dataset.name;
     chip.classList.remove("selected");
@@ -2903,11 +2900,22 @@ function tqHandleCheck(){
 
 function tqShowResults(){
   hide("tq-quiz");show("tq-results");
-  const pct=Math.round(TQ.score/TQ.questions.length*100);
-  $("tq-res-score").textContent=TQ.score;
-  $("tq-res-denom").textContent=`out of ${TQ.questions.length}`;
-  const msgs=[[90,"Excellent — strong taxonomic knowledge!"],[70,"Good work — keep practising."],[50,"Getting there — try again to improve."],[0,"Tough quiz! A few more rounds will help it stick."]];
-  $("tq-res-msg").textContent=msgs.find(([t])=>pct>=t)[1];
+  const total=TQ.results.length;
+  const correct=TQ.results.filter(r=>r.isCorrect).length;
+  const pct=total?Math.round(correct/total*100):0;
+  const col=pct>=70?"#3d8b5e":pct>=40?"#d97706":"#dc2626";
+  $("tq-res-ring").style.background=col;$("tq-res-ring").textContent=`${pct}%`;
+  $("tq-res-sub").textContent=`${correct} / ${total} correct`;
+  const bd=$("tq-res-breakdown");bd.innerHTML="";
+  for(const r of [...TQ.results].sort((a,b)=>b.isCorrect-a.isCorrect)){
+    const row=document.createElement("div");row.className="rb-row";
+    row.style.background=r.isCorrect?"rgba(61,139,94,.06)":"rgba(220,38,38,.04)";
+    const typeLabel=r.questionType.charAt(0).toUpperCase()+r.questionType.slice(1);
+    const minsUntil=r.nextReview?(r.nextReview-Date.now())/60000:null;
+    const dueStr=minsUntil!==null?(minsUntil<=0?"due now":"in "+fmtIv(minsUntil)):"";
+    row.innerHTML=`<span class="rb-icon ${r.isCorrect?"rb-ok":"rb-fail"}">${r.isCorrect?"✓":"✗"}</span><span class="rb-name">${esc(r.label)}<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${typeLabel}</span></span>${dueStr?`<span style="font-size:10px;color:#9bb8a8;white-space:nowrap;flex-shrink:0">${dueStr}</span>`:""}`;
+    bd.appendChild(row);
+  }
 }
 
 function tqShowSpeciesPopup(rank,value){
@@ -2986,7 +2994,7 @@ async function openTaxoQuiz(){
   for(let i=0;i<Math.max(due.length,fresh.length);i++){if(i<due.length)interleaved.push(due[i]);if(i<fresh.length)interleaved.push(fresh[i]);}
   const sorted=[...interleaved,...notDue];
   TQ.questions=sorted.slice(0,Math.min(S.qCount,sorted.length));
-  TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
+  TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];
   show("tq-quiz");hide("tq-results");
   showScreen("taxoquiz");
   tqShowQuestion();
@@ -2995,7 +3003,6 @@ async function openTaxoQuiz(){
 $("btn-taxoquiz-home").addEventListener("click",()=>showScreen("home-main"));
 $("btn-taxoquiz-taxa").addEventListener("click",()=>{if(S.allObs?.length)showHome();else showScreen("home");});
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
-$("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
 $("tq-new-quiz-btn").addEventListener("click",()=>openTaxoQuiz());
 $("tq-quit-btn").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedMode=false;showScreen("home-main");});
 </script>
