@@ -745,7 +745,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
   </div>
 </div>
 
-<div id="data-notice-popup" class="hidden" style="position:fixed;inset:0;z-index:9200;background:rgba(28,43,34,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px 16px">
+<div id="data-notice-popup" class="hidden" style="position:fixed;inset:0;z-index:9200;background:rgba(28,43,34,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px 16px" onclick="if(event.target===this)dismissDataNotice()">
   <div style="background:#fff;border-radius:18px;padding:20px 18px 18px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(28,43,34,.2)">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div style="width:30px;height:30px;border-radius:50%;background:#fff3cd;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -2459,6 +2459,9 @@ window.addEventListener('appinstalled',()=>{hide('install-banner');_installPromp
 function dismissIosBanner(){hide('ios-install-banner');localStorage.setItem('inat_ios_banner_dismissed','1');}
 function maybeShowDataNotice(cb){
   if(localStorage.getItem('inat_data_notice_seen')){cb();return;}
+  const sessions=parseInt(localStorage.getItem('inat_session_count')||'0')+1;
+  localStorage.setItem('inat_session_count',sessions);
+  if(sessions<3){cb();return;}
   show('data-notice-popup');
   window._dataNoticeCb=cb;
 }
