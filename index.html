@@ -479,7 +479,6 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <input type="file" id="inp-csv" accept=".csv,.txt,.tsv" style="display:none">
     <input type="file" id="inp-traits" accept=".csv" style="display:none">
     <p id="error-msg" class="error hidden"></p>
-    <button id="btn-start" class="btn-primary">Save &amp; Return</button>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4f0ea">
       <button id="btn-csv" class="btn-secondary" style="display:none"></button>
       <p id="csv-status" style="font-size:12px;color:#6b8f78;margin-top:6px" class="hidden"></p>
@@ -491,7 +490,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <textarea id="feedback-msg" class="input" rows="3" placeholder="Bug report or feature request…" style="resize:none;font-family:inherit;font-size:13px;line-height:1.5;margin-top:6px"></textarea>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
         <span id="feedback-status" style="font-size:12px;color:#6b8f78"></span>
-        <button id="btn-feedback-send" style="background:#dff0e8;color:#2a6e4a;border:1.5px solid #a8d4bc;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;outline:none;-webkit-tap-highlight-color:transparent">Send</button>
+        <button id="btn-feedback-send" style="background:#82c97a;color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;outline:none;-webkit-tap-highlight-color:transparent">Send</button>
       </div>
     </div>
   </div>
@@ -875,6 +874,7 @@ function dedupe(obs){
   $("tog-species").checked=localStorage.getItem("inat_f_species")!=="0";
   $("tog-common").checked=localStorage.getItem("inat_f_common")!=="0";
   try{const kf=JSON.parse(localStorage.getItem("inat_kingdom_filter")||"[]");S.kingdomFilter=new Set(kf);}catch{}
+  const savedQ=parseInt(localStorage.getItem("inat_quiz_qcount")||"");if(!isNaN(savedQ)){S.qCount=savedQ;document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.classList.toggle("active",+b.dataset.n===savedQ);});}
   setNameOrder(localStorage.getItem("inat_name_common_first")==="0"?"latin":"common",true);
   if(saved)$("inp-user").value=saved;
   updateHomeMainSub();
@@ -884,9 +884,10 @@ function dedupe(obs){
 
 /* ── Events ── */
 $("inp-user").addEventListener("input",()=>{const v=$("inp-user").value.trim();if(v)localStorage.setItem("inat_quiz_user",v);updateHomeMainSub()});
-$("inp-user").addEventListener("keydown",e=>{if(e.key==="Enter")saveSettingsAndReturn()});
-document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListener("click",()=>{document.querySelectorAll("#count-row .count-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.qCount=+b.dataset.n})});
-$("btn-start").addEventListener("click",saveSettingsAndReturn);
+$("inp-user").addEventListener("keydown",e=>{if(e.key==="Enter")$("inp-user").blur()});
+document.querySelectorAll("#count-row .count-btn").forEach(b=>{b.addEventListener("click",()=>{document.querySelectorAll("#count-row .count-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.qCount=+b.dataset.n;localStorage.setItem("inat_quiz_qcount",S.qCount);})});
+["tog-order","tog-family","tog-species","tog-common"].forEach(id=>$(id).addEventListener("change",saveFieldToggles));
+document.addEventListener("change",e=>{if(e.target.classList.contains("kingdom-cb"))saveKingdomFilter();});
 $("btn-settings-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-open-settings").addEventListener("click",()=>{showScreen("setup");populateKingdomCheckboxes();});
 $("btn-learn").addEventListener("click",()=>maybeShowDataNotice(()=>startFromHome(false)));
@@ -1388,25 +1389,19 @@ function populateKingdomCheckboxes(){
   }).join("");
 }
 
-function saveSettingsAndReturn(){
-  const un=$("inp-user").value.trim();
-  if(un)localStorage.setItem("inat_quiz_user",un);
-  const ak=$("inp-apikey").value.trim();if(ak)localStorage.setItem("inat_quiz_apikey",ak);
+function saveSettingsAndReturn(){updateHomeMainSub();showScreen("home-main");}
+function saveFieldToggles(){
   localStorage.setItem("inat_f_order",$("tog-order").checked?"1":"0");
   localStorage.setItem("inat_f_family",$("tog-family").checked?"1":"0");
   localStorage.setItem("inat_f_species",$("tog-species").checked?"1":"0");
   localStorage.setItem("inat_f_common",$("tog-common").checked?"1":"0");
-  // Kingdom filter
+}
+function saveKingdomFilter(){
   const cbs=document.querySelectorAll(".kingdom-cb");
-  if(cbs.length){
-    const all=[...cbs],checked=all.filter(c=>c.checked).map(c=>c.dataset.kingdom);
-    // If all checked, store empty (= no filter); otherwise store the selected set
-    S.kingdomFilter=all.length===checked.length?new Set():new Set(checked);
-    localStorage.setItem("inat_kingdom_filter",JSON.stringify([...S.kingdomFilter]));
-  }
-  // name order saved live via setNameOrder; nothing extra needed here
-  updateHomeMainSub();
-  showScreen("home-main");
+  if(!cbs.length)return;
+  const all=[...cbs],checked=all.filter(c=>c.checked).map(c=>c.dataset.kingdom);
+  S.kingdomFilter=all.length===checked.length?new Set():new Set(checked);
+  localStorage.setItem("inat_kingdom_filter",JSON.stringify([...S.kingdomFilter]));
 }
 async function startFromHome(practiseMode){
   const un=localStorage.getItem("inat_quiz_user");
