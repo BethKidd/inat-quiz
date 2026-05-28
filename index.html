@@ -2483,7 +2483,7 @@ function revealCard(c){
     const hint=fg.querySelector(".hint");
     fb.textContent="";fb.className="correct-answer";fb.style.display="none";
     if(result==="correct"||c[f+"Done"]){
-      inp.value=val;inp.className="answer-input correct";
+      inp.value=(result==="correct"&&userVal)?userVal:val;inp.className="answer-input correct";
       if(hint){hint.textContent="\u2713";hint.className="hint revealed-correct";}
     }else if(result==="wrong"){
       inp.value=userVal;inp.className="answer-input wrong";
@@ -2586,10 +2586,12 @@ function check(){
   const inp=$("inp-"+step);
   const userVal=inp.value;
   const correctVal=c[step];
-  const isCorrect=correctVal&&(isMatch(userVal,correctVal)||(step==="common"&&(c._altCommonNames||[]).some(n=>isMatch(userVal,n))));
+  const matchedAlt=step==="common"?(c._altCommonNames||[]).find(n=>isMatch(userVal,n)):null;
+  const isCorrect=correctVal&&(isMatch(userVal,correctVal)||!!matchedAlt);
+  if(matchedAlt){c.common=matchedAlt;c.srs.common=matchedAlt;}
   c._answers=c._answers||{};
   c._results=c._results||{};
-  c._answers[step]=userVal;
+  c._answers[step]=matchedAlt||userVal;
   c._results[step]=isCorrect?"correct":(userVal.trim()?"wrong":"skipped");
   if(isCorrect)c[step+"Done"]=true;
   c._activeFields=(c._activeFields||0)+1;
