@@ -2865,7 +2865,7 @@ function openTaxoQuiz(){
 }
 
 $("btn-taxoquiz-home").addEventListener("click",()=>showScreen("home-main"));
-$("btn-taxoquiz-taxa").addEventListener("click",()=>showScreen("home"));
+$("btn-taxoquiz-taxa").addEventListener("click",()=>{if(S.allObs?.length)showHome();else showScreen("home");});
 $("tq-check-btn").addEventListener("click",tqHandleCheck);
 $("tq-retry-btn").addEventListener("click",()=>{TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.questions=tqShuffle(TQ.questions);tqShowQuestion();});
 $("tq-new-quiz-btn").addEventListener("click",()=>{const allQ=tqBuildQuestions(S.allObs);TQ.questions=allQ.slice(0,Math.min(10,allQ.length));TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];tqShowQuestion();});
