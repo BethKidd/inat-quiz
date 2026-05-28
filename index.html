@@ -1139,7 +1139,7 @@ function renderCar(slides){
 async function fetchExtra(tid,uid){
   if(photoCache.has(tid))return photoCache.get(tid);
   try{
-    const r=await fetch(`${API}/taxa/${tid}?locale=en`);
+    const r=await fetch(`${API}/taxa/${tid}?locale=en&all_names=true`);
     if(!r.ok)return[];const d=await r.json();
     const taxon=(d.results||[])[0];if(!taxon)return[];
     const ps=[];
