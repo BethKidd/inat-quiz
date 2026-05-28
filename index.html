@@ -2985,7 +2985,7 @@ async function openTaxoQuiz(){
   const interleaved=[];
   for(let i=0;i<Math.max(due.length,fresh.length);i++){if(i<due.length)interleaved.push(due[i]);if(i<fresh.length)interleaved.push(fresh[i]);}
   const sorted=[...interleaved,...notDue];
-  TQ.questions=sorted.slice(0,Math.min(10,sorted.length));
+  TQ.questions=sorted.slice(0,Math.min(S.qCount,sorted.length));
   TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];
   show("tq-quiz");hide("tq-results");
   showScreen("taxoquiz");
