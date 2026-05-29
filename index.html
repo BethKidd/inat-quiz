@@ -523,7 +523,11 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <button type="button" class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div><!-- end q-card-scroll -->
-  <button type="button" id="btn-ignore-link" class="hidden" style="background:none;border:none;color:#b5c9bc;font-size:10px;cursor:pointer;font-family:inherit;padding:10px 0 12px;text-align:center;width:100%;display:block;line-height:1;-webkit-tap-highlight-color:transparent;flex-shrink:0" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore</button>
+  <div id="btn-ignore-link" class="hidden" style="display:flex;align-items:center;padding:10px 24px 12px;flex-shrink:0;box-sizing:border-box">
+    <div style="flex:1;text-align:right;padding-right:16px"><button type="button" style="background:none;border:none;color:#b5c9bc;font-size:10px;cursor:pointer;font-family:inherit;padding:0;line-height:1;-webkit-tap-highlight-color:transparent" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore</button></div>
+    <div style="width:1px;height:10px;background:#d4ddd8;flex-shrink:0;align-self:center"></div>
+    <div style="flex:1;text-align:left;padding-left:16px"><button type="button" style="background:none;border:none;color:#b5c9bc;font-size:10px;cursor:pointer;font-family:inherit;padding:0;line-height:1;-webkit-tap-highlight-color:transparent" onclick="showBugReport()">Report bug</button></div>
+  </div>
   </div>
   <!-- Keyboard anchor: keeps soft keyboard alive during field transitions -->
   <input id="kb-anchor" type="text" inputmode="text" aria-hidden="true" tabindex="-1"
@@ -731,6 +735,19 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
       <button class="ignore-confirm" id="ignore-confirm" type="button" onclick="ignoreCurrentSpecies()">Ignore species<span class="ignore-btn-label">removes all observations of this species from study</span></button>
       <button class="ignore-obs" id="ignore-obs-btn" type="button" onclick="ignoreCurrentObservation()">Ignore this observation<span class="ignore-btn-label">hides this photo — species stays if you have others</span></button>
       <button class="ignore-cancel" id="ignore-cancel" type="button" onclick="hide('ignore-popup')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="bug-report-popup" class="ignore-popup hidden" style="z-index:9999" onclick="if(event.target===this)hide('bug-report-popup')">
+  <div class="ignore-popup-card" style="max-width:300px">
+    <div class="ignore-popup-title">Report a bug</div>
+    <div class="ignore-popup-sub">Describe what went wrong and we'll look into it.</div>
+    <textarea id="bug-report-msg" class="input" rows="3" placeholder="What happened?" style="resize:none;font-family:inherit;font-size:13px;line-height:1.5;width:100%;margin-bottom:10px;background:#fff;border:1.5px solid #c8ddd2;color:#1c2b22;border-radius:10px;padding:10px 12px;box-sizing:border-box"></textarea>
+    <p id="bug-report-status" style="font-size:12px;color:#6b8f78;min-height:16px;margin:0 0 8px;text-align:center"></p>
+    <div class="ignore-popup-btns" style="gap:8px">
+      <button type="button" id="bug-report-send" onclick="submitBugReport()" style="background:#3d8b5e;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">Send</button>
+      <button type="button" onclick="hide('bug-report-popup')" class="ignore-cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -1095,6 +1112,19 @@ $("btn-feedback-send").addEventListener("click",async()=>{
   }catch{st.style.color="#dc2626";st.textContent="No connection. Please try again.";}
   $("btn-feedback-send").disabled=false;
 });
+function showBugReport(){$('bug-report-msg').value='';$('bug-report-status').textContent='';show('bug-report-popup');}
+async function submitBugReport(){
+  const msg=$('bug-report-msg').value.trim();
+  const st=$('bug-report-status');
+  if(!msg){st.style.color='#dc2626';st.textContent='Please describe the bug first.';return;}
+  const btn=$('bug-report-send');btn.disabled=true;st.style.color='#6b8f78';st.textContent='Sending…';
+  try{
+    const r=await fetch('https://formspree.io/f/xeedvqbb',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({message:'[Bug report] '+msg,user:S.currentUser||$('inp-user')?.value.trim()||'unknown'})});
+    if(r.ok){st.style.color='#3d8b5e';st.textContent='✓ Sent — thanks!';$('bug-report-msg').value='';setTimeout(()=>hide('bug-report-popup'),1200);}
+    else{st.style.color='#dc2626';st.textContent='Something went wrong. Please try again.';}
+  }catch{st.style.color='#dc2626';st.textContent='No connection. Please try again.';}
+  btn.disabled=false;
+}
 function quizSubmit(e){e.preventDefault();const c=S.deck?.[S.cardIndex];if(!c)return;if(c._revealed)next();else check()}
 document.addEventListener("keyup",e=>{if((e.key==="Enter"||e.keyCode===13)&&$("screen-quiz")&&!$("screen-quiz").classList.contains("hidden")){
   const c=S.deck?.[S.cardIndex];
