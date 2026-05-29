@@ -1999,7 +1999,7 @@ async function renderCard(){
   if(_ef.includes("common")&&c.common&&!c.commonDone)c._fieldOrder.push("common");
   c._fieldStep=0;
   $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
-  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("progress-fill").style.width=`${S._mixedMode?((S._mixedCompleted-1)/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
   const o=c.obs;
   const ds=o.observed_on_details?.date||o.observed_on||"";
@@ -2134,7 +2134,7 @@ function revealCard(c){
   $("btn-next").innerHTML=isLast&&S.retryQueue.length===0?SVG_CHECK:SVG_ARROW;
   $("btn-next").title=isLast&&S.retryQueue.length===0?"See results (Enter)":"Next (Enter)";
   S.completedCards++;
-  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
 }
 
@@ -2180,7 +2180,7 @@ function handleMC(c,chosenIdx){
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
   S.completedCards++;
-  $("progress-fill").style.width=`${(S.completedCards/S.totalCards)*100}%`;
+  $("progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
   $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
 }
 
@@ -2600,7 +2600,7 @@ function tqShowQuestion(){
   TQ.checked=false;TQ.selected=new Set();
   const q=TQ.questions[TQ.currentQ];
   if(!S._mixedMode){$("tq-progress").textContent=`${Math.min(TQ.completedCards+1,TQ.totalCards)} / ${TQ.totalCards}`;}
-  $("tq-progress-fill").style.width=`${(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
+  $("tq-progress-fill").style.width=`${S._mixedMode?((S._mixedCompleted-1)/S._mixedTotal)*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
   $("tq-round-info").innerHTML=S._mixedMode?"":`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const qt=q.questionType;
   $("tq-order-label").textContent=qt==="family"?"Family":"Order";
@@ -2671,7 +2671,7 @@ function tqHandleCheck(){
     TQ.retryQueue.push(q);
     $("tq-retry-notice").textContent="You'll see this again at the end.";show("tq-retry-notice");
   }
-  $("tq-progress-fill").style.width=`${(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
+  $("tq-progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
   if(!S._mixedMode)$("tq-round-info").innerHTML=`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const isLast=TQ.currentQ>=TQ.questions.length-1;
   btn.textContent=isLast?"See results →":"Next →";btn.className="tq-check-btn next-mode";btn.disabled=false;
