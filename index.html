@@ -523,10 +523,10 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     <button type="button" class="btn-next-floating hidden" id="btn-next" title="Next (or press Enter)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     <div class="retry-notice hidden" id="retry-notice"></div>
   </div><!-- end q-card-scroll -->
-  <div id="btn-ignore-link" class="hidden" style="display:flex;align-items:center;padding:10px 24px 12px;flex-shrink:0;box-sizing:border-box">
-    <div style="flex:1;text-align:right;padding-right:16px"><button type="button" style="background:none;border:none;color:#b5c9bc;font-size:10px;cursor:pointer;font-family:inherit;padding:0;line-height:1;-webkit-tap-highlight-color:transparent" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore</button></div>
-    <div style="width:1px;height:10px;background:#d4ddd8;flex-shrink:0;align-self:center"></div>
-    <div style="flex:1;text-align:left;padding-left:16px"><button type="button" style="background:none;border:none;color:#b5c9bc;font-size:10px;cursor:pointer;font-family:inherit;padding:0;line-height:1;-webkit-tap-highlight-color:transparent" onclick="showBugReport()">Report bug</button></div>
+  <div id="btn-ignore-link" class="hidden" style="display:flex;align-items:center;justify-content:center;padding:10px 0 12px;flex-shrink:0">
+    <button type="button" style="background:none;border:none;color:#b5c9bc;font-size:9px;cursor:pointer;font-family:inherit;padding:0;line-height:1;-webkit-tap-highlight-color:transparent" onclick="(function(){const c=S.deck?.[S.cardIndex];if(!c)return;$('ignore-popup-name').textContent=c.species+(c.common?' · '+c.common:'');show('ignore-popup')})()">Ignore this</button>
+    <div style="width:1px;height:9px;background:#d4ddd8;flex-shrink:0;margin:0 12px;align-self:center"></div>
+    <button type="button" style="background:none;border:none;color:#b5c9bc;font-size:9px;cursor:pointer;font-family:inherit;padding:0;line-height:1;-webkit-tap-highlight-color:transparent" onclick="showBugReport()">Report bug</button>
   </div>
   </div>
   <!-- Keyboard anchor: keeps soft keyboard alive during field transitions -->
