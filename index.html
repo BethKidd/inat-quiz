@@ -1075,7 +1075,7 @@ $("btn-sync-logout").addEventListener("click",async()=>{
   await _SB.auth.signOut();_sbUser=null;_updateSyncUI();
 });
 $("btn-delete-account").addEventListener("click",async()=>{
-  if(!confirm("Delete all your cloud data permanently? This cannot be undone. (Your email is removed via the feedback form — see Privacy Policy.)"))return;
+  if(!confirm("Delete all your cloud data permanently? This cannot be undone.\n\nFor more info about your data, see Privacy Policy in Settings."))return;
   try{
     const{error}=await _SB.from('srs_records').delete().eq('user_id',_sbUser.id);
     if(error)throw error;
