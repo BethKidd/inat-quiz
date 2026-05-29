@@ -470,6 +470,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
           <button id="btn-sync-logout" style="background:none;border:1.5px solid #c8ddd2;color:#6b8f78;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">Log out</button>
         </div>
         <p id="sync-status" style="font-size:12px;color:#6b8f78;margin-top:6px;min-height:18px"></p>
+        <button id="btn-delete-account" style="background:none;border:none;color:#c0392b;font-size:11px;cursor:pointer;font-family:inherit;padding:4px 0;margin-top:2px;-webkit-tap-highlight-color:transparent">Delete my account</button>
       </div>
     </div>
     <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e4f0ea">
@@ -482,6 +483,7 @@ h1{font-size:32px;font-weight:800;letter-spacing:-0.02em}
     </div>
   </div>
   <p class="footer-text" id="footer-sync-text">Progress saved in your browser via IndexedDB.</p>
+  <p class="footer-text"><a href="/privacy" style="color:#8aab96">Privacy Policy</a></p>
 </div>
 
 <div id="screen-loading" class="hidden" style="position:fixed;inset:0;background:#f4f2ed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0"><div class="spinner" style="border-color:#d6ebe1;border-top-color:#3d8b5e"></div><p id="loading-text" style="font-size:15px;color:#6b8f78">Loading...</p></div>
@@ -1070,6 +1072,14 @@ $("btn-send-magic-link").addEventListener("click",async()=>{
 });
 $("btn-sync-logout").addEventListener("click",async()=>{
   await _SB.auth.signOut();_sbUser=null;_updateSyncUI();
+});
+$("btn-delete-account").addEventListener("click",async()=>{
+  if(!confirm("Delete all your cloud data permanently? This cannot be undone."))return;
+  try{
+    await _SB.from('srs_records').delete().eq('user_id',_sbUser.id);
+    await _SB.auth.signOut();_sbUser=null;_updateSyncUI();
+    showToast('Cloud data deleted.');
+  }catch(e){showToast('Something went wrong. Please try again.');}
 });
 $("btn-feedback-send").addEventListener("click",async()=>{
   const msg=$("feedback-msg").value.trim();
