@@ -942,7 +942,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0,_mixedRound:1,_mixedRetryRoundBumped:false};
 const photoCache=new Map(),wikiCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
@@ -1571,7 +1571,7 @@ async function startAllDueQuiz(){
   const mixed=[];
   const maxLen=Math.max(spItems.length,tqItems.length);
   for(let i=0;i<maxLen;i++){if(i<spItems.length)mixed.push(spItems[i]);if(i<tqItems.length)mixed.push(tqItems[i]);}
-  S._mixedMode=true;S._mixedQueue=mixed;S._mixedIdx=0;S._mixedTotal=mixed.length;S._mixedCompleted=0;
+  S._mixedMode=true;S._mixedQueue=mixed;S._mixedIdx=0;S._mixedTotal=mixed.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;
   S._pendingTaxaDue=[];S.sessionResults=[];
   advanceMixed();
 }
@@ -1584,6 +1584,7 @@ function advanceMixed(){
     return;
   }
   const item=S._mixedQueue[S._mixedIdx++];
+  if(item._isRetry&&!S._mixedRetryRoundBumped){S._mixedRound++;S._mixedRetryRoundBumped=true;}
   S._mixedCompleted=S._mixedIdx;
   const label=`${S._mixedCompleted} / ${S._mixedTotal}`;
   if(item.type==='taxa'){
@@ -2000,7 +2001,7 @@ async function renderCard(){
   c._fieldStep=0;
   $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
   $("progress-fill").style.width=`${S._mixedMode?((S._mixedCompleted-1)/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
   const o=c.obs;
   const ds=o.observed_on_details?.date||o.observed_on||"";
   let dateStr="";
@@ -2135,7 +2136,7 @@ function revealCard(c){
   $("btn-next").title=isLast&&S.retryQueue.length===0?"See results (Enter)":"Next (Enter)";
   S.completedCards++;
   $("progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
 }
 
 function handleMC(c,chosenIdx){
@@ -2181,7 +2182,7 @@ function handleMC(c,chosenIdx){
   show("btn-next");show("btn-ignore-link");
   S.completedCards++;
   $("progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
 }
 
 function check(){
@@ -2268,7 +2269,10 @@ function ignoreCurrentObservation(){
 
 function next(){
   killMap();S.cardIndex++;
-  if(S.cardIndex>=S.deck.length){if(S.retryQueue.length===0){if(S._mixedMode){advanceMixed();return}results();return}S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
+  if(S.cardIndex>=S.deck.length){
+    if(S.retryQueue.length===0){if(S._mixedMode){advanceMixed();return}results();return}
+    if(S._mixedMode){S.retryQueue.forEach(c=>{S._mixedQueue.push({type:'names',obs:c.obs,srs:c.srs,_isRetry:true});S._mixedTotal++;});S.retryQueue=[];advanceMixed();return;}
+    S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
   $("q-card").classList.add("fade-out");setTimeout(()=>renderCard(),150)}
 
 function results(){
@@ -2601,7 +2605,7 @@ function tqShowQuestion(){
   const q=TQ.questions[TQ.currentQ];
   if(!S._mixedMode){$("tq-progress").textContent=`${Math.min(TQ.completedCards+1,TQ.totalCards)} / ${TQ.totalCards}`;}
   $("tq-progress-fill").style.width=`${S._mixedMode?((S._mixedCompleted-1)/S._mixedTotal)*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
-  $("tq-round-info").innerHTML=S._mixedMode?"":`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
+  $("tq-round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const qt=q.questionType;
   $("tq-order-label").textContent=qt==="family"?"Family":"Order";
   $("tq-order-name").textContent=qt==="family"?q.family:q.order;
@@ -2630,7 +2634,10 @@ function tqHandleCheck(){
   if(TQ.checked){
     TQ.currentQ++;
     if(TQ.currentQ>=TQ.questions.length){
-      if(TQ.retryQueue.length){TQ.questions=[...TQ.questions,...TQ.retryQueue];TQ.retryQueue=[];TQ.round++;}
+      if(TQ.retryQueue.length){
+        if(S._mixedMode){TQ.retryQueue.forEach(q=>{S._mixedQueue.push({type:'taxa',q,_isRetry:true});S._mixedTotal++;});TQ.retryQueue=[];advanceMixed();return;}
+        TQ.questions=[...TQ.questions,...TQ.retryQueue];TQ.retryQueue=[];TQ.round++;
+      }
       else{if(S._mixedMode){advanceMixed();return;}tqShowResults();return;}
     }
     tqShowQuestion();
@@ -2672,7 +2679,7 @@ function tqHandleCheck(){
     $("tq-retry-notice").textContent="You'll see this again at the end.";show("tq-retry-notice");
   }
   $("tq-progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
-  if(!S._mixedMode)$("tq-round-info").innerHTML=`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
+  $("tq-round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const isLast=TQ.currentQ>=TQ.questions.length-1;
   btn.textContent=isLast?"See results →":"Next →";btn.className="tq-check-btn next-mode";btn.disabled=false;
 }
