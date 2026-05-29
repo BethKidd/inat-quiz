@@ -1355,7 +1355,8 @@ async function _fetchHomeStats(un){
     // Streak
     const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const studyDays=new Set(cards.filter(c=>c.lastReview).map(c=>dayKey(new Date(c.lastReview))));
-    let streak=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
+    const _sStart=studyDays.has(dayKey(new Date()))?0:1;
+    let streak=0;for(let i=_sStart;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
     $("home-streak-label").textContent=`${streak} day${streak!==1?'s':''}`;
     // Fetch total unique species from iNaturalist for accurate "new" count
     const login=await resolveCanonLogin(un).catch(()=>un);
@@ -2333,8 +2334,9 @@ async function showStats(){
   const studyDays=new Set();
   for(const c of all){if(c.lastReview)studyDays.add(dayKey(new Date(c.lastReview)));}
   const todayKey=dayKey(new Date());
+  const streakStart=studyDays.has(dayKey(new Date()))?0:1;
   let streak=0;
-  for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
+  for(let i=streakStart;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(studyDays.has(dayKey(d)))streak++;else break;}
   $("streak-count").textContent=streak>0?`${streak} day${streak!==1?'s':''}  🌿`:'–';
   // Build 4-week grid aligned to Monday
   const todayD=new Date();
