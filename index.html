@@ -943,7 +943,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0,_mixedRound:1,_mixedRetryRoundBumped:false,_mixedPending:[]};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0,_mixedRound:1,_mixedRetryRoundBumped:false,_mixedPending:[],_mixedRound1Total:0,_mixedRound2Start:0};
 const photoCache=new Map(),wikiCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
@@ -1062,7 +1062,7 @@ $("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixe
 $("btn-continue-taxa").addEventListener("click",()=>{
   if(S._mixedPending&&S._mixedPending.length){
     const batch=S._mixedPending.splice(0,S.qCount);
-    S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;
+    S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;S._mixedRound1Total=batch.length;S._mixedRound2Start=0;
     S._pendingTaxaDue=[];S.sessionResults=[];
     advanceMixed();return;
   }
@@ -1582,11 +1582,13 @@ async function startAllDueQuiz(){
   // Slice to session size — remainder stored for "Continue studying"
   const batch=mixed.slice(0,S.qCount);
   S._mixedPending=mixed.slice(S.qCount);
-  S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;
+  S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;S._mixedRound1Total=batch.length;S._mixedRound2Start=0;
   S._pendingTaxaDue=[];S.sessionResults=[];
   advanceMixed();
 }
 
+function _mxRoundTotal(){return S._mixedRound>1?S._mixedTotal-S._mixedRound2Start:S._mixedRound1Total;}
+function _mxRoundDone(){return S._mixedRound>1?S._mixedCompleted-S._mixedRound2Start:S._mixedCompleted;}
 function advanceMixed(){
   if(S._mixedIdx>=S._mixedQueue.length){
     S._mixedMode=false;
@@ -1595,9 +1597,9 @@ function advanceMixed(){
     return;
   }
   const item=S._mixedQueue[S._mixedIdx++];
-  if(item._isRetry&&!S._mixedRetryRoundBumped){S._mixedRound++;S._mixedRetryRoundBumped=true;}
+  if(item._isRetry&&!S._mixedRetryRoundBumped){S._mixedRound++;S._mixedRetryRoundBumped=true;S._mixedRound2Start=S._mixedIdx-1;}
   S._mixedCompleted=S._mixedIdx;
-  const label=`${S._mixedCompleted} / ${S._mixedTotal}`;
+  const label=`${_mxRoundDone()} / ${_mxRoundTotal()}`;
   if(item.type==='taxa'){
     TQ.questions=[item.q];TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];TQ.round=1;TQ.completedCards=0;TQ.totalCards=1;
     show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
@@ -2011,8 +2013,8 @@ async function renderCard(){
   if(_ef.includes("common")&&c.common&&!c.commonDone)c._fieldOrder.push("common");
   c._fieldStep=0;
   $("q-counter").textContent=`${S.cardIndex+1}/${S.deck.length}`;
-  $("progress-fill").style.width=`${S._mixedMode?((S._mixedCompleted-1)/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("progress-fill").style.width=`${S._mixedMode?((_mxRoundDone()-1)/_mxRoundTotal())*100:(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${_mxRoundTotal()-_mxRoundDone()} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
   const o=c.obs;
   const ds=o.observed_on_details?.date||o.observed_on||"";
   let dateStr="";
@@ -2146,8 +2148,8 @@ function revealCard(c){
   $("btn-next").innerHTML=isLast&&S.retryQueue.length===0?SVG_CHECK:SVG_ARROW;
   $("btn-next").title=isLast&&S.retryQueue.length===0?"See results (Enter)":"Next (Enter)";
   S.completedCards++;
-  $("progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("progress-fill").style.width=`${S._mixedMode?(_mxRoundDone()/_mxRoundTotal())*100:(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${_mxRoundTotal()-_mxRoundDone()} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
 }
 
 function handleMC(c,chosenIdx){
@@ -2192,8 +2194,8 @@ function handleMC(c,chosenIdx){
   if(!allCorrect){c._mcMode=false;S.retryQueue.push(c);$("retry-notice").textContent="You\u2019ll see this again as free-text next time.";show("retry-notice")}
   show("btn-next");show("btn-ignore-link");
   S.completedCards++;
-  $("progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(S.completedCards/S.totalCards)*100}%`;
-  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
+  $("progress-fill").style.width=`${S._mixedMode?(_mxRoundDone()/_mxRoundTotal())*100:(S.completedCards/S.totalCards)*100}%`;
+  $("round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${_mxRoundTotal()-_mxRoundDone()} left</span>`:`<span class="round-badge">Round ${S.round}</span><span class="remaining-badge">${S.totalCards-S.completedCards} left</span>`;
 }
 
 function check(){
@@ -2306,7 +2308,7 @@ function results(){
     row.style.background=rowBg;
     const minsUntil=r.nextReview?(r.nextReview-Date.now())/60000:null;
     const dueStr=minsUntil!==null?(minsUntil<=0?"due now":"in "+fmtIv(minsUntil)):"";
-    const nd=nameDisplay(r.species,r.common);
+    const nd=r._isTq?{primary:r.species,secondary:r.common.charAt(0).toUpperCase()+r.common.slice(1)}:nameDisplay(r.species,r.common);
     row.innerHTML=`<span class="rb-name">${esc(nd.primary)}${nd.secondary?`<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(nd.secondary)}</span>`:""}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0"><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>${dueStr?`<span style="font-size:10px;color:#9bb8a8;white-space:nowrap">${dueStr}</span>`:""}</span>`;
     bd.appendChild(row);
   }
@@ -2314,12 +2316,12 @@ function results(){
   const contBtn=$("btn-continue-taxa");
   if(S._mixedPending&&S._mixedPending.length){
     contBtn.textContent=`Continue studying (${S._mixedPending.length} more) →`;
-    show("btn-continue-taxa");
+    show("btn-continue-taxa");hide("btn-replay");
   }else if(!S._mixedMode&&S._pendingTaxaDue&&S._pendingTaxaDue.length){
     contBtn.textContent=`Continue: Taxonomy (${S._pendingTaxaDue.length} due) →`;
-    show("btn-continue-taxa");
+    show("btn-continue-taxa");show("btn-replay");
   }else{
-    hide("btn-continue-taxa");
+    hide("btn-continue-taxa");show("btn-replay");
   }
   showScreen("results");
 }
@@ -2618,8 +2620,8 @@ function tqShowQuestion(){
   TQ.checked=false;TQ.selected=new Set();
   const q=TQ.questions[TQ.currentQ];
   if(!S._mixedMode){$("tq-progress").textContent=`${Math.min(TQ.completedCards+1,TQ.totalCards)} / ${TQ.totalCards}`;}
-  $("tq-progress-fill").style.width=`${S._mixedMode?((S._mixedCompleted-1)/S._mixedTotal)*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
-  $("tq-round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
+  $("tq-progress-fill").style.width=`${S._mixedMode?((_mxRoundDone()-1)/_mxRoundTotal())*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
+  $("tq-round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${_mxRoundTotal()-_mxRoundDone()} left</span>`:`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const qt=q.questionType;
   $("tq-order-label").textContent=qt==="family"?"Family":"Order";
   $("tq-order-name").textContent=qt==="family"?q.family:q.order;
@@ -2672,6 +2674,11 @@ function tqHandleCheck(){
     q._firstAttemptDone=true;
     TQ.completedCards++;
     TQ.results.push({label:q.questionType==='order'?q.order:q.family,questionType:q.questionType,isCorrect:isFullyCorrect,nextReview:q.srs?.nextReview||0});
+    if(S._mixedMode){
+      const taxonName=q.questionType==='order'?q.order:q.family;
+      const rankLabel=q.questionType==='order'?'order':'family';
+      S.sessionResults.push({species:taxonName,common:rankLabel,score:isFullyCorrect?10:0,nextReview:q.srs?.nextReview||0,_isTq:true});
+    }
   }
   $("tq-grid").querySelectorAll(".tq-chip").forEach(chip=>{
     const name=chip.dataset.name;
@@ -2694,8 +2701,8 @@ function tqHandleCheck(){
     TQ.retryQueue.push(q);
     $("tq-retry-notice").textContent="You'll see this again at the end.";show("tq-retry-notice");
   }
-  $("tq-progress-fill").style.width=`${S._mixedMode?(S._mixedCompleted/S._mixedTotal)*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
-  $("tq-round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${S._mixedTotal-S._mixedCompleted} left</span>`:`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
+  $("tq-progress-fill").style.width=`${S._mixedMode?(_mxRoundDone()/_mxRoundTotal())*100:(TQ.completedCards/Math.max(TQ.totalCards,1))*100}%`;
+  $("tq-round-info").innerHTML=S._mixedMode?`<span class="round-badge">Round ${S._mixedRound}</span><span class="remaining-badge">${_mxRoundTotal()-_mxRoundDone()} left</span>`:`<span class="round-badge">Round ${TQ.round}</span><span class="remaining-badge">${TQ.totalCards-TQ.completedCards} left</span>`;
   const isLast=TQ.currentQ>=TQ.questions.length-1;
   if(S._mixedMode){
     hide("tq-check-btn");
