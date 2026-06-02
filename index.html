@@ -1055,17 +1055,16 @@ $("btn-family-back").addEventListener("click",()=>showHome());
 $("btn-study-family").addEventListener("click",()=>startQuizFromFamily());
 $("btn-submit").addEventListener("click",()=>check());
 $("btn-replay").addEventListener("click",async()=>{
+  if(S._mixedPending&&S._mixedPending.length){
+    const batch=S._mixedPending.splice(0,S.qCount);
+    S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;S._mixedRound1Total=batch.length;S._mixedRound2Start=0;
+    S._pendingTaxaDue=[];S.sessionResults=[];advanceMixed();return;
+  }
   try{await buildDeck(S.allObs,false);}
   catch(e){showErr("Error starting session: "+e.message);}
 });
 $("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedPending=[];S._mixedMode=false;showScreen("home-main");});
 $("btn-continue-taxa").addEventListener("click",()=>{
-  if(S._mixedPending&&S._mixedPending.length){
-    const batch=S._mixedPending.splice(0,S.qCount);
-    S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;S._mixedRound1Total=batch.length;S._mixedRound2Start=0;
-    S._pendingTaxaDue=[];S.sessionResults=[];
-    advanceMixed();return;
-  }
   const qs=S._pendingTaxaDue;S._pendingTaxaDue=[];
   if(!qs.length){showScreen("home-main");return}
   TQ.questions=tqShuffle(qs);TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];TQ.round=1;TQ.completedCards=0;
@@ -2313,15 +2312,18 @@ function results(){
     bd.appendChild(row);
   }
   // Show continue button: mixed pending takes priority, then standalone taxonomy pending
-  const contBtn=$("btn-continue-taxa");
+  const replayBtn=$("btn-replay");
   if(S._mixedPending&&S._mixedPending.length){
-    contBtn.textContent=`Continue studying (${S._mixedPending.length} more) →`;
-    show("btn-continue-taxa");hide("btn-replay");
-  }else if(!S._mixedMode&&S._pendingTaxaDue&&S._pendingTaxaDue.length){
-    contBtn.textContent=`Continue: Taxonomy (${S._pendingTaxaDue.length} due) →`;
-    show("btn-continue-taxa");show("btn-replay");
+    replayBtn.textContent=`Continue studying (${S._mixedPending.length} more) →`;
+    hide("btn-continue-taxa");
   }else{
-    hide("btn-continue-taxa");show("btn-replay");
+    replayBtn.textContent="Continue Studying →";
+    if(!S._mixedMode&&S._pendingTaxaDue&&S._pendingTaxaDue.length){
+      $("btn-continue-taxa").textContent=`Continue: Taxonomy (${S._pendingTaxaDue.length} due) →`;
+      show("btn-continue-taxa");
+    }else{
+      hide("btn-continue-taxa");
+    }
   }
   showScreen("results");
 }
