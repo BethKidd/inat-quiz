@@ -1154,7 +1154,11 @@ $("map-toggle").addEventListener("click",e=>{
   e.stopPropagation();
   if($("map-strip").classList.contains("expanded"))collapseMap();else expandMap();
 });
-function _handleBtnNext(){if(S._mixedMode&&TQ.checked){tqHandleCheck();return;}next();}
+function _handleBtnNext(){
+  // Only route to taxa handler if we're actually on the taxoquiz screen
+  if(S._mixedMode&&TQ.checked&&$("screen-taxoquiz")&&!$("screen-taxoquiz").classList.contains("hidden")){tqHandleCheck();return;}
+  next();
+}
 $("btn-next").addEventListener("click",_handleBtnNext);$("btn-next").addEventListener("touchend",e=>{e.preventDefault();_handleBtnNext();},{passive:false});
 
 /* ── Carousel ── */
@@ -1604,6 +1608,7 @@ function advanceMixed(){
     show("tq-quiz");hide("tq-results");showScreen("taxoquiz");tqShowQuestion();
     $("tq-progress").textContent=label;
   }else{
+    TQ.checked=false; // reset taxa state so _handleBtnNext routes correctly on names cards
     const o=item.obs,srs=item.srs;
     const card={obs:o,srs,order:o._treeRanks?.order||"",family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",orderDone:false,familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false};
     if(!card.order)card.orderDone=true;if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
@@ -2250,10 +2255,10 @@ async function ignoreCurrentSpecies(){
   S.allObs=S.allObs.filter(o=>o.taxon.name!==c.species);
   S.totalCards=Math.max(0,S.totalCards-1);
   hide("ignore-popup");
-  if(S.deck.length===0&&S.retryQueue.length===0){results();return}
+  if(S.deck.length===0&&S.retryQueue.length===0){if(S._mixedMode){advanceMixed();return}results();return}
   if(S.cardIndex>=S.deck.length){
     if(S.retryQueue.length>0){S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
-    else{results();return}
+    else{if(S._mixedMode){advanceMixed();return}results();return}
   }
   killMap();$("q-card").classList.add("fade-out");
   setTimeout(()=>renderCard(),150);
@@ -2270,10 +2275,10 @@ function ignoreCurrentObservation(){
   S.retryQueue=S.retryQueue.filter(r=>r.obs?.id!==obsId);
   S.totalCards=Math.max(0,S.totalCards-1);
   hide("ignore-popup");
-  if(S.deck.length===0&&S.retryQueue.length===0){results();return}
+  if(S.deck.length===0&&S.retryQueue.length===0){if(S._mixedMode){advanceMixed();return}results();return}
   if(S.cardIndex>=S.deck.length){
     if(S.retryQueue.length>0){S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
-    else{results();return}
+    else{if(S._mixedMode){advanceMixed();return}results();return}
   }
   killMap();$("q-card").classList.add("fade-out");
   setTimeout(()=>renderCard(),150);
