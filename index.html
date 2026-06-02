@@ -943,7 +943,7 @@ function sm2(card,q){
 function fmtIv(m){if(m<1)return"<1m";if(m<60)return Math.round(m)+"m";if(m<1440)return Math.round(m/60)+"h";const d=Math.round(m/1440);if(d<30)return d+"d";if(d<365)return Math.round(d/30)+"mo";return(d/365).toFixed(1)+"y"}
 
 /* ── State ── */
-let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0,_mixedRound:1,_mixedRetryRoundBumped:false};
+let S={qCount:5,allObs:[],deck:[],retryQueue:[],cardIndex:0,round:1,totalCards:0,completedCards:0,sessionResults:[],currentUser:"",deckLabel:"",kingdomFilter:new Set(),_pendingTaxaDue:[],_mixedMode:false,_mixedQueue:[],_mixedIdx:0,_mixedTotal:0,_mixedCompleted:0,_mixedRound:1,_mixedRetryRoundBumped:false,_mixedPending:[]};
 const photoCache=new Map(),wikiCache=new Map(),commonNamesCache=new Map();
 let cIdx=0,cSlides=[],leafMap=null;
 let _baseCarSlides=[],_wikiText=null,_homeTreeTrunkX=0,_revealedAt=0;
@@ -1049,7 +1049,7 @@ $("btn-open-howto").addEventListener("click",()=>showScreen("howto"));
 $("btn-open-stats").addEventListener("click",()=>showStats());
 $("btn-howto-back").addEventListener("click",()=>showScreen("home-main"));
 $("btn-families-main").addEventListener("click",()=>maybeShowDataNotice(async()=>{if(!S.allObs?.length)await loadHome();openTaxoQuiz();}));
-$("btn-exit").addEventListener("click",()=>{killMap();S._mixedMode=false;showScreen("home-main")});
+$("btn-exit").addEventListener("click",()=>{killMap();S._mixedMode=false;S._mixedPending=[];showScreen("home-main")});
 $("btn-home-back").addEventListener("click",()=>{if(S._fromTaxoQuiz){S._fromTaxoQuiz=false;showScreen("taxoquiz");}else{showScreen("home-main");}});
 $("btn-family-back").addEventListener("click",()=>showHome());
 $("btn-study-family").addEventListener("click",()=>startQuizFromFamily());
@@ -1058,8 +1058,14 @@ $("btn-replay").addEventListener("click",async()=>{
   try{await buildDeck(S.allObs,false);}
   catch(e){showErr("Error starting session: "+e.message);}
 });
-$("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedMode=false;showScreen("home-main");});
+$("btn-results-home").addEventListener("click",()=>{S._pendingTaxaDue=[];S._mixedPending=[];S._mixedMode=false;showScreen("home-main");});
 $("btn-continue-taxa").addEventListener("click",()=>{
+  if(S._mixedPending&&S._mixedPending.length){
+    const batch=S._mixedPending.splice(0,S.qCount);
+    S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;
+    S._pendingTaxaDue=[];S.sessionResults=[];
+    advanceMixed();return;
+  }
   const qs=S._pendingTaxaDue;S._pendingTaxaDue=[];
   if(!qs.length){showScreen("home-main");return}
   TQ.questions=tqShuffle(qs);TQ.currentQ=0;TQ.score=0;TQ.retryQueue=[];TQ.results=[];TQ.round=1;TQ.completedCards=0;
@@ -1573,7 +1579,10 @@ async function startAllDueQuiz(){
   const mixed=[];
   const maxLen=Math.max(spItems.length,tqItems.length);
   for(let i=0;i<maxLen;i++){if(i<spItems.length)mixed.push(spItems[i]);if(i<tqItems.length)mixed.push(tqItems[i]);}
-  S._mixedMode=true;S._mixedQueue=mixed;S._mixedIdx=0;S._mixedTotal=mixed.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;
+  // Slice to session size — remainder stored for "Continue studying"
+  const batch=mixed.slice(0,S.qCount);
+  S._mixedPending=mixed.slice(S.qCount);
+  S._mixedMode=true;S._mixedQueue=batch;S._mixedIdx=0;S._mixedTotal=batch.length;S._mixedCompleted=0;S._mixedRound=1;S._mixedRetryRoundBumped=false;
   S._pendingTaxaDue=[];S.sessionResults=[];
   advanceMixed();
 }
@@ -2301,9 +2310,12 @@ function results(){
     row.innerHTML=`<span class="rb-name">${esc(nd.primary)}${nd.secondary?`<span style="display:block;font-size:11px;font-weight:400;font-style:italic;color:#6b8f78;margin-top:1px">${esc(nd.secondary)}</span>`:""}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0"><span class="rb-score" style="color:${scoreCol}">${s>0?"+":""}${s}</span>${dueStr?`<span style="font-size:10px;color:#9bb8a8;white-space:nowrap">${dueStr}</span>`:""}</span>`;
     bd.appendChild(row);
   }
-  // Show "Continue to Taxonomy" button if there are pending due taxa (not in mixed mode)
+  // Show continue button: mixed pending takes priority, then standalone taxonomy pending
   const contBtn=$("btn-continue-taxa");
-  if(!S._mixedMode&&S._pendingTaxaDue&&S._pendingTaxaDue.length){
+  if(S._mixedPending&&S._mixedPending.length){
+    contBtn.textContent=`Continue studying (${S._mixedPending.length} more) →`;
+    show("btn-continue-taxa");
+  }else if(!S._mixedMode&&S._pendingTaxaDue&&S._pendingTaxaDue.length){
     contBtn.textContent=`Continue: Taxonomy (${S._pendingTaxaDue.length} due) →`;
     show("btn-continue-taxa");
   }else{
