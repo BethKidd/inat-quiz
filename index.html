@@ -917,16 +917,23 @@ const DAY=1440; // minutes in a day
 const MATURE_IV=14*DAY; // interval threshold for "long-term memory" (14 days)
 function sm2(card,q){
   const now=Date.now();let{easeFactor:ef,interval:iv,repetitions:reps}=card;
-  if(q<3){
-    // Fail — due again in 4 hours
+  if(q===0){
+    // Species wrong — conservative reset, rebuild from scratch, no restore
+    reps=0;iv=240;
+  }else if(q===2){
+    // Species right but other fields wrong — also 4h, but save the pre-lapse
+    // interval so a perfect recovery freezes (restores) it rather than rebuilding
+    if(!card.lapseInterval&&iv>0)card.lapseInterval=iv;
     reps=0;iv=240;
   }else{
-    if(reps===0){
-      // First completion — go straight to day-scale intervals
+    // q=3/4/5: pass
+    if(card.lapseInterval){
+      // Recovering from a q=2 lapse — restore interval exactly, don't grow
+      iv=card.lapseInterval;card.lapseInterval=0;
+    }else if(reps===0){
       if(q===5)iv=4*DAY;      // Easy: 4 days
       else iv=DAY;             // Good / Hard: 1 day
     }else{
-      // Review phase: grow by ease factor
       if(q===3)iv=Math.max(DAY,Math.round(iv*1.2));   // hard: slow growth
       else if(q===5)iv=Math.round(iv*ef*1.3);          // easy: fast growth
       else iv=Math.round(iv*ef);                        // good: normal growth
@@ -2142,7 +2149,14 @@ function revealCard(c){
   if(allCorrect&&!c._sessionResultPushed){
     c._sessionResultPushed=true;
     const score=cardSessionScore(c);
-    const q=score>=10?5:score>=5?4:score>=4?3:0;
+    const neededRetry=(c._firstPassCorrect||0)<(c._firstPassTotal||1);
+    // q=0: species was wrong first pass → conservative reset, rebuild from scratch
+    // q=2: species right but other fields needed retries → freeze interval
+    // q=5: perfect first pass → grow interval
+    // If species isn't an enabled field, treat any retry as q=2 (freeze).
+    const speciesEnabled=getEnabledFields().includes("species");
+    const speciesWrong=speciesEnabled&&!c._speciesFirstPassCorrect;
+    const q=speciesWrong?0:neededRetry?2:5;
     sm2(c.srs,q);dbPut(c.srs);_cloudPut(c.srs);
     S.sessionResults.push({species:c.species,common:c.common,score,nextReview:c.srs.nextReview});
   }
@@ -2191,7 +2205,8 @@ function handleMC(c,chosenIdx){
   if(allCorrect&&!c._sessionResultPushed){
     c._sessionResultPushed=true;
     const score=cardSessionScore(c);
-    const q=score>=10?5:score>=5?4:score>=4?3:0;
+    const neededRetry=(c._firstPassCorrect||0)<(c._firstPassTotal||1);
+    const q=neededRetry?0:5; // any retry = lapse (4h + restore); perfect first pass = easy
     sm2(c.srs,q);dbPut(c.srs);_cloudPut(c.srs);
     S.sessionResults.push({species:c.species,common:c.common,score,nextReview:c.srs.nextReview});
   }
@@ -2218,6 +2233,8 @@ function check(){
   c._answers[step]=matchedAlt||userVal;
   c._results[step]=isCorrect?"correct":(userVal.trim()?"wrong":"skipped");
   if(isCorrect)c[step+"Done"]=true;
+  // Track whether the latin species name was right on the very first attempt
+  if(step==="species"&&!c._firstPassDone)c._speciesFirstPassCorrect=isCorrect;
   c._activeFields=(c._activeFields||0)+1;
   if(isCorrect)c._correctThisAttempt=(c._correctThisAttempt||0)+1;
   if(c._firstPassDone&&!isCorrect)c._retryWrong=(c._retryWrong||0)+1;
