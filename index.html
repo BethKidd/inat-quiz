@@ -1617,7 +1617,7 @@ function advanceMixed(){
   }else{
     TQ.checked=false; // reset taxa state so _handleBtnNext routes correctly on names cards
     const o=item.obs,srs=item.srs;
-    const card={obs:o,srs,order:o._treeRanks?.order||"",family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",orderDone:false,familyDone:false,commonDone:false,speciesDone:false,_revealed:false,_srsRated:false};
+    const card={obs:o,srs,order:o._treeRanks?.order||"",family:o._family||"",common:tc(o.taxon.preferred_common_name)||"",species:o.taxon.name||"",orderDone:item.orderDone||false,familyDone:item.familyDone||false,commonDone:item.commonDone||false,speciesDone:item.speciesDone||false,_revealed:false,_srsRated:false,_firstPassDone:item._firstPassDone||false,_firstPassCorrect:item._firstPassCorrect,_firstPassTotal:item._firstPassTotal,_speciesFirstPassCorrect:item._speciesFirstPassCorrect,_retryWrong:item._retryWrong||0};
     if(!card.order)card.orderDone=true;if(!card.family)card.familyDone=true;if(!card.common)card.commonDone=true;
     S.deck=[card];S.retryQueue=[];S.cardIndex=0;S.round=1;S.totalCards=1;S.completedCards=0;
     showScreen("quiz");renderCard();
@@ -2305,7 +2305,7 @@ function next(){
   killMap();S.cardIndex++;
   if(S.cardIndex>=S.deck.length){
     if(S.retryQueue.length===0){if(S._mixedMode){advanceMixed();return}results();return}
-    if(S._mixedMode){S.retryQueue.forEach(c=>{S._mixedQueue.push({type:'names',obs:c.obs,srs:c.srs,_isRetry:true});S._mixedTotal++;});S.retryQueue=[];advanceMixed();return;}
+    if(S._mixedMode){S.retryQueue.forEach(c=>{S._mixedQueue.push({type:'names',obs:c.obs,srs:c.srs,_isRetry:true,orderDone:c.orderDone,familyDone:c.familyDone,speciesDone:c.speciesDone,commonDone:c.commonDone,_firstPassDone:c._firstPassDone,_firstPassCorrect:c._firstPassCorrect,_firstPassTotal:c._firstPassTotal,_speciesFirstPassCorrect:c._speciesFirstPassCorrect,_retryWrong:c._retryWrong});S._mixedTotal++;});S.retryQueue=[];advanceMixed();return;}
     S.round++;S.deck=shuffle(S.retryQueue);S.retryQueue=[];S.cardIndex=0}
   $("q-card").classList.add("fade-out");setTimeout(()=>renderCard(),150)}
 
