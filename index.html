@@ -2454,7 +2454,7 @@ function openLightboxMap(lat,lng,label){
   const el=document.createElement("div");el.style.cssText="width:100%;height:100%";mw.appendChild(el);
   if(lbLeafMap){lbLeafMap.remove();lbLeafMap=null}
   lbLeafMap=L.map(el,{zoomControl:true,attributionControl:true,dragging:true,scrollWheelZoom:true,touchZoom:true}).setView([lat,lng],16);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(lbLeafMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(lbLeafMap);
   L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#6366f1;border:3px solid #fff"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(lbLeafMap);
   setTimeout(()=>lbLeafMap.invalidateSize(),100);
   lb.ontouchstart=null;lb.ontouchmove=null;
