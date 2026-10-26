@@ -1214,8 +1214,8 @@ function killMap(){if(leafMap){leafMap.remove();leafMap=null}}
 
 function initMapInSlide(el,lat,lng,label){
   killMap();
-  leafMap=L.map(el,{zoomControl:true,attributionControl:true,dragging:true,scrollWheelZoom:false,doubleClickZoom:true,touchZoom:true}).setView([lat,lng],17);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(leafMap);
+  leafMap=L.map(el,{zoomControl:true,attributionControl:false,dragging:true,scrollWheelZoom:false,doubleClickZoom:true,touchZoom:true}).setView([lat,lng],17);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(leafMap);
   L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#6366f1;border:3px solid #fff;box-shadow:0 0 8px rgba(99,102,241,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(leafMap);
   if(label){const lbl=document.createElement("div");lbl.style.cssText="position:absolute;bottom:6px;right:8px;font-size:10px;font-weight:600;color:#333;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:5px;z-index:1000;pointer-events:none";lbl.textContent="📍 "+label;el.appendChild(lbl)}
   setTimeout(()=>{if(leafMap)leafMap.invalidateSize()},120);
@@ -2453,7 +2453,7 @@ function openLightboxMap(lat,lng,label){
   img.classList.add("hidden");mw.classList.remove("hidden");mw.innerHTML="";
   const el=document.createElement("div");el.style.cssText="width:100%;height:100%";mw.appendChild(el);
   if(lbLeafMap){lbLeafMap.remove();lbLeafMap=null}
-  lbLeafMap=L.map(el,{zoomControl:true,attributionControl:true,dragging:true,scrollWheelZoom:true,touchZoom:true}).setView([lat,lng],16);
+  lbLeafMap=L.map(el,{zoomControl:true,attributionControl:false,dragging:true,scrollWheelZoom:true,touchZoom:true}).setView([lat,lng],16);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(lbLeafMap);
   L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#6366f1;border:3px solid #fff"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(lbLeafMap);
   setTimeout(()=>lbLeafMap.invalidateSize(),100);
