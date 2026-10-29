@@ -1192,6 +1192,8 @@ function initCarTouch(){
   // Use capture phase so Leaflet's stopPropagation can't hide multi-touch from us
   car.addEventListener("touchstart",e=>{
     if(e.touches.length>1){sx=null;mt=true;return;}
+    // Don't start swipe tracking if the touch lands on the map
+    if(e.target.closest('.leaflet-container')){sx=null;return;}
     mt=false;sx=e.touches[0].clientX;sy=e.touches[0].clientY;fired=false;
   },{capture:true,passive:true});
   car.addEventListener("touchmove",e=>{
