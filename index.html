@@ -2123,7 +2123,7 @@ function revealCard(c){
     fb.textContent="";fb.className="correct-answer";fb.style.display="none";
     if(result==="correct"||c[f+"Done"]){
       inp.value=(result==="correct"&&userVal)?userVal:val;inp.className="answer-input correct";
-      if(hint){hint.textContent="\u2713";hint.className="hint revealed-correct";}
+      if(hint){const hadTypo=result==="correct"&&userVal&&normalize(userVal)!==normalize(val);hint.textContent=hadTypo?`\u2713 \u2192 ${val}`:"\u2713";hint.className="hint revealed-correct";}
     }else if(result==="wrong"){
       inp.value=userVal;inp.className="answer-input wrong";
       if(hint){hint.textContent=val;hint.className="hint revealed-wrong";}
